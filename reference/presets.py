@@ -16,8 +16,9 @@ def layer(**kw):
     d.update(kw)
     a = np.zeros(NP)
     for k, v in d.items():
-        a[P[k]] = v
+        if k in P:  # the prototype has no volumes or erosion stack
+            a[P[k]] = v
     return a
 
 
-TYPES = dict((name, layer(**kw)) for name, kw in cloud_types.TYPES.items())
+TYPES = dict((name, layer(**kw)) for name, kw in cloud_types.TYPES.items() if not kw.get("volume"))

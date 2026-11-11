@@ -1,0 +1,60 @@
+// EzCloudGenStack: puts up to three cloud layers over each other nearest first, per pixel.
+//
+// c1..c3 are premultiplied images of the layers (colour, sun share, or Planar Z times alpha).
+// z1..z3 are the layers' depth passes (rgb = Planar Z, a = opacity), only used to order them:
+// a layer with no opacity at a pixel counts as furthest. The result is c_near over c_mid over
+// c_far, so placed volumes and decks sort themselves out wherever they are.
+
+kernel EzCloudGenStack : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> c1;
+  Image<eRead, eAccessPoint, eEdgeClamped> c2;
+  Image<eRead, eAccessPoint, eEdgeClamped> c3;
+  Image<eRead, eAccessPoint, eEdgeClamped> z1;
+  Image<eRead, eAccessPoint, eEdgeClamped> z2;
+  Image<eRead, eAccessPoint, eEdgeClamped> z3;
+  Image<eWrite> dst;
+
+  float key(float4 z)
+  {
+    return z.w > 1e-6f ? z.x : 1e30f;
+  }
+
+  float4 over(float4 a, float4 b)
+  {
+    return a + b * (1.0f - a.w);
+  }
+
+  void process()
+  {
+    float4 a = c1();
+    float4 b = c2();
+    float4 c = c3();
+    float ka = key(z1());
+    float kb = key(z2());
+    float kc = key(z3());
+    // Sort three by key, nearest first.
+    if (kb < ka) {
+      float4 t = a;
+      a = b;
+      b = t;
+      float k = ka;
+      ka = kb;
+      kb = k;
+    }
+    if (kc < kb) {
+      float4 t = b;
+      b = c;
+      c = t;
+      float k = kb;
+      kb = kc;
+      kc = k;
+    }
+    if (kb < ka) {
+      float4 t = a;
+      a = b;
+      b = t;
+    }
+    dst() = over(a, over(b, c));
+  }
+};
