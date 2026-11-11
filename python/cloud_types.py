@@ -67,7 +67,7 @@ TYPES = {
                         erosion=0.4, sigma=0.07, octaves=4, billow=1.0, wisp_size=200, wisp_amount=0.4,
                         shear=0.3),
     # A low fog bank: wide, thin, soft and swirly.
-    "Fog Bank": dict(volume=1, vol_shape=3, vol_size=(8000, 300, 8000), base=0, lumps=0.6, lump_size=600,
+    "Fog Bank": dict(volume=1, vol_shape=3, vol_size=(8000, 600, 8000), base=0, lumps=0.6, lump_size=600,
                      place_km=6, coverage=0.5, edge=0.3, bottom=0.4, detail=120, erosion=0.3, sigma=0.01,
                      billow=0.2, octaves=2, wisp_size=40, wisp_amount=0.6, swirl=0.4, swirl_size=200,
                      g=0.7, ambient=1.2),

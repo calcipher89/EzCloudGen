@@ -88,7 +88,7 @@ def main():
 
     def set_type(p, tname):
         g[p + "type"].setValue(tname)
-        # The type menu fills the knobs from knobChanged, which a terminal session doesn't run.
+        # The type menu fills the knobs from knobChanged; set them here too so the test does not lean on it.
         for k, v in cloud_types.full(tname).items():
             if g.knob(p + k) is not None:
                 g[p + k].setValue(list(v) if isinstance(v, tuple) else v)
@@ -99,13 +99,21 @@ def main():
         set_type("l1_", tname)
         render(tname.replace(" ", "_").lower())
 
-    # The erosion stack on a hero cumulus.
+    # The erosion stack on a hero cumulus. Grain is finer than a pixel at the type's 12 km (the
+    # kernel fades detail out by footprint), so grain is checked on a close hero at 4 km.
     set_type("l1_", "Hero Cumulus")
     for knob, value in (("wisp_amount", 0.9), ("grain_amount", 0.8), ("swirl", 0.6), ("shear", 0.5)):
+        if knob == "grain_amount":
+            g["l1_place_km"].setValue(4)
+            g["l1_place"].execute()
+            render("hero_cumulus_near")
         old = g["l1_" + knob].value()
         g["l1_" + knob].setValue(value)
         render("hero_cumulus_" + knob)
         g["l1_" + knob].setValue(old)
+        if knob == "grain_amount":
+            g["l1_place_km"].setValue(12)
+            g["l1_place"].execute()
 
     # Layer check: a deck, a hero volume in front of it, and cirrus, sorted by depth.
     set_type("l1_", "Cumulus")
@@ -115,11 +123,19 @@ def main():
     g["l2_place"].execute()
     g["l3_enable"].setValue(True)
     render("layered")
-    # The same with the volume as layer 1 and the deck as layer 2: must look the same.
-    set_type("l1_", "Hero Cumulus")
-    g["l1_place_km"].setValue(5)
-    g["l1_place"].execute()
-    set_type("l2_", "Cumulus")
+    # The same with layers 1 and 2 swapped (every knob, seed included): must look the same.
+    # knobChanged is off meanwhile, or the type knobs would reset their layer.
+    kc = g["knobChanged"].value()
+    g["knobChanged"].setValue("")
+    for k in g.knobs():
+        if k.startswith("l1_") and g.knob("l2_" + k[3:]) is not None:
+            a, b = g[k], g["l2_" + k[3:]]
+            if isinstance(a, (nuke.PyScript_Knob, nuke.Text_Knob, nuke.Tab_Knob)):
+                continue
+            sa, sb = a.toScript(), b.toScript()
+            a.fromScript(sb)
+            b.fromScript(sa)
+    g["knobChanged"].setValue(kc)
     render("layered_swapped")
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
