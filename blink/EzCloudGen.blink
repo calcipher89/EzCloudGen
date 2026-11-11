@@ -1,0 +1,612 @@
+// EzCloudGen: one procedural, volumetric cloud layer, ray marched through the shot camera.
+// Ported from the prototype in reference/clouds.py.
+//
+// Metres inside, +Y up. The earth is curved: the layer is a shell from `base` to
+// `base + thickness` above the ground, so a deck converges on the horizon. The camera sits at
+// camPosition (scene units, times sceneScale for metres) with its height above the ground at
+// (camPosition.y - groundHeight) * sceneScale.
+//
+// Shape: a 2D weather field (warped fbm, ridged streaks, Worley cells) thresholded by coverage
+// and shrunk with height by a profile (flat base, rounded top, domes with `taper`). Then the
+// surface is displaced by 3D detail noise (inverted Worley billows or value-noise wisps). Detail
+// octaves drop with distance, so far clouds don't sparkle.
+//
+// Light: a short march towards the sun, four multiple-scattering octaves with a dual
+// Henyey-Greenstein phase (silver linings when backlit), a powder term (dark edges), sky light
+// from above and ground bounce from below, energy-conserving integration, and aerial
+// perspective towards hazeColor over hazeDistance.
+//
+// output 0: rgb = cloud colour (premultiplied), a = opacity.
+// output 1: rgb = the direct sun share of output 0's rgb (premultiplied), a = opacity.
+// output 2: rgb = Planar Z of the clouds in scene units (opacity-weighted), a = opacity.
+//           No lighting, so it is cheap.
+//
+// `src` only sets the format: pixel (x, y) maps to the camera frame by frameSize.
+
+kernel EzCloudGen : ImageComputationKernel<ePixelWise>
+{
+  Image<eRead, eAccessPoint, eEdgeClamped> src;
+  Image<eWrite> dst;
+
+param:
+  int output;
+  float3 camRow0;
+  float3 camRow1;
+  float3 camRow2;
+  float3 camPosition;
+  float focal;
+  float haperture;
+  float2 frameSize;
+  float sceneScale;
+  float groundHeight;
+  float3 sunDirection;
+  float sunRotation;
+  float3 sunColor;
+  float3 skyColor;
+  float3 groundColor;
+  float3 hazeColor;
+  float hazeDistance;
+  float maxDistance;
+  float quality;
+  int samples;
+  float seed;
+  float evolve;
+  float2 offset;
+  float gapAmount;
+  float gapSize;
+  // The cloud type.
+  float base;
+  float thickness;
+  float coverage;
+  float scaleKm;
+  float stretch;
+  float windDeg;
+  float edge;
+  float taper;
+  float bottomRound;
+  float topRound;
+  float detailSize;
+  float erosion;
+  float sigma;
+  float cells;
+  float cellKm;
+  float warp;
+  float forward;
+  float ambient;
+  float octaves;
+  float billow;
+  float streaks;
+  float vary;
+  float density;
+
+local:
+  float R;
+  float pi;
+  float3 sun;
+  float camAlt;
+  float ca;
+  float sa;
+  float gapX;
+  float gapZ;
+
+  void define()
+  {
+    defineParam(output, "output", 0);
+    defineParam(camRow0, "cam_row0", float3(1.0f, 0.0f, 0.0f));
+    defineParam(camRow1, "cam_row1", float3(0.0f, 1.0f, 0.0f));
+    defineParam(camRow2, "cam_row2", float3(0.0f, 0.0f, 1.0f));
+    defineParam(camPosition, "cam_position", float3(0.0f, 3000.0f, 0.0f));
+    defineParam(focal, "focal", 24.0f);
+    defineParam(haperture, "haperture", 36.0f);
+    defineParam(frameSize, "frame_size", float2(1920.0f, 1080.0f));
+    defineParam(sceneScale, "scene_scale", 0.1f);
+    defineParam(groundHeight, "ground_height", 0.0f);
+    defineParam(sunDirection, "sun_direction", float3(0.0f, 0.5f, -1.0f));
+    defineParam(sunRotation, "sun_rotation", 0.0f);
+    defineParam(sunColor, "sun_color", float3(1.0f, 0.95f, 0.85f));
+    defineParam(skyColor, "sky_color", float3(0.3f, 0.45f, 0.8f));
+    defineParam(groundColor, "ground_color", float3(0.12f, 0.11f, 0.09f));
+    defineParam(hazeColor, "haze_color", float3(0.6f, 0.68f, 0.8f));
+    defineParam(hazeDistance, "haze_distance", 60000.0f);
+    defineParam(maxDistance, "max_distance", 80000.0f);
+    defineParam(quality, "quality", 1.0f);
+    defineParam(samples, "samples", 1);
+    defineParam(seed, "seed", 0.0f);
+    defineParam(evolve, "evolve", 0.0f);
+    defineParam(offset, "offset", float2(0.0f, 0.0f));
+    defineParam(gapAmount, "gap_amount", 0.0f);
+    defineParam(gapSize, "gap_size", 2000.0f);
+    defineParam(base, "base", 1400.0f);
+    defineParam(thickness, "thickness", 1300.0f);
+    defineParam(coverage, "coverage", 0.42f);
+    defineParam(scaleKm, "scale_km", 1.6f);
+    defineParam(stretch, "stretch", 1.0f);
+    defineParam(windDeg, "wind_deg", 20.0f);
+    defineParam(edge, "edge", 0.06f);
+    defineParam(taper, "taper", 0.85f);
+    defineParam(bottomRound, "bottom_round", 0.04f);
+    defineParam(topRound, "top_round", 0.15f);
+    defineParam(detailSize, "detail_size", 220.0f);
+    defineParam(erosion, "erosion", 0.45f);
+    defineParam(sigma, "sigma", 0.06f);
+    defineParam(cells, "cells", 0.0f);
+    defineParam(cellKm, "cell_km", 0.5f);
+    defineParam(warp, "warp", 1.2f);
+    defineParam(forward, "forward", 0.8f);
+    defineParam(ambient, "ambient", 1.0f);
+    defineParam(octaves, "octaves", 3.5f);
+    defineParam(billow, "billow", 1.0f);
+    defineParam(streaks, "streaks", 0.0f);
+    defineParam(vary, "vary", 0.0f);
+    defineParam(density, "density", 1.0f);
+  }
+
+  void init()
+  {
+    R = 6371000.0f;
+    pi = 3.14159265358979f;
+    // The sun direction turned by sunRotation about +Y (an EzAtmosScatter's HDRI rotation).
+    float r = -sunRotation * pi / 180.0f;
+    float3 sd = normalize(sunDirection);
+    sun = float3(sd.x * cos(r) + sd.z * sin(r), sd.y, -sd.x * sin(r) + sd.z * cos(r));
+    camAlt = max((camPosition.y - groundHeight) * sceneScale, 1.0f);
+    float a = windDeg * pi / 180.0f;
+    ca = cos(a);
+    sa = sin(a);
+    // Where the line from the camera to the sun crosses the cloud base: the gap opens there.
+    float up = max(sun.y, 0.02f);
+    float rise = base + 0.5f * thickness - camAlt;
+    gapX = sun.x / up * rise;
+    gapZ = sun.z / up * rise;
+  }
+
+  // ---- Noise (float only) -----------------------------------------------------------------
+
+  float fr(float v)
+  {
+    return v - floor(v);
+  }
+
+  // Dave Hoskins' hash13.
+  float hash3(float x, float y, float z)
+  {
+    float px = fr(x * 0.1031f);
+    float py = fr(y * 0.1031f);
+    float pz = fr(z * 0.1031f);
+    float d = px * (py + 33.33f) + py * (pz + 33.33f) + pz * (px + 33.33f);
+    px += d;
+    py += d;
+    pz += d;
+    return fr((px + py) * pz);
+  }
+
+  float fade5(float f)
+  {
+    return f * f * f * (f * (f * 6.0f - 15.0f) + 10.0f);
+  }
+
+  float vnoise3(float x, float y, float z)
+  {
+    float ix = floor(x);
+    float iy = floor(y);
+    float iz = floor(z);
+    float ux = fade5(x - ix);
+    float uy = fade5(y - iy);
+    float uz = fade5(z - iz);
+    float a = hash3(ix, iy, iz);
+    float b = hash3(ix + 1.0f, iy, iz);
+    float c = hash3(ix, iy + 1.0f, iz);
+    float d = hash3(ix + 1.0f, iy + 1.0f, iz);
+    float e = hash3(ix, iy, iz + 1.0f);
+    float f = hash3(ix + 1.0f, iy, iz + 1.0f);
+    float g = hash3(ix, iy + 1.0f, iz + 1.0f);
+    float h = hash3(ix + 1.0f, iy + 1.0f, iz + 1.0f);
+    float k0 = a + (b - a) * ux;
+    float k1 = c + (d - c) * ux;
+    float k2 = e + (f - e) * ux;
+    float k3 = g + (h - g) * ux;
+    float l0 = k0 + (k1 - k0) * uy;
+    float l1 = k2 + (k3 - k2) * uy;
+    return l0 + (l1 - l0) * uz;
+  }
+
+  float vnoise2(float x, float y)
+  {
+    return vnoise3(x, y, 17.31f + seed * 1.37f);
+  }
+
+  float fbm2(float x, float y, float oct)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      s += amp * w * vnoise2(x, y);
+      tot += amp * w;
+      amp *= 0.5f;
+      float nx = 1.6f * x + 1.2f * y + 13.7f;
+      y = -1.2f * x + 1.6f * y + 7.3f;
+      x = nx;
+    }
+    return s / max(tot, 1e-6f);
+  }
+
+  float ridged2(float x, float y, float oct)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      float v = 1.0f - fabs(2.0f * vnoise2(x, y) - 1.0f);
+      s += amp * w * v * v;
+      tot += amp * w;
+      amp *= 0.55f;
+      float nx = 1.7f * x + 1.1f * y + 5.1f;
+      y = -1.1f * x + 1.7f * y + 9.2f;
+      x = nx;
+    }
+    return s / max(tot, 1e-6f);
+  }
+
+  float worley2(float x, float y)
+  {
+    float ix = floor(x);
+    float iy = floor(y);
+    float best = 9.0f;
+    for (int j = -1; j <= 1; j++) {
+      for (int i = -1; i <= 1; i++) {
+        float cx = ix + float(i);
+        float cy = iy + float(j);
+        float dx = cx + hash3(cx, cy, 3.7f + seed) - x;
+        float dy = cy + hash3(cx, cy, 11.3f + seed) - y;
+        best = min(best, dx * dx + dy * dy);
+      }
+    }
+    return sqrt(best);
+  }
+
+  float worley3(float x, float y, float z)
+  {
+    float ix = floor(x);
+    float iy = floor(y);
+    float iz = floor(z);
+    float best = 9.0f;
+    for (int k = -1; k <= 1; k++) {
+      for (int j = -1; j <= 1; j++) {
+        for (int i = -1; i <= 1; i++) {
+          float cx = ix + float(i);
+          float cy = iy + float(j);
+          float cz = iz + float(k);
+          float dx = cx + hash3(cx, cy, cz) - x;
+          float dy = cy + hash3(cy, cz, cx + 7.1f) - y;
+          float dz = cz + hash3(cz, cx, cy + 3.3f) - z;
+          best = min(best, dx * dx + dy * dy + dz * dz);
+        }
+      }
+    }
+    return min(sqrt(best), 1.0f);
+  }
+
+  // Billowy (inverted Worley, cauliflower) mixed with wispy value noise.
+  float detail3(float x, float y, float z, float oct)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      float b = billow > 0.0f ? 1.0f - worley3(x, y, z) : 0.0f;
+      float v = billow < 1.0f ? vnoise3(x * 1.3f, y * 1.3f, z * 1.3f) : 0.0f;
+      s += amp * w * (billow * b + (1.0f - billow) * v);
+      tot += amp * w;
+      amp *= 0.5f;
+      x = x * 2.03f + 1.7f;
+      y = y * 2.03f + 3.1f;
+      z = z * 2.03f + 5.3f;
+    }
+    return s / max(tot, 1e-6f);
+  }
+
+  float sstep(float a, float b, float x)
+  {
+    float t = clamp((x - a) / (b - a), 0.0f, 1.0f);
+    return t * t * (3.0f - 2.0f * t);
+  }
+
+  float lg2(float v)
+  {
+    return log(v) * 1.44269504f;
+  }
+
+  // ---- Shape --------------------------------------------------------------------------------
+
+  // Coverage at local ground position X, Z (m, camera at 0, 0): positive inside a cloud.
+  float weather(float X, float Z, float foot)
+  {
+    float sc = scaleKm * 1000.0f;
+    float gx = X - gapX;
+    float gz = Z - gapZ;
+    // World position plus drift.
+    X += camPosition.x * sceneScale + offset.x;
+    Z += camPosition.z * sceneScale + offset.y;
+    float u = (X * ca + Z * sa) / sc;
+    float v = (-X * sa + Z * ca) / (sc * stretch);
+    float oct = min(6.0f, max(1.0f, lg2(max(sc / max(foot, 1.0f), 1.0f)) - 0.5f));
+    float wx = fbm2(u * 0.5f + 3.1f, v * 0.5f, 3.0f) - 0.5f;
+    float wz = fbm2(u * 0.5f + 9.7f, v * 0.5f + 5.0f, 3.0f) - 0.5f;
+    float u2 = u + wx * warp;
+    float v2 = v + wz * warp;
+    float f;
+    if (streaks > 0.5f)
+      f = ridged2(u2, v2, oct) * (0.55f + 0.9f * fbm2(u * 0.3f + 40.0f, v * 0.3f, 3.0f));
+    else
+      f = fbm2(u2, v2, oct);
+    float c = f - (0.82f - 0.55f * coverage);
+    if (cells > 0.0f) {
+      float cs = cellKm * 1000.0f;
+      float cu = (X * ca + Z * sa) / cs;
+      float cv = (-X * sa + Z * ca) / (cs * 0.6f);
+      // The cells fade out when they get smaller than a few pixels.
+      float fd = sstep(1.5f, 5.0f, cs / max(foot, 1.0f));
+      float cell = worley2(cu + wx * 0.8f, cv + wz * 0.8f);
+      c -= cells * fd * (cell - 0.45f) * 0.35f;
+    }
+    if (gapAmount > 0.0f)
+      c -= gapAmount * 0.5f * exp(-(gx * gx + gz * gz) / (gapSize * gapSize));
+    return c;
+  }
+
+  // How much the coverage shrinks at height hn (0 base, 1 top).
+  float profile(float hn)
+  {
+    float k = 0.3f * (1.0f - sstep(0.0f, max(bottomRound, 1e-3f), hn));
+    k += 0.3f * sstep(1.0f - max(topRound, 1e-3f), 1.0f, hn);
+    k += taper * 0.32f * hn * sqrt(hn);
+    return k;
+  }
+
+  // Height above the curved ground of local point p (camera above 0, 0).
+  float altitude(float3 p)
+  {
+    float h2 = p.x * p.x + p.z * p.z;
+    float y = p.y;
+    // sqrt((R + y)^2 + h2) - R, without losing the metres in R^2.
+    return (2.0f * R * y + y * y + h2) / (sqrt((R + y) * (R + y) + h2) + R);
+  }
+
+  // Cloud density 0..1. cheap: no detail noise (for the light march).
+  float cloud(float3 p, float foot, bool cheap)
+  {
+    float alt = altitude(p);
+    float b = base;
+    float c = weather(p.x, p.z, foot);
+    if (c <= -0.12f)
+      return 0.0f;
+    if (vary > 0.0f) {
+      float sv = scaleKm * 2500.0f;
+      float vx = p.x + camPosition.x * sceneScale + offset.x;
+      float vz = p.z + camPosition.z * sceneScale + offset.y;
+      b += (vnoise2(vx / sv + 70.0f, vz / sv) - 0.5f) * vary * thickness;
+    }
+    float hn = (alt - b) / thickness;
+    if (hn <= 0.0f || hn >= 1.0f)
+      return 0.0f;
+    c -= profile(hn);
+    float e = max(edge, 1e-3f);
+    if (cheap || erosion <= 0.0f)
+      return clamp(c / e, 0.0f, 1.0f);
+    if (c < -0.12f * erosion)
+      return 0.0f;
+    float oct = min(octaves, max(0.0f, lg2(max(detailSize / max(2.5f * foot, 1.0f), 1.0f))));
+    if (oct > 0.0f) {
+      float wx = p.x + camPosition.x * sceneScale + offset.x;
+      float wz = p.z + camPosition.z * sceneScale + offset.y;
+      // The detail rises slowly (boil) with evolve.
+      float n = detail3(wx / detailSize, (alt - evolve) / detailSize, wz / detailSize, oct);
+      c += erosion * (n - 0.5f) * 0.24f;
+    }
+    return clamp(c / e, 0.0f, 1.0f);
+  }
+
+  // ---- Rays ---------------------------------------------------------------------------------
+
+  // Ray from local o along d vs the sphere of radius R + h around (0, -R, 0).
+  bool sphere(float3 o, float3 d, float h, float &t0, float &t1)
+  {
+    float oy = o.y + R;
+    float b = o.x * d.x + oy * d.y + o.z * d.z;
+    // |o - centre|^2 - r^2, without losing the metres in R^2.
+    float c = o.x * o.x + o.z * o.z + (o.y - h) * (2.0f * R + o.y + h);
+    float disc = b * b - c;
+    if (disc < 0.0f)
+      return false;
+    float s = sqrt(disc);
+    float q = b > 0.0f ? -b - s : -b + s;
+    float r0 = q;
+    float r1 = fabs(q) > 1e-6f ? c / q : -b;
+    t0 = min(r0, r1);
+    t1 = max(r0, r1);
+    return true;
+  }
+
+  float hg(float g, float c)
+  {
+    float gg = g * g;
+    return (1.0f - gg) / (4.0f * pi * pow(1.0f + gg - 2.0f * g * c, 1.5f));
+  }
+
+  // Optical depth towards the sun from p, inside the layer.
+  float sunDepth(float3 p, float foot)
+  {
+    float t0 = 0.0f;
+    float t1 = 0.0f;
+    float far = 0.0f;
+    if (sphere(p, sun, base + thickness * (1.0f + vary), t0, t1))
+      far = max(t1, 0.0f);
+    far = min(far, min(6.0f * thickness / max(sun.y, 0.08f), 12000.0f));
+    int steps = max(int(6.0f * quality), 2);
+    float od = 0.0f;
+    float prev = 0.0f;
+    for (int i = 0; i < steps; i++) {
+      float f = (float(i) + 0.5f) / float(steps);
+      float t = far * f * f;
+      float dt = t - prev;
+      prev = t;
+      od += cloud(p + sun * t, foot + t * 0.02f, i > 1) * dt;
+    }
+    return od;
+  }
+
+  void process(int2 pos)
+  {
+    float3 cam = float3(0.0f, camAlt, 0.0f);
+    float hap = haperture;
+    float vap = haperture * frameSize.y / frameSize.x;
+    float pixAng = hap / focal / frameSize.x;
+    float sig0 = sigma * density;
+    // The layer's shell, with room for `vary`.
+    float hb = base - thickness * vary;
+    float ht = base + thickness * (1.0f + vary);
+
+    float4 acc = float4(0.0f);
+    int ns = max(samples, 1);
+    for (int s = 0; s < ns; s++) {
+      float jx = ns > 1 ? hash3(pos.x + 0.5f, pos.y + 0.5f, float(s) * 7.0f + seed) : 0.5f;
+      float jy = ns > 1 ? hash3(pos.y + 1.5f, pos.x + 2.5f, float(s) * 3.0f + 5.0f) : 0.5f;
+      float u = (pos.x + jx) / frameSize.x;
+      float v = (pos.y + jy) / frameSize.y;
+      float3 cd = float3((u - 0.5f) * hap / focal, (v - 0.5f) * vap / focal, -1.0f);
+      float3 d = normalize(float3(dot(camRow0, cd), dot(camRow1, cd), dot(camRow2, cd)));
+      // Planar Z per metre along the ray.
+      float zPer = 1.0f / length(cd);
+      float cosT = dot(d, sun);
+
+      // Where the ray is inside the shell: [a0, a1] (outer) minus (b0, b1) (inner), before
+      // the ground and maxDistance.
+      float tmax = maxDistance;
+      float g0 = 0.0f;
+      float g1 = 0.0f;
+      if (sphere(cam, d, 0.0f, g0, g1) && g0 > 0.0f)
+        tmax = min(tmax, g0);
+      float a0 = 0.0f;
+      float a1 = 0.0f;
+      float b0 = 0.0f;
+      float b1 = 0.0f;
+      float i0s = 0.0f;
+      float i0e = 0.0f;
+      float i1s = 0.0f;
+      float i1e = 0.0f;
+      int n = 0;
+      if (sphere(cam, d, ht, a0, a1) && a1 > 0.0f) {
+        float s0 = max(a0, 0.0f);
+        float s1 = min(a1, tmax);
+        if (!sphere(cam, d, hb, b0, b1)) {
+          if (s1 > s0) {
+            i0s = s0;
+            i0e = s1;
+            n = 1;
+          }
+        } else {
+          if (min(b0, s1) > s0) {
+            i0s = s0;
+            i0e = min(b0, s1);
+            n = 1;
+          }
+          if (s1 > max(b1, s0)) {
+            if (n == 0) {
+              i0s = max(b1, s0);
+              i0e = s1;
+            } else {
+              i1s = max(b1, s0);
+              i1e = s1;
+            }
+            n += 1;
+          }
+        }
+      }
+
+      float T = 1.0f;
+      float3 col = float3(0.0f);
+      float3 sunPart = float3(0.0f);
+      float dep = 0.0f;
+      float minStep = max(min(thickness / 24.0f, detailSize * 0.35f) / quality, 8.0f);
+      int maxSteps = int(220.0f * quality);
+      for (int k = 0; k < n; k++) {
+        float t = k == 0 ? i0s : i1s;
+        float tEnd = k == 0 ? i0e : i1e;
+        bool first = true;
+        int steps = 0;
+        while (t < tEnd && T > 0.01f && steps < maxSteps) {
+          steps++;
+          float foot = max(t * pixAng, 0.5f);
+          float dt = max(minStep, t * 0.012f / quality);
+          if (first) {
+            // Jitter the first step per pixel, so the steps don't band.
+            dt *= hash3(pos.x * 1.7f, pos.y * 2.3f, float(s + 31 * k) + seed) + 0.02f;
+            first = false;
+          }
+          dt = min(dt, tEnd - t + 1e-3f);
+          float tm = t + 0.5f * dt;
+          float3 p = cam + d * tm;
+          float dn = cloud(p, foot, false);
+          if (dn > 0.0f) {
+            float sig = dn * sig0;
+            float ext = exp(-sig * dt);
+            float w = T * (1.0f - ext);
+            dep += w * tm;
+            if (output != 2) {
+              float od = sunDepth(p, foot) * sig0;
+              // Multiple scattering octaves (Wrenninge).
+              float ms = 0.0f;
+              float oa = 1.0f;
+              float ob = 1.0f;
+              float oc = 1.0f;
+              for (int o = 0; o < 4; o++) {
+                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT);
+                ms += ob * exp(-od * oa) * ph;
+                oa *= 0.3f;
+                ob *= 0.6f;
+                oc *= 0.5f;
+              }
+              // Powder: dark edges facing away from the sun.
+              float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
+              float3 direct = sunColor * (ms * powder);
+              // Sky light from above, ground bounce from below.
+              float hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
+              float th = min(thickness, 1500.0f) * 0.12f;
+              float up = exp(-sig * (1.0f - hn) * th);
+              float dnl = exp(-sig * hn * th) * 0.35f;
+              float3 amb = (skyColor * up + groundColor * dnl) * ambient;
+              float hz = hazeDistance > 0.0f ? exp(-tm / hazeDistance) : 1.0f;
+              col += w * (hz * (direct + amb) + (1.0f - hz) * hazeColor);
+              sunPart += w * hz * direct;
+            }
+            T *= ext;
+          }
+          t += dt;
+        }
+      }
+      float alpha = 1.0f - T;
+      if (output == 2) {
+        float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
+        acc += float4(z, z, z, alpha);
+      } else if (output == 1) {
+        acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha);
+      } else {
+        acc += float4(col.x, col.y, col.z, alpha);
+      }
+    }
+    dst() = acc / float(ns);
+  }
+};
