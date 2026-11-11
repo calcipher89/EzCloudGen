@@ -31,12 +31,13 @@ SETUPS = [
      {"sun_direction": sun(35, 50)}),
     ("GoldenHour", "Golden hour, backlit: stratocumulus + altocumulus, gap toward the sun",
      [("Stratocumulus", {"coverage": 0.6}), ("Altocumulus", {}), None],
-     {"sun_direction": sun(6, 8), "light_from": "Manual", "sun_color": "14 8.5 4.2",
-      "sky_color": "0.16 0.2 0.38", "ground_color": "0.08 0.05 0.03", "haze_color": "1.9 1.3 0.9",
+     {"sun_direction": sun(6, 8), "light_from": "Manual", "sun_color": "14 7 2.6",
+      "sky_color": "0.22 0.16 0.2", "ground_color": "0.1 0.05 0.02", "haze_color": "1.8 0.95 0.45",
       "gap_amount": 0.7, "gap_size": 3}),
     ("Overcast", "Overcast: stratus under altostratus",
-     [("Stratus", {"coverage": 0.85}), ("Altostratus", {}), None],
-     {"sun_direction": sun(25, -30), "sun_intensity": 0.6}),
+     [("Stratus", {"coverage": 0.85, "erosion": 0.55, "billow": 0.6, "sigma": 0.03, "vary": 0.4}), ("Altostratus", {}), None],
+     {"sun_direction": sun(25, -30), "sun_intensity": 0.2, "sky_color": "0.3 0.31 0.33",
+      "sky_intensity": 0.7, "haze_color": "0.7 0.71 0.73", "haze_distance": 30}),
     ("Towering", "Towering cumulus + cirrocumulus, afternoon",
      [("Cumulus Congestus", {}), None, ("Cirrocumulus", {})],
      {"sun_direction": sun(22, -60)}),
@@ -52,7 +53,7 @@ def group_text():
 
 
 def instance(body, name, layers, knobs, x, y):
-    lines = ["xpos %d" % x, "ypos %d" % y, "resolution Half"]
+    lines = ["xpos %d" % x, "ypos %d" % y, "resolution Half", "samples 2"]
     for k, v in knobs.items():
         lines.append("%s %s" % (k, ("{%s}" % v) if isinstance(v, str) and " " in v else v))
     for i, layer in enumerate(layers):
