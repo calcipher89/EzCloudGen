@@ -19,8 +19,8 @@
 // volume 1: instead of a deck, the layer is one placed cloud volume: a shape (ellipsoid,
 // dome, anvil or box) centred on volCenter (scene units), turned by volRotate (degrees, Y then
 // X then Z) and sized volSize (metres, full size). Lumps (big noise) break the shape up first.
-// Its noise lives in the box's frame, so the cloud moves and turns with the box, and it fades
-// out before the box's sides and top.
+// Its noise lives in the box's frame, so the cloud moves and turns with the box. The shape
+// fills 80% of the box across, and fades out before the walls.
 //
 // Erosion stack, for decks and volumes: billows (detailSize/erosion, inverted Worley or value
 // noise by `billow`), wisps (fine value noise eating the thin edges), grain (finest noise).
@@ -559,24 +559,30 @@ local:
     hn = clamp(q.y * 0.5f + 0.5f, 0.0f, 1.0f);
     if (fabs(q.x) > 1.0f || fabs(q.y) > 1.0f || fabs(q.z) > 1.0f)
       return -1.0f;
-    float rxz = sqrt(q.x * q.x + q.z * q.z);
+    // The shape sits inside 80% of the box across (and 85% of its height), leaving the rest
+    // for the lumps and erosion to bulge into before the walls.
+    float sx = q.x * 1.25f;
+    float sz = q.z * 1.25f;
+    float rxz = sqrt(sx * sx + sz * sz);
+    float hs = min(hn * 1.18f, 1.0f);
     float dist;
     if (volShape == 0) {
       // Ellipsoid.
-      dist = sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+      float sy = q.y * 1.25f;
+      dist = sqrt(sx * sx + sy * sy + sz * sz);
     } else if (volShape == 1) {
       // Dome: a flat base, rounding to the top (cumulus).
-      float r = sqrt(max(1.0f - hn * hn, 0.0f));
+      float r = sqrt(max(1.0f - hs * hs, 0.0f));
       dist = rxz / max(r, 1e-3f);
       dist = max(dist, 1.0f - hn / max(bottomRound, 0.02f));
     } else if (volShape == 2) {
       // Anvil: a column that spreads into a flat top.
-      float r = 0.54f - 0.12f * sstep(0.0f, 0.3f, hn) + 0.58f * sstep(0.72f, 0.95f, hn);
+      float r = 0.54f - 0.12f * sstep(0.0f, 0.3f, hs) + 0.58f * sstep(0.72f, 0.95f, hs);
       dist = max(rxz / max(r, 1e-3f), 1.0f - hn / max(bottomRound, 0.02f));
-      dist = max(dist, sstep(0.93f, 1.0f, hn) * 1.2f);
+      dist = max(dist, sstep(0.93f, 1.0f, hs) * 1.2f);
     } else {
       // Box with soft corners.
-      float3 a = float3(fabs(q.x), fabs(q.y), fabs(q.z));
+      float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
       dist = pow(pow(a.x, 6.0f) + pow(a.y, 6.0f) + pow(a.z, 6.0f), 1.0f / 6.0f);
     }
     float c = (1.0f - dist) * 0.3f + (coverage - 0.5f) * 0.3f;
@@ -588,9 +594,10 @@ local:
       float ls = max(lumpSize, 10.0f);
       c += lumps * (fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd) * 0.5f + vnoise3(wx / ls, wy / ls, wz / ls) * 0.5f - 0.5f) * 0.45f;
     }
-    // Fade out before the sides and top of the box, so nothing is cut off flat by its walls.
-    float wall = max(max(fabs(q.x), fabs(q.z)), q.y);
-    c -= 0.6f * sstep(0.75f, 1.0f, wall);
+    // Fade out before the walls, so nothing is cut off flat by them.
+    // Round across (so the corners never show) and over the top and base.
+    float wall = max(sqrt(q.x * q.x + q.z * q.z), fabs(q.y));
+    c -= 0.6f * sstep(0.88f, 1.0f, wall);
     return c;
   }
 
