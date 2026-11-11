@@ -2,7 +2,8 @@
 
     python3 reference/blink_check/run_kernel.py out.exr_or_png [width] [k=v ...]
 
-Parameters are the kernel's define() names (cam_position=0,3000,0 ...). Writes rgba as a
+Parameters are the kernel's define() names (cam_position=0,3000,0 ...); map=picture.png feeds the
+coverage map input (and sets use_map=1). Writes rgba as a
 tone-mapped PNG (and a .npy of the raw floats beside it).
 """
 
@@ -43,7 +44,25 @@ int main(int argc, char **argv) {
   int w = atoi(argv[1]), h = atoi(argv[2]);
   EzCloudGen proto;
   proto.define();
-  for (int i = 3; i + 1 < argc; i += 2) set(proto, argv[i], argv[i + 1]);
+  std::vector<float> mapPix;
+  for (int i = 3; i + 1 < argc; i += 2) {
+    if (!strcmp(argv[i], "map_file")) {
+      // Raw: int w, int h, then w * h rgba floats, rows going up.
+      FILE *f = fopen(argv[i + 1], "rb");
+      int mw = 0, mh = 0;
+      if (f && fread(&mw, 4, 1, f) == 1 && fread(&mh, 4, 1, f) == 1) {
+        mapPix.resize(size_t(mw) * mh * 4);
+        if (fread(mapPix.data(), 4, mapPix.size(), f) == mapPix.size()) {
+          proto.cmap.pix = mapPix.data();
+          proto.cmap.bounds.x2 = mw;
+          proto.cmap.bounds.y2 = mh;
+        }
+      }
+      if (f) fclose(f);
+      continue;
+    }
+    set(proto, argv[i], argv[i + 1]);
+  }
   proto.init();
   std::vector<float> out(w * h * 4);
   int nt = std::thread::hardware_concurrency();
@@ -90,6 +109,16 @@ def build():
 def render(w, h, params):
     exe = build()
     args = [exe, str(w), str(h)]
+    if "map" in params:
+        # A picture for the coverage map input (cmap): any image PIL reads.
+        from PIL import Image
+        im = np.asarray(Image.open(params.pop("map")).convert("RGBA"), dtype=np.float32)[::-1] / 255.0
+        raw = os.path.join(BUILD, "map.raw")
+        with open(raw, "wb") as f:
+            f.write(np.array(im.shape[1::-1], dtype=np.int32).tobytes())
+            f.write(np.ascontiguousarray(im).tobytes())
+        params["map_file"] = raw
+        params.setdefault("use_map", "1")
     for k, v in params.items():
         args += [k, v]
     raw = subprocess.check_output(args)

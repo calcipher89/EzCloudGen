@@ -10,7 +10,8 @@ the node, so it needs no init.py, menu.py or Python module.
 
 Inputs: 0 bg (the plate or sky to comp over; it also sets the format, optional), 1 camera,
 2 atmos (an EzAtmosScatter, optional: sun direction, sun and sky colour), 3 sun (an Axis,
-optional: overrides the sun direction).
+optional: overrides the sun direction), 4 map (optional: a coverage map painted over the shot;
+see 'coverage map').
 
 Up to three layers (sky decks or placed volumes), each its own BlinkScript (one per output: colour, sun share, depth).
 Layers are put over each other nearest first, per pixel (blink/EzCloudGenStack.blink).
@@ -26,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.2.0"
+VERSION = "0.3.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -84,7 +85,9 @@ VOLUME = [
 ]
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
 # Knobs shown only for decks, and only for volumes.
-DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary"]
+DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
+             "map_amount", "map_channel"]
+MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "lumps",
             "lump_size"]
 
@@ -103,6 +106,7 @@ def find(var, index, knob):
 FIND_CAMERA = find("c", 1, "focal")
 FIND_ATMOS = find("a", 2, "haze_density")
 FIND_AXIS = find("x", 3, "world_matrix")
+VIEWS = ["Comp", "Clouds", "Sun share", "Depth", "Variations"]
 
 
 def py(code):
@@ -162,6 +166,17 @@ def place_script(p):
             "n['%sbase'].value() / s, m.getValue(11) + fz / l * d])\n" % (p, p, p))
 
 
+# The variations buttons: the layer is 'variations of'.
+VARIATIONS_LAYER = ("n = nuke.thisNode()\n"
+                    "p = 'l%d_' % (int(n['variations_of'].getValue()) + 1)\n")
+VARIATIONS_SHOW = VARIATIONS_LAYER + "n[p + 'enable'].setValue(True)\nn['view'].setValue('Variations')\n"
+VARIATIONS_NEXT = (VARIATIONS_LAYER + "n[p + 'seed'].setValue(n[p + 'seed'].value() + 9)\n"
+                   "n['view'].setValue('Variations')\n")
+VARIATIONS_USE = (VARIATIONS_LAYER + "k = min(max(int(n['variation_pick'].value()), 1), 9)\n"
+                  "n[p + 'seed'].setValue(n[p + 'seed'].value() + k - 1)\n"
+                  "n['view'].setValue('Comp')\n")
+
+
 # ---- Knobs --------------------------------------------------------------------------------
 
 def add(g, knob, tooltip=None, flags=()):
@@ -181,9 +196,10 @@ def hidden(g, knob):
 
 def build_knobs(g):
     add(g, nuke.Tab_Knob("ezcloudgen", "EzCloudGen"))
-    v = add(g, nuke.Enumeration_Knob("view", "view", ["Comp", "Clouds", "Sun share", "Depth"]),
+    v = add(g, nuke.Enumeration_Knob("view", "view", VIEWS),
             "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. "
-            "Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units.")
+            "Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. "
+            "Variations: nine seeds of one layer side by side (see 'variations').")
     v.setValue("Comp")
     add(g, nuke.Boolean_Knob("breakout", "breakout layers"),
         "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the "
@@ -248,6 +264,34 @@ def build_knobs(g):
         "How fast the cloud detail boils, in metres per second.").setValue(0.5)
     add(g, nuke.Double_Knob("seed", "seed"), "Changes every layer's clouds.").setValue(0)
 
+    add(g, nuke.Text_Knob("variations_divider", "variations"))
+    k = add(g, nuke.Enumeration_Knob("variations_of", "variations of", ["Layer 1", "Layer 2", "Layer 3"]),
+            "The layer 'show me variations' shows.")
+    add(g, nuke.PyScript_Knob("show_variations", "show me variations", VARIATIONS_SHOW),
+        "Shows nine seeds of this layer side by side (view: Variations). Pick one with 'use number'.")
+    g["show_variations"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.PyScript_Knob("next_variations", "next nine", VARIATIONS_NEXT), "Nine more seeds.")
+    g["next_variations"].clearFlag(nuke.STARTLINE)
+    k = add(g, nuke.Int_Knob("variation_pick", "use number"),
+            "1 is the top left, reading along the rows to 9 at the bottom right.")
+    k.setValue(1)
+    add(g, nuke.PyScript_Knob("use_variation", "use it", VARIATIONS_USE),
+        "Sets the layer's seed to that variation and goes back to the Comp view.")
+    g["use_variation"].clearFlag(nuke.STARTLINE)
+
+    add(g, nuke.Text_Knob("map_divider", "coverage map"))
+    add(g, nuke.Text_Knob("map_help", "",
+                          "Plug a picture into 'map' to say where the decks have clouds, as seen\n"
+                          "through the camera on 'map frame': white covers the sky, mid grey keeps\n"
+                          "the layer's coverage, black clears it. Paint it with a Roto over the plate,\n"
+                          "soft and blurred. It stays put in the world and drifts with the wind."))
+    k = add(g, nuke.Int_Knob("map_frame", "map frame"), "The frame the map is painted on.")
+    k.setValue(int(nuke.root()["first_frame"].value()))
+    add(g, nuke.PyScript_Knob("map_frame_here", "use this frame",
+                              "nuke.thisNode()['map_frame'].setValue(nuke.frame())"),
+        "Sets 'map frame' to the current frame.")
+    g["map_frame_here"].clearFlag(nuke.STARTLINE)
+
     for i, (tname, on) in enumerate(LAYER_DEFAULTS):
         p = "l%d_" % (i + 1)
         add(g, nuke.Tab_Knob(p + "tab", "Layer %d" % (i + 1)))
@@ -261,6 +305,13 @@ def build_knobs(g):
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
             k.setValue(vals[name])
+        k = add(g, nuke.Double_Knob(p + "map_amount", "follow map"),
+                "How much this deck follows the coverage map (when 'map' is plugged in).")
+        k.setValue(1.0)
+        k = add(g, nuke.Enumeration_Knob(p + "map_channel", "map channel", MAP_CHANNELS),
+                "Which channel of the map this deck reads: paint each deck in its own channel to place "
+                "them separately.")
+        k.clearFlag(nuke.STARTLINE)
         add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
         k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
                 "The volume's overall shape, before lumps and erosion break it up.")
@@ -318,6 +369,17 @@ def build_knobs(g):
         k = hidden(g, nuke.Double_Knob("cam_" + name))
         k.setExpression(py(FIND_CAMERA + "ret = c['%s'].getValueAt(nuke.frame()) if c is not None else %g"
                            % (name, default)))
+    # The camera on the map frame.
+    m = hidden(g, nuke.Array_Knob("map_cam_matrix", "map camera matrix", 16))
+    for i in range(16):
+        m.setExpression(py(FIND_CAMERA + "ret = c['world_matrix'].getValueAt(nuke.thisNode()['map_frame'].value(), %d) "
+                                         "if c is not None else %g" % (i, identity[i])), i)
+    for name, default in (("focal", 24), ("haperture", 36)):
+        k = hidden(g, nuke.Double_Knob("map_cam_" + name))
+        k.setExpression(py(FIND_CAMERA + "ret = c['%s'].getValueAt(nuke.thisNode()['map_frame'].value()) "
+                                         "if c is not None else %g" % (name, default)))
+    k = hidden(g, nuke.Int_Knob("map_found"))
+    k.setExpression(py("ret = 1 if nuke.thisNode().input(4) is not None else 0"))
     k = hidden(g, nuke.Int_Knob("atm_found"))
     k.setExpression(py(FIND_ATMOS + "ret = 1 if a is not None else 0"))
     k = hidden(g, nuke.XYZ_Knob("atm_sun"))
@@ -370,9 +432,10 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, layer, source_file):
+def blink(name, output, src, cmap, layer, source_file):
     n = compiled(name, source_file)
     n.setInput(0, src)
+    n.setInput(1, cmap)
     k = KERNEL + "_"
     p = "parent.l%d_" % layer
     n[k + "output"].setValue(output)
@@ -419,8 +482,28 @@ def blink(name, output, src, layer, source_file):
         n[k + "vol_rotate"].setExpression("%svol_rotate.%s" % (p, c), j)
         n[k + "vol_size"].setExpression("%svol_size.%s" % (p, c), j)
     n[k + "density"].setExpression(p + "density")
-    n["disable"].setExpression("!%senable" % p)
+    # The coverage map, through the camera on the map frame, drifting with the wind since then.
+    n[k + "use_map"].setExpression("parent.map_found")
+    n[k + "map_amount"].setExpression(p + "map_amount")
+    n[k + "map_channel"].setExpression(p + "map_channel")
+    for r, idx in enumerate(rows):
+        for j, m in enumerate(idx):
+            n[k + "map_row%d" % r].setExpression("parent.map_cam_matrix.%d" % m, j)
+    for j, m in enumerate((3, 7, 11)):
+        n[k + "map_position"].setExpression("parent.map_cam_matrix.%d" % m, j)
+    n[k + "map_focal"].setExpression("parent.map_cam_focal")
+    n[k + "map_haperture"].setExpression("parent.map_cam_haperture")
+    since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
+    n[k + "map_drift"].setExpression("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, since, p), 0)
+    n[k + "map_drift"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p), 1)
+    # The variations sheet.
+    n[k + "tiles"].setExpression("parent.view==4 && parent.variations_of==%d ? 3 : 1" % (layer - 1))
+    n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
+
+
+# A layer is off when disabled, and in the Variations view unless it is the one shown.
+DISABLE = "!parent.l%d_enable || (parent.view==4 && parent.variations_of!=%d)"
 
 
 def lf_copy(kernel):
@@ -460,7 +543,8 @@ def build():
         cam = nuke.nodes.Input(name="camera")
         atm = nuke.nodes.Input(name="atmos")
         sun = nuke.nodes.Input(name="sun")
-        for n in (cam, atm, sun):
+        mp = nuke.nodes.Input(name="map")
+        for n in (cam, atm, sun, mp):
             n.setXYpos(-1000, -1000)  # placed by the layout
         # The format: the bg's, or the script's without one.
         rootfmt = nuke.nodes.Constant(name="RootFormat", channels="rgba", color=0)
@@ -479,11 +563,11 @@ def build():
 
         colour, sunpart, depth, zkeys = [], [], [], []
         for i in range(1, 4):
-            colour.append(blink("L%d_Color" % i, 0, work, i, source))
-            sp = blink("L%d_Sun" % i, 1, work, i, source)
-            sp["disable"].setExpression("!parent.l%d_enable || !(parent.breakout || parent.view==2)" % i)
+            colour.append(blink("L%d_Color" % i, 0, work, mp, i, source))
+            sp = blink("L%d_Sun" % i, 1, work, mp, i, source)
+            sp["disable"].setExpression("(%s) || !(parent.breakout || parent.view==2)" % (DISABLE % (i, i - 1)))
             sunpart.append(sp)
-            d = blink("L%d_Depth" % i, 2, work, i, source)
+            d = blink("L%d_Depth" % i, 2, work, mp, i, source)
             zkeys.append(d)
             pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
             pm.setInput(0, d)
@@ -568,13 +652,14 @@ def build():
         depth_view.setInput(0, layers)
         depth_view.setInput(1, dep_up)
         view = nuke.nodes.Switch(name="ViewOutput")
-        for j, n in enumerate((layers, clouds_view, sun_view, depth_view)):
+        # Variations: the comp, with only the layer shown, tiled (by the kernels).
+        for j, n in enumerate((layers, clouds_view, sun_view, depth_view, layers)):
             view.setInput(j, n)
         view["which"].setExpression("parent.view")
         out = nuke.nodes.Output(name="Output1")
         out.setInput(0, view)
 
-    # Inputs in the order nuke numbers them: by creation, bg 0, camera 1, atmos 2, sun 3.
+    # Inputs in the order nuke numbers them: by creation, bg 0, camera 1, atmos 2, sun 3, map 4.
     problems = node_layout.apply_nuke(g, modules=MODULES, labels=LABELS)
     for p in problems:
         print("layout: " + p)
@@ -582,7 +667,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|RootFormat|FormatSource|WorkClear|WorkBlack|WorkFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|WorkClear|WorkBlack|WorkFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp)"),

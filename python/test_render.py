@@ -137,6 +137,40 @@ def main():
             b.fromScript(sa)
     g["knobChanged"].setValue(kc)
     render("layered_swapped")
+    # The variations sheet of layer 1 (a cumulus deck).
+    g["l2_enable"].setValue(False)
+    g["l3_enable"].setValue(False)
+    set_type("l1_", "Cumulus")
+    g["variations_of"].setValue("Layer 1")
+    g["show_variations"].execute()
+    render("variations")
+    g["variation_pick"].setValue(5)
+    seed = g["l1_seed"].value()
+    g["use_variation"].execute()
+    if g["l1_seed"].value() != seed + 4 or g["view"].value() != "Comp":
+        raise RuntimeError("use it: seed %g view %s" % (g["l1_seed"].value(), g["view"].value()))
+    g["l1_seed"].setValue(seed)
+
+    # The coverage map: a soft white disc on the left, a grey band on the right, black elsewhere.
+    black = nuke.nodes.Constant(name="TestMapBlack", channels="rgba")
+    black["color"].setValue([0, 0, 0, 0])
+    disc = nuke.nodes.Radial(name="TestMapDisc", softness=0.6)
+    disc["area"].setValue([W * 0.05, H * 0.3, W * 0.45, H * 0.85])
+    disc.setInput(0, black)
+    band = nuke.nodes.Rectangle(name="TestMapBand", softness=H * 0.06)
+    band["area"].setValue([W * 0.55, H * 0.45, W * 0.98, H * 0.6])
+    band["color"].setValue(0.5)
+    band.setInput(0, disc)
+    blur = nuke.nodes.Blur(name="TestMapBlur", size=W / 40.0)
+    blur.setInput(0, band)
+    g.setInput(4, blur)
+    g["map_frame"].setValue(1001)
+    render("map")
+    g["l1_map_amount"].setValue(0)
+    render("map_off")
+    g["l1_map_amount"].setValue(1)
+    g.setInput(4, None)
+
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 

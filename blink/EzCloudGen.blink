@@ -29,11 +29,22 @@
 // output 2: rgb = Planar Z of the clouds in scene units (opacity-weighted), a = opacity.
 //           No lighting, so it is cheap.
 //
+// Coverage map (decks): `cmap` is a picture painted over the shot, seen through the camera at
+// the map frame (mapRow*, mapPosition, mapFocal, mapHaperture). Each point of the deck is
+// projected into it, and the coverage there follows the paint (by mapAmount): mid grey keeps
+// the layer's coverage, white covers the sky, black clears it. The lookup is warped by the
+// cloud noise, so edges are the clouds' own. It drifts with the wind (mapDrift, metres, since the
+// map frame). Outside the picture the edge pixels carry on.
+//
+// tiles > 1: a contact sheet of tiles x tiles variations, each the whole frame at a smaller
+// size with seed + 0, 1, 2 ... in reading order from the top left.
+//
 // `src` only sets the format: pixel (x, y) maps to the camera frame by frameSize.
 
 kernel EzCloudGen : ImageComputationKernel<ePixelWise>
 {
   Image<eRead, eAccessPoint, eEdgeClamped> src;
+  Image<eRead, eAccessRandom, eEdgeClamped> cmap;
   Image<eWrite> dst;
 
 param:
@@ -102,6 +113,19 @@ param:
   float swirl;
   float swirlSize;
   float shear;
+  // Coverage map.
+  int useMap;
+  float mapAmount;
+  int mapChannel;
+  float3 mapRow0;
+  float3 mapRow1;
+  float3 mapRow2;
+  float3 mapPosition;
+  float mapFocal;
+  float mapHaperture;
+  float2 mapDrift;
+  // Variations sheet.
+  int tiles;
 
 local:
   float R;
@@ -117,6 +141,7 @@ local:
   float3 vr1;
   float3 vr2;
   float3 vh;
+  float3 mc;
 
   void define()
   {
@@ -182,6 +207,17 @@ local:
     defineParam(swirl, "swirl", 0.0f);
     defineParam(swirlSize, "swirl_size", 400.0f);
     defineParam(shear, "shear", 0.0f);
+    defineParam(useMap, "use_map", 0);
+    defineParam(mapAmount, "map_amount", 1.0f);
+    defineParam(mapChannel, "map_channel", 0);
+    defineParam(mapRow0, "map_row0", float3(1.0f, 0.0f, 0.0f));
+    defineParam(mapRow1, "map_row1", float3(0.0f, 1.0f, 0.0f));
+    defineParam(mapRow2, "map_row2", float3(0.0f, 0.0f, 1.0f));
+    defineParam(mapPosition, "map_position", float3(0.0f, 3000.0f, 0.0f));
+    defineParam(mapFocal, "map_focal", 24.0f);
+    defineParam(mapHaperture, "map_haperture", 36.0f);
+    defineParam(mapDrift, "map_drift", float2(0.0f, 0.0f));
+    defineParam(tiles, "tiles", 1);
   }
 
   void init()
@@ -220,6 +256,9 @@ local:
     vr1 = float3(-sz * cx, cz * cx, sx);
     vr2 = float3(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy);
     vh = float3(max(volSize.x, 1.0f) * 0.5f, max(volSize.y, 1.0f) * 0.5f, max(volSize.z, 1.0f) * 0.5f);
+    // The map camera in the kernel's frame.
+    mc = float3((mapPosition.x - camPosition.x) * sceneScale, (mapPosition.y - groundHeight) * sceneScale,
+                (mapPosition.z - camPosition.z) * sceneScale);
   }
 
   // World (kernel frame) point or direction into the volume's unit box space.
@@ -294,12 +333,12 @@ local:
     return l0 + (l1 - l0) * uz;
   }
 
-  float vnoise2(float x, float y)
+  float vnoise2(float x, float y, float sd)
   {
-    return vnoise3(x, y, 17.31f + seed * 1.37f);
+    return vnoise3(x, y, 17.31f + sd * 1.37f);
   }
 
-  float fbm2(float x, float y, float oct)
+  float fbm2(float x, float y, float oct, float sd)
   {
     float s = 0.0f;
     float amp = 0.5f;
@@ -309,7 +348,7 @@ local:
       float w = i < n ? 1.0f : oct - float(n);
       if (w <= 0.0f)
         break;
-      s += amp * w * vnoise2(x, y);
+      s += amp * w * vnoise2(x, y, sd);
       tot += amp * w;
       amp *= 0.5f;
       float nx = 1.6f * x + 1.2f * y + 13.7f;
@@ -319,7 +358,7 @@ local:
     return s / max(tot, 1e-6f);
   }
 
-  float ridged2(float x, float y, float oct)
+  float ridged2(float x, float y, float oct, float sd)
   {
     float s = 0.0f;
     float amp = 0.5f;
@@ -329,7 +368,7 @@ local:
       float w = i < n ? 1.0f : oct - float(n);
       if (w <= 0.0f)
         break;
-      float v = 1.0f - fabs(2.0f * vnoise2(x, y) - 1.0f);
+      float v = 1.0f - fabs(2.0f * vnoise2(x, y, sd) - 1.0f);
       s += amp * w * v * v;
       tot += amp * w;
       amp *= 0.55f;
@@ -340,7 +379,7 @@ local:
     return s / max(tot, 1e-6f);
   }
 
-  float worley2(float x, float y)
+  float worley2(float x, float y, float sd)
   {
     float ix = floor(x);
     float iy = floor(y);
@@ -349,8 +388,8 @@ local:
       for (int i = -1; i <= 1; i++) {
         float cx = ix + float(i);
         float cy = iy + float(j);
-        float dx = cx + hash3(cx, cy, 3.7f + seed) - x;
-        float dy = cy + hash3(cx, cy, 11.3f + seed) - y;
+        float dx = cx + hash3(cx, cy, 3.7f + sd) - x;
+        float dy = cy + hash3(cx, cy, 11.3f + sd) - y;
         best = min(best, dx * dx + dy * dy);
       }
     }
@@ -415,9 +454,35 @@ local:
 
   // ---- Shape --------------------------------------------------------------------------------
 
-  // Coverage at local ground position X, Z (m, camera at 0, 0): positive inside a cloud.
-  float weather(float X, float Z, float foot)
+  // The painted coverage at kernel-frame point p, 0..1, or -1 where the map can't see it.
+  float mapCoverage(float3 p)
   {
+    float3 v = float3(p.x + mapDrift.x - mc.x, p.y - mc.y, p.z + mapDrift.y - mc.z);
+    // World to the map camera: the transpose of its rotation.
+    float cx = mapRow0.x * v.x + mapRow1.x * v.y + mapRow2.x * v.z;
+    float cy = mapRow0.y * v.x + mapRow1.y * v.y + mapRow2.y * v.z;
+    float cz = mapRow0.z * v.x + mapRow1.z * v.y + mapRow2.z * v.z;
+    if (cz > -1.0f)
+      return -1.0f;
+    float w = float(cmap.bounds.width());
+    float h = float(cmap.bounds.height());
+    if (w < 1.0f || h < 1.0f)
+      return -1.0f;
+    float hap = max(mapHaperture, 1e-3f);
+    float u = cx / -cz * mapFocal / hap + 0.5f;
+    float t = cy / -cz * mapFocal / (hap * h / w) + 0.5f;
+    float4 m = bilinear(cmap, cmap.bounds.x1 + u * w - 0.5f, cmap.bounds.y1 + t * h - 0.5f);
+    float c = mapChannel == 1 ? m.x : mapChannel == 2 ? m.y : mapChannel == 3 ? m.z : mapChannel == 4 ? m.w
+                                                                                     : 0.2126f * m.x + 0.7152f * m.y + 0.0722f * m.z;
+    return clamp(c, 0.0f, 1.0f);
+  }
+
+  // Coverage at local point p (m, camera above 0, 0; only x, z for the noise, y for the map):
+  // positive inside a cloud.
+  float weather(float3 p, float foot, float sd)
+  {
+    float X = p.x;
+    float Z = p.z;
     float sc = scaleKm * 1000.0f;
     float gx = X - gapX;
     float gz = Z - gapZ;
@@ -427,23 +492,34 @@ local:
     float u = (X * ca + Z * sa) / sc;
     float v = (-X * sa + Z * ca) / (sc * stretch);
     float oct = min(6.0f, max(1.0f, lg2(max(sc / max(foot, 1.0f), 1.0f)) - 0.5f));
-    float wx = fbm2(u * 0.5f + 3.1f, v * 0.5f, 3.0f) - 0.5f;
-    float wz = fbm2(u * 0.5f + 9.7f, v * 0.5f + 5.0f, 3.0f) - 0.5f;
+    float wx = fbm2(u * 0.5f + 3.1f, v * 0.5f, 3.0f, sd) - 0.5f;
+    float wz = fbm2(u * 0.5f + 9.7f, v * 0.5f + 5.0f, 3.0f, sd) - 0.5f;
     float u2 = u + wx * warp;
     float v2 = v + wz * warp;
     float f;
     if (streaks > 0.5f)
-      f = ridged2(u2, v2, oct) * (0.55f + 0.9f * fbm2(u * 0.3f + 40.0f, v * 0.3f, 3.0f));
+      f = ridged2(u2, v2, oct, sd) * (0.55f + 0.9f * fbm2(u * 0.3f + 40.0f, v * 0.3f, 3.0f, sd));
     else
-      f = fbm2(u2, v2, oct);
-    float c = f - (0.82f - 0.55f * coverage);
+      f = fbm2(u2, v2, oct, sd);
+    float cov = coverage;
+    if (useMap == 1 && mapAmount > 0.0f) {
+      // Mid grey keeps the layer's coverage, white covers, black clears. The lookup is warped
+      // by the cloud noise, so the clouds don't take the painted outline exactly.
+      float ws = sc * max(warp, 0.5f) * 0.8f;
+      float m = mapCoverage(float3(p.x + wx * ws, p.y, p.z + wz * ws));
+      if (m >= 0.0f) {
+        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (1.0f - coverage) * (2.0f * m - 1.0f);
+        cov += (mc2 - cov) * min(mapAmount, 1.0f);
+      }
+    }
+    float c = f - (0.82f - 0.55f * cov);
     if (cells > 0.0f) {
       float cs = cellKm * 1000.0f;
       float cu = (X * ca + Z * sa) / cs;
       float cv = (-X * sa + Z * ca) / (cs * 0.6f);
       // The cells fade out when they get smaller than a few pixels.
       float fd = sstep(1.5f, 5.0f, cs / max(foot, 1.0f));
-      float cell = worley2(cu + wx * 0.8f, cv + wz * 0.8f);
+      float cell = worley2(cu + wx * 0.8f, cv + wz * 0.8f, sd);
       c -= cells * fd * (cell - 0.45f) * 0.35f;
     }
     if (gapAmount > 0.0f)
@@ -470,7 +546,7 @@ local:
   }
 
   // The placed volume's coverage at p (kernel frame), positive inside; hn: 0 bottom, 1 top.
-  float volumeShape(float3 p, float &hn)
+  float volumeShape(float3 p, float &hn, float sd)
   {
     float3 q = toLocal(p - vc);
     hn = clamp(q.y * 0.5f + 0.5f, 0.0f, 1.0f);
@@ -501,7 +577,7 @@ local:
       float wx = p.x + camPosition.x * sceneScale + offset.x;
       float wz = p.z + camPosition.z * sceneScale + offset.y;
       float ls = max(lumpSize, 10.0f);
-      c += lumps * (fbm2(wx / ls + 5.3f, wz / ls, 2.0f) * 0.5f + vnoise3(wx / ls, p.y / ls, wz / ls) * 0.5f - 0.5f) * 0.45f;
+      c += lumps * (fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd) * 0.5f + vnoise3(wx / ls, p.y / ls, wz / ls) * 0.5f - 0.5f) * 0.45f;
     }
     return c;
   }
@@ -533,14 +609,14 @@ local:
   }
 
   // Cloud density 0..1. cheap: no detail noise (for the light march).
-  float cloud(float3 p, float foot, bool cheap)
+  float cloud(float3 p, float foot, bool cheap, float sd)
   {
     float hn = 0.0f;
     float c = 0.0f;
     float alt = 0.0f;
     float height = thickness;
     if (volume == 1) {
-      c = volumeShape(p, hn);
+      c = volumeShape(p, hn, sd);
       if (c <= -0.15f)
         return 0.0f;
       alt = p.y;
@@ -548,14 +624,14 @@ local:
     } else {
       alt = altitude(p);
       float b = base;
-      c = weather(p.x, p.z, foot);
+      c = weather(p, foot, sd);
       if (c <= -0.12f)
         return 0.0f;
       if (vary > 0.0f) {
         float sv = scaleKm * 2500.0f;
         float vx = p.x + camPosition.x * sceneScale + offset.x;
         float vz = p.z + camPosition.z * sceneScale + offset.y;
-        b += (vnoise2(vx / sv + 70.0f, vz / sv) - 0.5f) * vary * thickness;
+        b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary * thickness;
       }
       hn = (alt - b) / thickness;
       if (hn <= 0.0f || hn >= 1.0f)
@@ -638,7 +714,7 @@ local:
   }
 
   // Optical depth towards the sun from p, inside the layer.
-  float sunDepth(float3 p, float foot)
+  float sunDepth(float3 p, float foot, float sd)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -660,7 +736,7 @@ local:
       float t = far * f * f;
       float dt = t - prev;
       prev = t;
-      od += cloud(p + sun * t, foot + t * 0.02f, i > 1) * dt;
+      od += cloud(p + sun * t, foot + t * 0.02f, i > 1, sd) * dt;
     }
     return od;
   }
@@ -671,6 +747,29 @@ local:
     float hap = haperture;
     float vap = haperture * frameSize.y / frameSize.x;
     float pixAng = hap / focal / frameSize.x;
+    // A variations sheet: which tile, where in it, and its seed.
+    float sd = seed;
+    float px = float(pos.x);
+    float py = float(pos.y);
+    float tf = 1.0f;
+    if (tiles > 1) {
+      tf = float(tiles);
+      float tw = frameSize.x / tf;
+      float th = frameSize.y / tf;
+      int tx = min(int(floor(px / tw)), tiles - 1);
+      int ty = min(int(floor(py / th)), tiles - 1);
+      float lx = px - float(tx) * tw;
+      float ly = py - float(ty) * th;
+      // A thin gap between the tiles.
+      if (lx < 1.0f || ly < 1.0f || lx > tw - 1.0f || ly > th - 1.0f) {
+        dst() = float4(0.0f);
+        return;
+      }
+      px = lx * tf;
+      py = ly * tf;
+      pixAng *= tf;
+      sd = seed + float((tiles - 1 - ty) * tiles + tx);
+    }
     float sig0 = sigma * density;
     // The layer's shell, with room for `vary`.
     float hb = base - thickness * vary;
@@ -681,8 +780,8 @@ local:
     for (int s = 0; s < ns; s++) {
       float jx = ns > 1 ? hash3(pos.x + 0.5f, pos.y + 0.5f, float(s) * 7.0f + seed) : 0.5f;
       float jy = ns > 1 ? hash3(pos.y + 1.5f, pos.x + 2.5f, float(s) * 3.0f + 5.0f) : 0.5f;
-      float u = (pos.x + jx) / frameSize.x;
-      float v = (pos.y + jy) / frameSize.y;
+      float u = (px + jx * tf) / frameSize.x;
+      float v = (py + jy * tf) / frameSize.y;
       float3 cd = float3((u - 0.5f) * hap / focal, (v - 0.5f) * vap / focal, -1.0f);
       float3 d = normalize(float3(dot(camRow0, cd), dot(camRow1, cd), dot(camRow2, cd)));
       // Planar Z per metre along the ray.
@@ -763,14 +862,14 @@ local:
           dt = min(dt, tEnd - t + 1e-3f);
           float tm = t + 0.5f * dt;
           float3 p = cam + d * tm;
-          float dn = cloud(p, foot, false);
+          float dn = cloud(p, foot, false, sd);
           if (dn > 0.0f) {
             float sig = dn * sig0;
             float ext = exp(-sig * dt);
             float w = T * (1.0f - ext);
             dep += w * tm;
             if (output != 2) {
-              float od = sunDepth(p, foot) * sig0;
+              float od = sunDepth(p, foot, sd) * sig0;
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
               float oa = 1.0f;
@@ -789,7 +888,7 @@ local:
               // Sky light from above, ground bounce from below.
               float hn = 0.0f;
               if (volume == 1)
-                volumeShape(p, hn);
+                volumeShape(p, hn, sd);
               else
                 hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
               float th = min(layerH, 1500.0f) * 0.12f;
