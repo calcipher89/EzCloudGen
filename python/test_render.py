@@ -192,6 +192,16 @@ def main():
     if abs(pos1[0] - pos0[0] + 15000) > 1 or abs(pos1[2] - pos0[2] - 30000) > 1:
         raise RuntimeError("the volume doesn't follow the box")
     render("box_moved")
+    # The cloud must travel with the box: moved back by the same amount, it renders as before
+    # the move (its noise lives in the box's frame).
+    t = box["translate"].value()
+    box["translate"].setValue([t[0] + 15000, t[1], t[2] - 30000])
+    box["rotate"].setValue([0, 25, 0])
+    box["scaling"].setValue([box["scaling"].value(0) / 1.5, box["scaling"].value(1), box["scaling"].value(2)])
+    render("box_back")  # must match box_linked
+    box["translate"].setValue([t[0], t[1], t[2]])
+    box["rotate"].setValue([10, 60, 5])
+    box["scaling"].setValue([box["scaling"].value(0) * 1.5, box["scaling"].value(1), box["scaling"].value(2)])
     # The Cube's rotation must be the kernel's (Y, then X, then Z): compare its matrix.
     import math
     ax, ay, az = [math.radians(v) for v in (10, 60, 5)]
