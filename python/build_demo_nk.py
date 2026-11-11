@@ -43,10 +43,10 @@ SETUPS = [
      {"sun_direction": sun(22, -60)}),
     ("HeroVolume", "Placed hero cumulus over a light cumulus deck, with a puff close by",
      [("Cumulus", {"coverage": 0.3}), ("Hero Cumulus", {"across": -1.5, "wisp_amount": 0.5}),
-      ("Puff", {"across": 0.4, "place_km": 2.5})],
+      ("Puff", {"across": 0.75, "place_km": 2.5})],
      {"sun_direction": sun(30, 40)}),
     ("StormFront", "Storm anvil far off, fog bank rolling in low, cirrus above",
-     [("Storm Anvil", {"across": 6}), ("Fog Bank", {"place_km": 5}), ("Cirrus", {})],
+     [("Storm Anvil", {"across": -3, "place_km": 30}), ("Fog Bank", {"place_km": 7}), ("Cirrus", {})],
      {"sun_direction": sun(18, -45), "sun_intensity": 0.8}),
 ]
 

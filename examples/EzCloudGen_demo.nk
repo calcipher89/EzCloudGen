@@ -8284,7 +8284,7 @@ Group {
  l3_swirl 0.0
  l3_swirl_size 400
  l3_shear 0.0
- l3_vol_position {4000 8000 -25000}
+ l3_vol_position {7500 8000 -25000}
 }
  BackdropNode {
   inputs 0
@@ -10181,7 +10181,7 @@ Group {
  l1_vol_size {9000 11000 9000}
  l1_lumps 0.6
  l1_lump_size 1500
- l1_place_km 40
+ l1_place_km 30
  l1_wisp_size 200
  l1_wisp_amount 0.4
  l1_grain_size 15
@@ -10189,7 +10189,7 @@ Group {
  l1_swirl 0.0
  l1_swirl_size 400
  l1_shear 0.3
- l1_vol_position {60000 12000 -400000}
+ l1_vol_position {-30000 12000 -300000}
  l2_enable true
  l2_type "Fog Bank"
  l2_base 0
@@ -10219,7 +10219,7 @@ Group {
  l2_vol_size {8000 600 8000}
  l2_lumps 0.6
  l2_lump_size 600
- l2_place_km 5
+ l2_place_km 7
  l2_wisp_size 40
  l2_wisp_amount 0.6
  l2_grain_size 15
@@ -10227,7 +10227,7 @@ Group {
  l2_swirl 0.4
  l2_swirl_size 200
  l2_shear 0.0
- l2_vol_position {0 0 -50000}
+ l2_vol_position {0 0 -70000}
  l3_enable true
  l3_type "Cirrus"
  l3_base 9000
