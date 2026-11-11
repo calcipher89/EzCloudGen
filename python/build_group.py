@@ -283,10 +283,15 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, layer, source):
+def blink(name, output, src, layer, source_file):
     n = nuke.nodes.BlinkScript(name=name)
-    n["kernelSource"].setValue(source)
+    # Terminal Nuke only compiles a kernel loaded from a file (setting kernelSource and pressing
+    # recompile leaves it uncompiled, and renders cancel). The file is then cleared, so the node
+    # keeps the source and needs no file.
+    n["kernelSourceFile"].setValue(source_file)
+    n["reloadKernelSourceFile"].execute()
     n["recompile"].execute()
+    n["kernelSourceFile"].setValue("")
     n.setInput(0, src)
     k = KERNEL + "_"
     p = "parent.l%d_" % layer
@@ -333,8 +338,13 @@ def blink(name, output, src, layer, source):
 def build():
     for layer, chans in LAYERS.items():
         nuke.Layer(layer, ["%s.%s" % (layer, c) for c in chans])
+    # An LF-only copy of the kernel (a Windows checkout may have CRLF).
+    import tempfile
     with open(KERNEL_FILE) as f:
-        source = f.read()
+        text = f.read().replace("\r\n", "\n")
+    source = os.path.join(tempfile.gettempdir(), KERNEL + ".blink").replace("\\", "/")
+    with open(source, "w", newline="\n") as f:
+        f.write(text)
 
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)

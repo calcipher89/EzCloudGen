@@ -1,6 +1,10 @@
 """Render test frames from groups/EzCloudGen_group.nk in NukeX (synthetic, no plates):
 
-    Nuke15.1.exe --nukex -i --gpu -t python/test_render.py [width]
+    set EZCLOUDGEN_TEST_WIDTH=960
+    Nuke15.1.exe --nukex -i --gpu -t python/test_render.py
+
+(A trailing number on the Nuke command line is read as a frame range, so the width is an
+environment variable.)
 
 Writes tests/out/<type>.png (each type on layer 1, comp view, tone mapped by a simple grade)
 and tests/out/views_*.png for the views of the default setup, and prints the time per frame
@@ -20,7 +24,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 
 OUT = os.path.join(ROOT, "tests", "out").replace("\\", "/")
-W = int(sys.argv[1]) if len(sys.argv) > 1 else 960
+W = int(os.environ.get("EZCLOUDGEN_TEST_WIDTH", "960"))
 H = int(W * 9 / 16)
 
 
