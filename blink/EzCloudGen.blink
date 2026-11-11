@@ -503,12 +503,17 @@ local:
       f = fbm2(u2, v2, oct, sd);
     float cov = coverage;
     if (useMap == 1 && mapAmount > 0.0f) {
-      // Mid grey keeps the layer's coverage, white covers, black clears. The lookup is warped
-      // by the cloud noise, so the clouds don't take the painted outline exactly.
+      // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
+      // the painted area as one solid mass), black clears. The lookup is warped by the cloud
+      // noise at the cloud size and again at a quarter of it, so the edges billow instead of
+      // taking the painted outline.
       float ws = sc * max(warp, 0.5f) * 0.8f;
-      float m = mapCoverage(float3(p.x + wx * ws, p.y, p.z + wz * ws));
+      float hs = sc * 0.8f;
+      float hx = fbm2(u * 4.0f + 17.0f, v * 4.0f + 2.0f, 3.0f, sd) - 0.5f;
+      float hz = fbm2(u * 4.0f + 23.0f, v * 4.0f + 11.0f, 3.0f, sd) - 0.5f;
+      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, p.y, p.z + wz * ws + hz * hs));
       if (m >= 0.0f) {
-        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (1.0f - coverage) * (2.0f * m - 1.0f);
+        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (0.8f - coverage) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(mapAmount, 1.0f);
       }
     }

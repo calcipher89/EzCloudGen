@@ -560,6 +560,14 @@ def build():
         work = nuke.nodes.Reformat(name="WorkFormat", type="scale", filter="Impulse", black_outside=True)
         work["scale"].setExpression("parent.work_scale")
         work.setInput(0, black)
+        # The map, or a black stand-in without one (the kernels need input 1 connected; use_map
+        # is 0 then, so they never read it).
+        nomap = nuke.nodes.Constant(name="MapNone", channels="rgba", color=0)
+        mapsrc = nuke.nodes.Switch(name="MapSource")
+        mapsrc.setInput(0, nomap)
+        mapsrc.setInput(1, mp)
+        mapsrc["which"].setExpression("parent.map_found")
+        mp = mapsrc
 
         colour, sunpart, depth, zkeys = [], [], [], []
         for i in range(1, 4):
@@ -667,7 +675,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|WorkClear|WorkBlack|WorkFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp)"),
