@@ -1,4 +1,4 @@
-"""Write examples/EzCloudGen_demo.nk: four cloud setups through a moving shot camera.
+"""Write examples/EzCloudGen_demo.nk: six cloud setups (two with placed volumes) through a moving shot camera.
 
 Plain Python, no Nuke needed: each setup is a copy of the Nuke-built
 groups/EzCloudGen_group.nk with its own knob values added to the group's knobs.
@@ -41,7 +41,26 @@ SETUPS = [
     ("Towering", "Towering cumulus + cirrocumulus, afternoon",
      [("Cumulus Congestus", {}), None, ("Cirrocumulus", {})],
      {"sun_direction": sun(22, -60)}),
+    ("HeroVolume", "Placed hero cumulus over a light cumulus deck, with a puff close by",
+     [("Cumulus", {"coverage": 0.3}), ("Hero Cumulus", {"across": -1.5, "wisp_amount": 0.5}),
+      ("Puff", {"across": 0.75, "place_km": 2.5})],
+     {"sun_direction": sun(30, 40)}),
+    ("StormFront", "Storm anvil far off, fog bank rolling in low, cirrus above",
+     [("Storm Anvil", {"across": -3, "place_km": 30}), ("Fog Bank", {"place_km": 7}), ("Cirrus", {})],
+     {"sun_direction": sun(18, -45), "sun_intensity": 0.8}),
 ]
+
+
+VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
+
+
+def knob_value(k, v):
+    """A cloud_types value as .nk text: menus by label, XYZ knobs as {x y z}."""
+    if k == "vol_shape":
+        return VOL_SHAPES[int(v)]
+    if isinstance(v, (tuple, list)):
+        return "{%s}" % " ".join("%g" % c for c in v)
+    return v
 
 
 def group_text():
@@ -66,8 +85,15 @@ def instance(body, name, layers, knobs, x, y):
         lines.append('%stype "%s"' % (p, tname))
         vals = cloud_types.full(tname)
         vals.update(extra)
+        across = vals.pop("across", 0.0)
         for k, v in vals.items():
-            lines.append("%s%s %s" % (p, k, v))
+            lines.append("%s%s %s" % (p, k, knob_value(k, v)))
+        if vals["volume"]:
+            # What 'place in front of camera' does for the camera at frame 1001 (at 0, 3000, 0,
+            # looking down -Z), plus 'across' km to the side so the pan carries it over the frame.
+            s = float(knobs.get("scene_scale", 0.1))
+            lines.append("%svol_position {%g %g %g}" % (p, across * 1000.0 / s, vals["base"] / s,
+                                                        -vals["place_km"] * 1000.0 / s))
     # The group's own knobs end at the first line that is just "}"; later values win.
     head_end = body.index("\n}\n")
     body = re.sub(r"^ name EzCloudGen\n", "", body, count=1, flags=re.M)
@@ -94,7 +120,7 @@ def main():
     out += ["StickyNote {", " inputs 0", " name ReadMe",
             ' label "EzCloudGen demo: synthetic, no files read. The scene is in decimetres (units to metres 0.1).\\n'
             'The shot camera is 300 m up and pans 12 degrees over 1001-1100; the clouds drift with the wind.\\n'
-            'View 1-4 in the Viewer for the four setups. Each EzCloudGen: Layer tabs have the type menu,\\n'
+            'View 1-6 in the Viewer for the six setups (5 and 6 use placed volumes). Each EzCloudGen: Layer tabs have the type menu,\\n'
             'view shows Comp / Clouds / Sun share / Depth, resolution Half (Full for finals).\\n'
             'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky."',
             " note_font_size 18", " xpos 0", " ypos -420", "}",
