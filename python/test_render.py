@@ -197,14 +197,41 @@ def main():
     ax, ay, az = [math.radians(v) for v in (10, 60, 5)]
     cx, sx, cy, sy, cz, sz = math.cos(ax), math.sin(ax), math.cos(ay), math.sin(ay), math.cos(az), math.sin(az)
     col0 = (cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy)
-    m = box["world_matrix"]
+    # A Cube has no world_matrix knob; an Axis with the same transform knobs gives its matrix.
+    ax3 = nuke.nodes.Axis3() if hasattr(nuke.nodes, "Axis3") else nuke.nodes.Axis2()
+    for kn in ("translate", "rotate", "scaling", "uniform_scale", "rot_order", "xform_order"):
+        ax3[kn].fromScript(box[kn].toScript())
+    m = ax3["world_matrix"]
     sc = box["scaling"].value(0) * box["uniform_scale"].value()
     got = (m.getValue(0) / sc, m.getValue(4) / sc, m.getValue(8) / sc)
     print("rotation check: kernel %s cube %s" % (["%.4f" % v for v in col0], ["%.4f" % v for v in got]))
     if max(abs(a - b) for a, b in zip(col0, got)) > 1e-3:
         raise RuntimeError("Cube rot_order doesn't match the kernel")
+    nuke.delete(ax3)
+    t0 = box["translate"].value()
     g["l1_place"].execute()
-    print("place moves the box: %s" % (box["translate"].value(),))
+    print("place moves the box: %s -> %s" % (t0, box["translate"].value()))
+    if abs(box["translate"].value(0) - t0[0]) + abs(box["translate"].value(2) - t0[2]) < 1:
+        raise RuntimeError("place in front of camera didn't move the box")
+    # Picking a type with the box linked sizes the box and keeps the links.
+    g["l1_type"].setValue("Storm Anvil")
+    want = cloud_types.full("Storm Anvil")["vol_size"]
+    if max(abs(a - b) for a, b in zip(g["l1_vol_size"].value(), want)) > 1e-2 * max(want):
+        # Terminal Nuke doesn't run knobChanged: run the node's script as the GUI would.
+        saved = nuke.thisNode, nuke.thisKnob
+        nuke.thisNode, nuke.thisKnob = (lambda: g), (lambda: g["l1_type"])
+        try:
+            exec(g["knobChanged"].value(), {"nuke": nuke})
+        finally:
+            nuke.thisNode, nuke.thisKnob = saved
+        print("type change: knobChanged run by hand")
+    got_size = g["l1_vol_size"].value()
+    print("type change: size %s (type %s), linked %s" % (got_size, want, g["l1_vol_size"].isAnimated()))
+    if not (g["l1_vol_size"].hasExpression() and g["l1_vol_position"].hasExpression()
+            and g["l1_vol_rotate"].hasExpression()):
+        raise RuntimeError("picking a type broke the box links")
+    if max(abs(a - b) for a, b in zip(got_size, want)) > 1e-2 * max(want):
+        raise RuntimeError("picking a type didn't size the box")
     g["l1_release_box"].execute()
     if g["l1_vol_position"].isAnimated() or g["l1_box"].value():
         raise RuntimeError("release box left a link")
