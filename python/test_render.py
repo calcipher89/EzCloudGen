@@ -40,7 +40,9 @@ def main():
     cam["translate"].setValue([0, 3000, 0])     # 300 m up, decimetres
     cam["rotate"].setValue([18, 0, 0])
     cam["focal"].setValue(24)
-    sky = nuke.nodes.Constant(name="TestSky", color=[0.12, 0.22, 0.5, 1])
+    sky = nuke.nodes.Constant(name="TestSky", channels="rgba")
+    # A list can't be passed as a knob argument to nuke.nodes (it is read as TCL).
+    sky["color"].setValue([0.12, 0.22, 0.5, 1])
     g.setInput(0, sky)
     g.setInput(1, cam)
     g["sun_direction"].setValue([0.627, 0.574, -0.527])
@@ -55,16 +57,23 @@ def main():
     clamp.setInput(0, srgb)
     w = nuke.nodes.Write(name="TestWrite", file_type="png", channels="rgb")
     w.setInput(0, clamp)
-    stats = nuke.nodes.CurveTool(name="TestStats", operation="Avg Intensities")
-    stats.setInput(0, g)
+
+    def mean_alpha():
+        # The clouds' own alpha (the cloud layer), not the comp's, on a coarse grid. A CurveTool
+        # keeps its first result when executed again in a terminal session.
+        n, tot = 0, 0.0
+        for y in range(H // 60, H, H // 30):
+            for x in range(W // 96, W, W // 48):
+                tot += g.sample("cloud.alpha", x + 0.5, y + 0.5, frame=1001)
+                n += 1
+        return tot / n
 
     def render(name):
         w["file"].setValue("%s/%s.png" % (OUT, name))
         t = time.time()
         nuke.execute(w, 1001, 1001)
         secs = time.time() - t
-        nuke.execute(stats, 1001, 1001)
-        a = stats["intensitydata"].valueAt(1001, 3)
+        a = mean_alpha()
         print("%-24s %6.2fs  mean alpha %.3f" % (name, secs, a))
         if not os.path.exists("%s/%s.png" % (OUT, name)):
             raise RuntimeError("no output for " + name)
