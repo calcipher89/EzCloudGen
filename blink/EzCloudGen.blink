@@ -30,6 +30,12 @@
 // output 1: rgb = the direct sun share of output 0's rgb (premultiplied), a = opacity.
 // output 2: rgb = Planar Z of the clouds in scene units (opacity-weighted), a = opacity.
 //           No lighting, so it is cheap.
+// output 3: rgb = ground shadow: how much of the sun this layer blocks at the bg's surface
+//           (0 lit, 1 fully shaded), a = 1 where the bg has a surface. Needs the bg depth.
+//
+// Occlusion: `zin` red is the bg's depth (scene units, as depthMode says). With occlude on, the
+// march stops at the bg's surface, so clouds go behind mountains and buildings. Depth of 0, or
+// beyond skyDepth, is sky. The tiles sheet ignores it.
 //
 // Coverage map (decks): `cmap` is a picture painted over the shot, seen through the camera at
 // the map frame (mapRow*, mapPosition, mapFocal, mapHaperture). Each point of the deck is
@@ -47,6 +53,7 @@ kernel EzCloudGen : ImageComputationKernel<ePixelWise>
 {
   Image<eRead, eAccessPoint, eEdgeClamped> src;
   Image<eRead, eAccessRandom, eEdgeClamped> cmap;
+  Image<eRead, eAccessPoint, eEdgeClamped> zin;
   Image<eWrite> dst;
 
 param:
@@ -128,6 +135,10 @@ param:
   float2 mapDrift;
   // Variations sheet.
   int tiles;
+  // Occlusion by the bg depth, and ground shadows.
+  int occlude;
+  int depthMode;
+  float skyDepth;
 
 local:
   float R;
@@ -220,6 +231,9 @@ local:
     defineParam(mapHaperture, "map_haperture", 36.0f);
     defineParam(mapDrift, "map_drift", float2(0.0f, 0.0f));
     defineParam(tiles, "tiles", 1);
+    defineParam(occlude, "occlude", 0);
+    defineParam(depthMode, "depth_mode", 0);
+    defineParam(skyDepth, "sky_depth", 500000.0f);
   }
 
   void init()
@@ -767,6 +781,42 @@ local:
     return od;
   }
 
+  // How much of the sun this layer blocks at p (on the bg's surface): 0 lit .. 1 shaded.
+  float groundShadow(float3 p, float jit, float sd)
+  {
+    float t0 = 0.0f;
+    float t1 = 0.0f;
+    float s0 = 0.0f;
+    float s1 = 0.0f;
+    if (volume == 1) {
+      if (!boxHit(toLocal(p - vc), toLocal(sun), t0, t1))
+        return 0.0f;
+      s0 = max(t0, 0.0f);
+      s1 = t1;
+    } else {
+      float hb = base - thickness * vary;
+      float ht = base + thickness * (1.0f + vary);
+      if (!sphere(p, sun, ht, t0, t1) || t1 <= 0.0f)
+        return 0.0f;
+      s1 = t1;
+      // Below the layer: start where the sun ray leaves the base.
+      if (sphere(p, sun, hb, t0, t1) && t0 <= 0.0f && t1 > 0.0f)
+        s0 = t1;
+      s1 = min(s1, s0 + min(6.0f * thickness / max(sun.y, 0.08f), 40000.0f));
+    }
+    if (s1 <= s0)
+      return 0.0f;
+    int steps = max(int(16.0f * quality), 4);
+    float dt = (s1 - s0) / float(steps);
+    float od = 0.0f;
+    for (int i = 0; i < steps; i++) {
+      float t = s0 + (float(i) + jit) * dt;
+      // A wide footprint: soft shadows, and no fine noise to pay for.
+      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd) * dt;
+    }
+    return 1.0f - exp(-od * sigma * density);
+  }
+
   void process(int2 pos)
   {
     float3 cam = float3(0.0f, camAlt, 0.0f);
@@ -817,6 +867,25 @@ local:
       // Where the ray is inside the shell: [a0, a1] (outer) minus (b0, b1) (inner), before
       // the ground and maxDistance.
       float tmax = maxDistance;
+      // The bg's surface along this ray, from its depth (sceneT < 0: sky, or no depth).
+      float sceneT = -1.0f;
+      if (occlude == 1 && tiles <= 1) {
+        float z = zin().x;
+        if (depthMode == 1)
+          z = z > 0.0f ? 1.0f / z : 0.0f;
+        if (z > 0.0f && z < skyDepth)
+          sceneT = depthMode == 2 ? z * sceneScale : z * sceneScale / zPer;
+      }
+      if (output == 3) {
+        if (sceneT > 0.0f) {
+          float jit = hash3(pos.x * 1.3f, pos.y * 1.9f, float(s) + seed);
+          float sh = groundShadow(cam + d * sceneT, jit, sd);
+          acc += float4(sh, sh, sh, 1.0f);
+        }
+        continue;
+      }
+      if (sceneT > 0.0f)
+        tmax = min(tmax, sceneT);
       float g0 = 0.0f;
       float g1 = 0.0f;
       if (sphere(cam, d, 0.0f, g0, g1) && g0 > 0.0f)

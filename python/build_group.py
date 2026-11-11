@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -94,7 +94,8 @@ VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size"
 
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
           "cloud_sun": ["red", "green", "blue"],
-          "cloud_sky": ["red", "green", "blue"]}
+          "cloud_sky": ["red", "green", "blue"],
+          "cloud_shadow": ["red", "green", "blue"]}
 
 
 def find(var, index, knob):
@@ -107,7 +108,8 @@ def find(var, index, knob):
 FIND_CAMERA = find("c", 1, "focal")
 FIND_ATMOS = find("a", 2, "haze_density")
 FIND_AXIS = find("x", 3, "world_matrix")
-VIEWS = ["Comp", "Clouds", "Sun share", "Depth", "Variations"]
+VIEWS = ["Comp", "Clouds", "Sun share", "Depth", "Variations", "Shadow"]
+DEPTH_MODES = ["Planar Z", "1/Z (ScanlineRender)", "Distance"]
 
 
 def py(code):
@@ -148,6 +150,8 @@ def knob_changed():
             "    if n[p + 'volume'].value() > 0.5 and (box is not None or not n[p + 'vol_position'].isAnimated()):\n"
             "        exec(n[p + 'place'].value(), {'nuke': nuke})\n"
             "    layers = [p]\n"
+            "elif k.name() == 'depth_channel':\n"
+            "    n.node('DepthSource')['from0'].setValue(k.value())\n"
             "elif k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -262,11 +266,13 @@ def build_knobs(g):
     v = add(g, nuke.Enumeration_Knob("view", "view", VIEWS),
             "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. "
             "Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. "
-            "Variations: nine seeds of one layer side by side (see 'variations').")
+            "Variations: nine seeds of one layer side by side (see 'variations'). "
+            "Shadow: the clouds' shadows on the bg (needs its depth), white is shaded.")
     v.setValue("Comp")
     add(g, nuke.Boolean_Knob("breakout", "breakout layers"),
         "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the "
-        "plate. Takes a second pass per layer.").setValue(True)
+        "plate, and cloud_shadow (rgb, the shadows on the bg; needs its depth). Takes extra passes per "
+        "layer.").setValue(True)
     r = add(g, nuke.Enumeration_Knob("resolution", "resolution", ["Full", "Half", "Quarter"]),
             "Render the clouds smaller and scale them back up: much faster, softer.")
     r.setValue("Half")
@@ -286,6 +292,25 @@ def build_knobs(g):
         "Height of the ground in scene units; the camera's height above it places it under the clouds."
         ).setValue(0)
     g["ground_height"].setRange(-10000, 10000)
+
+    add(g, nuke.Text_Knob("bg_depth_divider", "bg depth"))
+    add(g, nuke.Boolean_Knob("occlude", "hide behind bg"),
+        "Uses the bg's depth so the clouds go behind mountains and buildings, and casts their shadows "
+        "onto it (cloud_shadow, and the Shadow view). Without a depth channel on the bg, nothing is "
+        "hidden.").setValue(True)
+    c = add(g, nuke.Channel_Knob("depth_channel", "depth"), "The bg channel holding its depth.")
+    c.setValue("depth.Z")
+    m = add(g, nuke.Enumeration_Knob("depth_mode", "depth is", DEPTH_MODES),
+            "Planar Z: distance along the camera's view axis (Arnold, Karma, V-Ray Z). "
+            "1/Z: Nuke's ScanlineRender. Distance: from the camera to the point.")
+    m.clearFlag(nuke.STARTLINE)
+    add(g, nuke.Double_Knob("sky_depth", "sky beyond"),
+        "Depth beyond this (km) is sky, like a far sky dome, so it hides nothing. A depth of 0 is "
+        "always sky.").setValue(50)
+    g["sky_depth"].setRange(1, 500)
+    add(g, nuke.Double_Knob("shadow_amount", "shadow amount"),
+        "How much the shadows darken the bg in the Comp view. The cloud_shadow layer is always the "
+        "full shadow, for grading the plate yourself.").setValue(0.6)
 
     add(g, nuke.Text_Knob("sun_divider", "sun"))
     sf = add(g, nuke.Enumeration_Knob("sun_from", "sun from", ["Auto", "Axis", "EzAtmosScatter", "Manual"]),
@@ -504,10 +529,11 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, cmap, layer, source_file):
+def blink(name, output, src, cmap, zin, layer, source_file):
     n = compiled(name, source_file)
     n.setInput(0, src)
     n.setInput(1, cmap)
+    n.setInput(2, zin)
     k = KERNEL + "_"
     p = "parent.l%d_" % layer
     n[k + "output"].setValue(output)
@@ -570,6 +596,9 @@ def blink(name, output, src, cmap, layer, source_file):
     n[k + "map_drift"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p), 1)
     # The variations sheet.
     n[k + "tiles"].setExpression("parent.view==4 && parent.variations_of==%d ? 3 : 1" % (layer - 1))
+    n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
+    n[k + "depth_mode"].setExpression("parent.depth_mode")
+    n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
     n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
 
@@ -640,14 +669,26 @@ def build():
         mapsrc.setInput(1, mp)
         mapsrc["which"].setExpression("parent.map_found")
         mp = mapsrc
+        # The bg's depth in red, in the work format (black without one: all sky).
+        zsrc = nuke.nodes.Copy(name="DepthSource", from0="depth.Z", to0="rgba.red")
+        zsrc.setInput(0, nuke.toNode("WorkBlack"))
+        zsrc.setInput(1, bg)
+        zwork = nuke.nodes.Reformat(name="DepthWork", type="scale", filter="Impulse", black_outside=True)
+        zwork["scale"].setExpression("parent.work_scale")
+        zwork.setInput(0, zsrc)
 
-        colour, sunpart, depth, zkeys = [], [], [], []
+        colour, sunpart, depth, zkeys, shadows = [], [], [], [], []
         for i in range(1, 4):
-            colour.append(blink("L%d_Color" % i, 0, work, mp, i, source))
-            sp = blink("L%d_Sun" % i, 1, work, mp, i, source)
+            colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, i, source))
+            sp = blink("L%d_Sun" % i, 1, work, mp, zwork, i, source)
             sp["disable"].setExpression("(%s) || !(parent.breakout || parent.view==2)" % (DISABLE % (i, i - 1)))
             sunpart.append(sp)
-            d = blink("L%d_Depth" % i, 2, work, mp, i, source)
+            sh = blink("L%d_Shadow" % i, 3, work, mp, zwork, i, source)
+            sh["disable"].setExpression("(%s) || !(parent.occlude && parent.bg_found) || "
+                                        "!(parent.breakout || parent.view==0 || parent.view==5)"
+                                        % (DISABLE % (i, i - 1)))
+            shadows.append(sh)
+            d = blink("L%d_Depth" % i, 2, work, mp, zwork, i, source)
             zkeys.append(d)
             pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
             pm.setInput(0, d)
@@ -682,9 +723,28 @@ def build():
         dep_up["box_height"].setExpression("FormatSource.height")
         dep_up.setInput(0, unp)
 
+        # Shadows: each layer lets 1 - s of the sun through, so together they block
+        # 1 - (1 - a)(1 - b)(1 - c): a screen. A disabled layer passes black (no shadow).
+        shm = nuke.nodes.Merge2(name="Shadow_Screen12", operation="screen", output="rgb")
+        shm.setInput(0, shadows[0])
+        shm.setInput(1, shadows[1])
+        shm2 = nuke.nodes.Merge2(name="Shadow_Screen3", operation="screen", output="rgb")
+        shm2.setInput(0, shm)
+        shm2.setInput(1, shadows[2])
+        shadow_up = up("ShadowUp", shm2)
+        # Darken the bg by shadow_amount for the Comp view.
+        lit = nuke.nodes.Expression(name="Shadow_Light", channel0="rgb",
+                                    expr0="1 - parent.shadow_amount * r",
+                                    channel1="none", channel2="none", channel3="none")
+        lit.setInput(0, shadow_up)
+        shaded = nuke.nodes.Merge2(name="Shadow_OnBg", operation="multiply", output="rgb")
+        shaded.setInput(0, bg)
+        shaded.setInput(1, lit)
+        shaded["disable"].setExpression("!(parent.occlude && parent.bg_found) || parent.shadow_amount==0")
+
         # Comp: the clouds over the bg (or alone).
         over = nuke.nodes.Merge2(name="CompOver", operation="over")
-        over.setInput(0, bg)
+        over.setInput(0, shaded)
         over.setInput(1, col_up)
         comp = nuke.nodes.Switch(name="CompOrClouds")
         comp.setInput(0, col_up)
@@ -716,9 +776,15 @@ def build():
             ck["to%d" % j].setValue("cloud_sky." + c)
         ck.setInput(0, cs)
         ck.setInput(1, sky)
+        cw = nuke.nodes.Copy(name="Layer_CloudShadow")
+        for j, c in enumerate(("red", "green", "blue")):
+            cw["from%d" % j].setValue("rgba." + c)
+            cw["to%d" % j].setValue("cloud_shadow." + c)
+        cw.setInput(0, ck)
+        cw.setInput(1, shadow_up)
         layers = nuke.nodes.Switch(name="BreakoutOrNot")
         layers.setInput(0, z)
-        layers.setInput(1, ck)
+        layers.setInput(1, cw)
         layers["which"].setExpression("parent.breakout")
 
         # Views.
@@ -731,9 +797,12 @@ def build():
         depth_view = nuke.nodes.Copy(name="View_Depth", channels="rgba")
         depth_view.setInput(0, layers)
         depth_view.setInput(1, dep_up)
+        shadow_view = nuke.nodes.Copy(name="View_Shadow", channels="rgba")
+        shadow_view.setInput(0, layers)
+        shadow_view.setInput(1, shadow_up)
         view = nuke.nodes.Switch(name="ViewOutput")
         # Variations: the comp, with only the layer shown, tiled (by the kernels).
-        for j, n in enumerate((layers, clouds_view, sun_view, depth_view, layers)):
+        for j, n in enumerate((layers, clouds_view, sun_view, depth_view, layers, shadow_view)):
             view.setInput(j, n)
         view["which"].setExpression("parent.view")
         out = nuke.nodes.Output(name="Output1")
@@ -747,10 +816,11 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthSource|DepthWork)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
-    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp)"),
+    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp)"),
+    ("Shadows", 0x4a4a3aff, r"(Shadow_.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot)"),
     ("Views", 0x5a4a6aff, r"(View_.*|ViewOutput)"),

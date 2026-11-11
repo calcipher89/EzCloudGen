@@ -3,7 +3,7 @@
     python3 reference/blink_check/run_kernel.py out.exr_or_png [width] [k=v ...]
 
 Parameters are the kernel's define() names (cam_position=0,3000,0 ...); map=picture.png feeds the
-coverage map input (and sets use_map=1). Writes rgba as a
+coverage map input (and sets use_map=1); depth=z.npy feeds the bg depth (and sets occlude=1). Writes rgba as a
 tone-mapped PNG (and a .npy of the raw floats beside it).
 """
 
@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
   EzCloudGen proto;
   proto.define();
   std::vector<float> mapPix;
+  std::vector<float> zPix;
   for (int i = 3; i + 1 < argc; i += 2) {
     if (!strcmp(argv[i], "map_file")) {
       // Raw: int w, int h, then w * h rgba floats, rows going up.
@@ -61,6 +62,15 @@ int main(int argc, char **argv) {
       if (f) fclose(f);
       continue;
     }
+    if (!strcmp(argv[i], "depth_file")) {
+      // Raw: w * h floats (the bg depth), rows going up, the frame's size.
+      FILE *f = fopen(argv[i + 1], "rb");
+      zPix.resize(size_t(w) * h);
+      if (!f || fread(zPix.data(), 4, zPix.size(), f) != zPix.size())
+        zPix.clear();
+      if (f) fclose(f);
+      continue;
+    }
     set(proto, argv[i], argv[i + 1]);
   }
   proto.init();
@@ -72,6 +82,7 @@ int main(int argc, char **argv) {
     for (int y = t; y < h; y += nt)
       for (int x = 0; x < w; x++) {
         int2 p = {x, y};
+        k.zin.value = float4(zPix.empty() ? 0.0f : zPix[y * w + x], 0.0f, 0.0f, 0.0f);
         k.process(p);
         float4 c = k.dst();
         float *o = &out[(y * w + x) * 4];
@@ -119,6 +130,13 @@ def render(w, h, params):
             f.write(np.ascontiguousarray(im).tobytes())
         params["map_file"] = raw
         params.setdefault("use_map", "1")
+    if "depth" in params:
+        # The bg depth for occlusion: a .npy of h x w floats, rows going down (as a picture).
+        z = np.load(params.pop("depth")).astype(np.float32)[::-1]
+        raw = os.path.join(BUILD, "depth.raw")
+        z.tofile(raw)
+        params["depth_file"] = raw
+        params.setdefault("occlude", "1")
     for k, v in params.items():
         args += [k, v]
     raw = subprocess.check_output(args)
