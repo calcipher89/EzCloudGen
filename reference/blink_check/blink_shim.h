@@ -42,11 +42,34 @@ enum { eRead, eWrite };
 enum { eAccessPoint, eAccessRandom };
 enum { eEdgeClamped };
 
-// Point images: the kernel reads src() / writes dst() at the current pixel.
+struct Recti {
+  int x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+  int width() const { return x2 - x1; }
+  int height() const { return y2 - y1; }
+};
+
+// Point images: the kernel reads src() / writes dst() at the current pixel. A random access
+// image also holds pixels (rgba floats, rows going up) for bilinear(); edges clamp.
 template <int... A> struct Image {
   float4 value;
+  Recti bounds;
+  const float *pix = nullptr;
   float4 &operator()() { return value; }
+  float4 at(int x, int y) const {
+    x = std::min(std::max(x, bounds.x1), bounds.x2 - 1) - bounds.x1;
+    y = std::min(std::max(y, bounds.y1), bounds.y2 - 1) - bounds.y1;
+    const float *q = pix + (y * bounds.width() + x) * 4;
+    return float4(q[0], q[1], q[2], q[3]);
+  }
 };
+template <int... A> inline float4 bilinear(const Image<A...> &im, float x, float y) {
+  if (!im.pix) return float4(0.0f);
+  float fx = std::floor(x), fy = std::floor(y);
+  float ax = x - fx, ay = y - fy;
+  int ix = int(fx), iy = int(fy);
+  float4 a = im.at(ix, iy), b = im.at(ix + 1, iy), c = im.at(ix, iy + 1), d = im.at(ix + 1, iy + 1);
+  return (a * (1 - ax) + b * ax) * (1 - ay) + (c * (1 - ax) + d * ax) * ay;
+}
 template <int M> struct ImageComputationKernel {};
 template <class T> inline void defineParamImpl(T &v, const char *, T d) { v = d; }
 #define defineParam(v, name, d) defineParamImpl(v, name, decltype(v)(d))
