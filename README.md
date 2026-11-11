@@ -6,8 +6,32 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-Prototype stage. `reference/` holds a Python (NumPy + numba) prototype of the renderer, written as
-scalar per-pixel code so it ports line for line to a BlinkScript kernel. The Nuke tool comes next.
+v0.1.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
+
+## Using it
+
+Paste `groups/EzCloudGen_group.nk` into a script (or put `gizmos/` on the plugin path and create
+EzCloudGen). Inputs:
+
+- **bg** (optional): the plate or sky to comp over; it also sets the format.
+- **camera**: the shot camera. Without one the node looks level from 300 m up.
+- **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
+  measures in its HDRI light the clouds ('light from' Auto).
+- **sun** (optional): an Axis, overriding the sun direction.
+
+Each of the three Layer tabs has a type menu that fills in its shape knobs. Keep layer 1 the
+lowest. Output: rgba (the comp, or a view), depth.Z (Planar Z of the clouds, scene units, for
+EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky.
+
+Building (in NukeX, it compiles the kernel and writes its hash):
+
+    Nuke15.1.exe --nukex -t python/build_group.py
+    set EZCLOUDGEN_TEST_WIDTH=960
+    Nuke15.1.exe --nukex -i --gpu -t python/test_render.py
+
+`reference/blink_check/run_kernel.py` compiles the kernel on CPU with a small C++ stand-in for
+Blink, to check edits without Nuke. `reference/sheets/nuke/` has the test renders from NukeX.
 
 ## Planned v1
 
