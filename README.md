@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.3.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.4.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -28,7 +28,9 @@ EzCloudGen). Inputs:
 Each of the three Layer tabs has a type menu that fills in its knobs. A layer is either a sky
 deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Storm Anvil, Fog Bank, Puff):
 picking a volume type drops it 'distance' ahead of the camera ('place in front of camera' does
-it again), then position, rotate and size move it. Every layer has the erosion stack: billows,
+it again), then position, rotate and size move it. 'make 3D box' makes a wireframe Cube beside the node
+that the volume follows: view it with your camera and move, rotate and scale it in the 3D viewer
+('release box' unlinks it, keeping the volume where it is). Every layer has the erosion stack: billows,
 wisps, grain, swirl and wind shear. Layers are put over each other nearest first, per pixel.
 
 'show me variations' (main tab) shows nine seeds of one layer side by side ('next nine' for

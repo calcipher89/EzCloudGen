@@ -171,6 +171,46 @@ def main():
     g["l1_map_amount"].setValue(1)
     g.setInput(4, None)
 
+    # The 3D box: a hero cumulus linked to a Cube, then the Cube moved, turned and scaled.
+    g["l1_enable"].setValue(True)
+    set_type("l1_", "Hero Cumulus")
+    g["l1_vol_rotate"].setValue([0, 25, 0])
+    render("box_before")
+    g["l1_make_box"].execute()
+    box = nuke.toNode(g["l1_box"].value())
+    if box is None:
+        raise RuntimeError("make 3D box made no Cube")
+    render("box_linked")  # must match box_before
+    pos0 = g["l1_vol_position"].value()
+    box["translate"].setValue([box["translate"].value(0) - 15000, box["translate"].value(1),
+                               box["translate"].value(2) + 30000])
+    box["rotate"].setValue([10, 60, 5])
+    box["scaling"].setValue([box["scaling"].value(0) * 1.5, box["scaling"].value(1), box["scaling"].value(2)])
+    pos1 = g["l1_vol_position"].value()
+    print("box: position %s -> %s, rotate %s, size %s" % (pos0, pos1, g["l1_vol_rotate"].value(),
+                                                         g["l1_vol_size"].value()))
+    if abs(pos1[0] - pos0[0] + 15000) > 1 or abs(pos1[2] - pos0[2] - 30000) > 1:
+        raise RuntimeError("the volume doesn't follow the box")
+    render("box_moved")
+    # The Cube's rotation must be the kernel's (Y, then X, then Z): compare its matrix.
+    import math
+    ax, ay, az = [math.radians(v) for v in (10, 60, 5)]
+    cx, sx, cy, sy, cz, sz = math.cos(ax), math.sin(ax), math.cos(ay), math.sin(ay), math.cos(az), math.sin(az)
+    col0 = (cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy)
+    m = box["world_matrix"]
+    sc = box["scaling"].value(0) * box["uniform_scale"].value()
+    got = (m.getValue(0) / sc, m.getValue(4) / sc, m.getValue(8) / sc)
+    print("rotation check: kernel %s cube %s" % (["%.4f" % v for v in col0], ["%.4f" % v for v in got]))
+    if max(abs(a - b) for a, b in zip(col0, got)) > 1e-3:
+        raise RuntimeError("Cube rot_order doesn't match the kernel")
+    g["l1_place"].execute()
+    print("place moves the box: %s" % (box["translate"].value(),))
+    g["l1_release_box"].execute()
+    if g["l1_vol_position"].isAnimated() or g["l1_box"].value():
+        raise RuntimeError("release box left a link")
+    render("box_released")  # must match the last placed state
+    nuke.delete(box)
+
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 

@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.3.0"
+VERSION = "0.4.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -88,7 +88,8 @@ VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
              "map_amount", "map_channel"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
-VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "lumps",
+VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
+            "release_box", "lumps",
             "lump_size"]
 
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
@@ -132,13 +133,19 @@ def knob_changed():
             "if k.name() in ('l1_type', 'l2_type', 'l3_type'):\n"
             "    p = k.name()[:3]\n"
             "    t = %r\n"
+            "    box = nuke.toNode(n[p + 'box'].value()) if n[p + 'box'].value() else None\n"
             "    for key, v in t[k.value()].items():\n"
-            "        if n.knob(p + key) is not None:\n"
+            "        if key == 'vol_size' and box is not None:\n"
+            "            # Linked to a 3D box: size the box instead.\n"
+            "            s = n['scene_scale'].value() or 1.0\n"
+            "            box['uniform_scale'].setValue(1)\n"
+            "            box['scaling'].setValue([v[0] / s, v[1] / s, v[2] / s])\n"
+            "        elif n.knob(p + key) is not None:\n"
             "            n[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n"
             "    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n"
             "    # its code runs here. Every volume type re-places (base and distance come with the type),\n"
             "    # unless the position is animated or linked.\n"
-            "    if n[p + 'volume'].value() > 0.5 and not n[p + 'vol_position'].isAnimated():\n"
+            "    if n[p + 'volume'].value() > 0.5 and (box is not None or not n[p + 'vol_position'].isAnimated()):\n"
             "        exec(n[p + 'place'].value(), {'nuke': nuke})\n"
             "    layers = [p]\n"
             "elif k.name() == 'showPanel':\n"
@@ -162,8 +169,64 @@ def place_script(p):
             "if l < 1e-6:\n"
             "    fx, fz, l = 0.0, -1.0, 1.0\n"
             "d = n['%splace_km'].value() * 1000.0 / s\n"
-            "n['%svol_position'].setValue([m.getValue(3) + fx / l * d, n['ground_height'].value() + "
-            "n['%sbase'].value() / s, m.getValue(11) + fz / l * d])\n" % (p, p, p))
+            "pos = [m.getValue(3) + fx / l * d, n['ground_height'].value() + n['%sbase'].value() / s, "
+            "m.getValue(11) + fz / l * d]\n"
+            "box = nuke.toNode(n['%sbox'].value()) if n['%sbox'].value() else None\n"
+            "if box is not None:\n"
+            "    # Linked to a 3D box: move the box (its centre is half its height above the base).\n"
+            "    h = box['scaling'].value(1) * box['uniform_scale'].value()\n"
+            "    box['translate'].setValue([pos[0], pos[1] + h / 2.0, pos[2]])\n"
+            "else:\n"
+            "    n['%svol_position'].setValue(pos)\n" % (p, p, p, p, p))
+
+
+def make_box_script(p, layer):
+    """'make 3D box': a Cube beside the node, placed and sized like the volume, that the volume
+    then follows (move, rotate and scale it in the 3D viewer). Pressed again, it re-links the box."""
+    return ("n = nuke.thisNode()\n"
+            "p = '%s'\n"
+            "s = n['scene_scale'].value() or 1.0\n"
+            "path = n.fullName().split('.')\n"
+            "ctx = nuke.toNode('.'.join(path[:-1])) if len(path) > 1 else nuke.root()\n"
+            "name = n.name() + '_L%d_Box'\n"
+            "old = nuke.toNode(n[p + 'box'].value()) if n[p + 'box'].value() else None\n"
+            "ctx.begin()\n"
+            "c = old or nuke.toNode(name)\n"
+            "if c is None:\n"
+            "    c = nuke.nodes.Cube(name=name)\n"
+            "    c.setXYpos(n.xpos() + 150, n.ypos() + 60 * %d)\n"
+            "    pos = n[p + 'vol_position'].value()\n"
+            "    size = n[p + 'vol_size'].value()\n"
+            "    c['translate'].setValue([pos[0], pos[1] + size[1] / s / 2.0, pos[2]])\n"
+            "    c['rotate'].setValue(n[p + 'vol_rotate'].value())\n"
+            "    c['scaling'].setValue([size[0] / s, size[1] / s, size[2] / s])\n"
+            "ctx.end()\n"
+            "# The kernel turns the volume Y, then X, then Z.\n"
+            "c['rot_order'].setValue('YXZ')\n"
+            "c['display'].setValue('wireframe')\n"
+            "c['render_mode'].setValue('off')\n"
+            "c['label'].setValue('cloud volume: ' + n.name() + ' layer %d')\n"
+            "c['tile_color'].setValue(0x8fb3d9ff)\n"
+            "b = c.name()\n"
+            "n[p + 'box'].setValue(c.fullName())\n"
+            "for i, a in enumerate('xyz'):\n"
+            "    n[p + 'vol_rotate'].setExpression('%%s.rotate.%%s' %% (b, a), i)\n"
+            "    n[p + 'vol_size'].setExpression('%%s.scaling.%%s * %%s.uniform_scale * scene_scale' %% (b, a, b), i)\n"
+            "n[p + 'vol_position'].setExpression(b + '.translate.x', 0)\n"
+            "n[p + 'vol_position'].setExpression('%%s.translate.y - %%s.scaling.y * %%s.uniform_scale / 2' %% (b, b, b), 1)\n"
+            "n[p + 'vol_position'].setExpression(b + '.translate.z', 2)\n"
+            % (p, layer, layer - 1, layer))
+
+
+def release_box_script(p):
+    """'release box': the volume keeps where the box put it and stops following it."""
+    return ("n = nuke.thisNode()\n"
+            "for name in ('vol_position', 'vol_rotate', 'vol_size'):\n"
+            "    k = n['%s' + name]\n"
+            "    v = k.value()\n"
+            "    k.clearAnimated()\n"
+            "    k.setValue(v)\n"
+            "n['%sbox'].setValue('')\n" % (p, p))
 
 
 # The variations buttons: the layer is 'variations of'.
@@ -317,7 +380,8 @@ def build_knobs(g):
                 "The volume's overall shape, before lumps and erosion break it up.")
         k.setValue(int(vals["vol_shape"]))
         add(g, nuke.XYZ_Knob(p + "vol_position", "position"),
-            "Centre of the volume's base, in scene units (drag it in the 3D viewer, or link it to an Axis).")
+            "Centre of the volume's base, in scene units. 'make 3D box' links it to a Cube you can "
+            "drag in the 3D viewer.")
         add(g, nuke.XYZ_Knob(p + "vol_rotate", "rotate"), "Turns the volume, in degrees (Y, then X, then Z).")
         k = g[p + "vol_position"]
         if vals["volume"]:
@@ -330,6 +394,14 @@ def build_knobs(g):
         k = add(g, nuke.Double_Knob(p + "place_km", "distance"), "How far ahead 'place in front of camera' puts it, km.")
         k.setValue(vals["place_km"])
         k.clearFlag(nuke.STARTLINE)
+        add(g, nuke.PyScript_Knob(p + "make_box", "make 3D box", make_box_script(p, i + 1)),
+            "Makes a Cube beside this node, placed and sized like the volume, and links the volume to it: "
+            "move, rotate and scale the Cube in the 3D viewer (view it with your camera) and the cloud "
+            "follows. Its translate is the volume's centre.")
+        add(g, nuke.PyScript_Knob(p + "release_box", "release box", release_box_script(p)),
+            "Stops following the Cube; the volume stays where it is.")
+        g[p + "release_box"].clearFlag(nuke.STARTLINE)
+        hidden(g, nuke.String_Knob(p + "box", "box"))
         for name, label, tip, lo, hi in VOLUME:
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
