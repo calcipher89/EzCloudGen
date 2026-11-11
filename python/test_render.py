@@ -86,22 +86,41 @@ def main():
         grade["white"].setValue(0.8)
     g["view"].setValue("Comp")
 
-    for tname in cloud_types.TYPES:
-        g["l1_type"].setValue(tname)
+    def set_type(p, tname):
+        g[p + "type"].setValue(tname)
         # The type menu fills the knobs from knobChanged, which a terminal session doesn't run.
         for k, v in cloud_types.full(tname).items():
-            if g.knob("l1_" + k) is not None:
-                g["l1_" + k].setValue(v)
+            if g.knob(p + k) is not None:
+                g[p + k].setValue(list(v) if isinstance(v, tuple) else v)
+        if g[p + "volume"].value() > 0.5:
+            g[p + "place"].execute()
+
+    for tname in cloud_types.TYPES:
+        set_type("l1_", tname)
         render(tname.replace(" ", "_").lower())
 
-    # Layer check: all three on.
-    g["l1_type"].setValue("Cumulus")
-    for k, v in cloud_types.full("Cumulus").items():
-        if g.knob("l1_" + k) is not None:
-            g["l1_" + k].setValue(v)
+    # The erosion stack on a hero cumulus.
+    set_type("l1_", "Hero Cumulus")
+    for knob, value in (("wisp_amount", 0.9), ("grain_amount", 0.8), ("swirl", 0.6), ("shear", 0.5)):
+        old = g["l1_" + knob].value()
+        g["l1_" + knob].setValue(value)
+        render("hero_cumulus_" + knob)
+        g["l1_" + knob].setValue(old)
+
+    # Layer check: a deck, a hero volume in front of it, and cirrus, sorted by depth.
+    set_type("l1_", "Cumulus")
     g["l2_enable"].setValue(True)
+    set_type("l2_", "Hero Cumulus")
+    g["l2_place_km"].setValue(5)
+    g["l2_place"].execute()
     g["l3_enable"].setValue(True)
     render("layered")
+    # The same with the volume as layer 1 and the deck as layer 2: must look the same.
+    set_type("l1_", "Hero Cumulus")
+    g["l1_place_km"].setValue(5)
+    g["l1_place"].execute()
+    set_type("l2_", "Cumulus")
+    render("layered_swapped")
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 

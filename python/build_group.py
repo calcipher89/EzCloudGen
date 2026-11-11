@@ -12,8 +12,8 @@ Inputs: 0 bg (the plate or sky to comp over; it also sets the format, optional),
 2 atmos (an EzAtmosScatter, optional: sun direction, sun and sky colour), 3 sun (an Axis,
 optional: overrides the sun direction).
 
-Up to three layers, each its own BlinkScript (one per output: colour, sun share, depth).
-Layer 1 should be the lowest: with the camera under the clouds it is in front.
+Up to three layers (sky decks or placed volumes), each its own BlinkScript (one per output: colour, sun share, depth).
+Layers are put over each other nearest first, per pixel (blink/EzCloudGenStack.blink).
 """
 
 import os
@@ -26,13 +26,14 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
+STACK_KERNEL = "EzCloudGenStack"
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzCloudGen.gizmo")
 TYPE_NAMES = list(cloud_types.TYPES)
-LAYER_DEFAULTS = [("Cumulus", True), ("Altocumulus", False), ("Cirrus", False)]
+LAYER_DEFAULTS = [("Cumulus", True), ("Hero Cumulus", False), ("Cirrus", False)]
 
 # Per layer knobs: (kernel param, label, tooltip, min, max). The first block is always shown;
 # the rest are under "shape".
@@ -50,8 +51,6 @@ SHAPE = [
     ("taper", "domes", "How much the clouds narrow going up: cumulus domes and towers.", 0, 2),
     ("bottom_round", "base rounding", "Rounding at the base, as a share of the thickness (small = flat base).", 0, 1),
     ("top_round", "top rounding", "Rounding at the top, as a share of the thickness.", 0, 1),
-    ("detail_size", "detail size", "Size of the billows and wisps on the surface, in metres.", 10, 1000),
-    ("erosion", "detail amount", "How much the detail breaks up the surface.", 0, 1),
     ("sigma", "thickness of cloud", "Extinction per metre: high is dense and hard edged, low is thin and veil-like.",
      0.0005, 0.1),
     ("cells", "cells", "Cellular rows (altocumulus, cirrocumulus).", 0, 1),
@@ -64,6 +63,30 @@ SHAPE = [
     ("streaks", "streaks", "1: fibrous streaks (cirrus).", 0, 1),
     ("vary", "height variation", "How much the base and top move up and down across the deck.", 0, 0.5),
 ]
+
+# The erosion stack, shown on each layer.
+EROSION = [
+    ("erosion", "billows", "How much the billows (cauliflower bumps, or soft wisps with 'billow' at 0) break "
+                           "up the surface.", 0, 1),
+    ("detail_size", "billow size", "Size of the billows, in metres.", 10, 1000),
+    ("wisp_amount", "wisps", "Fine wisps that eat into the thin edges.", 0, 1),
+    ("wisp_size", "wisp size", "Size of the wisps, in metres.", 2, 500),
+    ("grain_amount", "grain", "The finest breakup of the edges.", 0, 1),
+    ("grain_size", "grain size", "Size of the grain, in metres.", 1, 100),
+    ("swirl", "swirl", "Curls the detail around, for swirly wisps.", 0, 1),
+    ("swirl_size", "swirl size", "Size of the swirls, in metres.", 20, 3000),
+    ("shear", "wind shear", "Leans the tops downwind (along 'wind direction').", -1, 1),
+]
+# A placed volume (types with volume on).
+VOLUME = [
+    ("lumps", "lumps", "Big noise that breaks the shape into towers and bulges.", 0, 1.5),
+    ("lump_size", "lump size", "Size of the lumps, in metres.", 20, 5000),
+]
+VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
+# Knobs shown only for decks, and only for volumes.
+DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary"]
+VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "lumps",
+            "lump_size"]
 
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
           "cloud_sun": ["red", "green", "blue"],
@@ -96,15 +119,44 @@ def atmos_light(pixel, channel, fallback):
 # ---- The type menu ------------------------------------------------------------------------
 
 def knob_changed():
+    # Plain top-level code: Nuke runs knob scripts with separate locals, which functions and
+    # comprehensions can't see.
     table = dict((name, cloud_types.full(name)) for name in TYPE_NAMES)
     return ("k = nuke.thisKnob()\n"
+            "n = nuke.thisNode()\n"
+            "layers = []\n"
             "if k.name() in ('l1_type', 'l2_type', 'l3_type'):\n"
-            "    n = nuke.thisNode()\n"
             "    p = k.name()[:3]\n"
             "    t = %r\n"
             "    for key, v in t[k.value()].items():\n"
             "        if n.knob(p + key) is not None:\n"
-            "            n[p + key].setValue(v)\n" % table)
+            "            n[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n"
+            "    if n[p + 'volume'].value() > 0.5 and list(n[p + 'vol_position'].value()) == [0.0, 0.0, 0.0]:\n"
+            "        n[p + 'place'].execute()\n"
+            "    layers = [p]\n"
+            "elif k.name() == 'showPanel':\n"
+            "    layers = ['l1_', 'l2_', 'l3_']\n"
+            "for p in layers:\n"
+            "    vol = n[p + 'volume'].value() > 0.5\n"
+            "    for name in %r:\n"
+            "        n[p + name].setVisible(not vol)\n"
+            "    for name in %r:\n"
+            "        n[p + name].setVisible(vol)\n" % (table, DECK_ONLY, VOL_ONLY))
+
+
+def place_script(p):
+    """The 'place in front of camera' button: the volume's base centre 'place km' ahead of the
+    camera (level, along where it looks), at the layer's base height."""
+    return ("n = nuke.thisNode()\n"
+            "m = n['cam_world_matrix']\n"
+            "s = n['scene_scale'].value() or 1.0\n"
+            "fx, fz = -m.getValue(2), -m.getValue(10)\n"
+            "l = (fx * fx + fz * fz) ** 0.5\n"
+            "if l < 1e-6:\n"
+            "    fx, fz, l = 0.0, -1.0, 1.0\n"
+            "d = n['%splace_km'].value() * 1000.0 / s\n"
+            "n['%svol_position'].setValue([m.getValue(3) + fx / l * d, n['ground_height'].value() + "
+            "n['%sbase'].value() / s, m.getValue(11) + fz / l * d])\n" % (p, p, p))
 
 
 # ---- Knobs --------------------------------------------------------------------------------
@@ -197,7 +249,7 @@ def build_knobs(g):
         p = "l%d_" % (i + 1)
         add(g, nuke.Tab_Knob(p + "tab", "Layer %d" % (i + 1)))
         add(g, nuke.Boolean_Knob(p + "enable", "enable"),
-            "Draw this layer. Keep layer 1 the lowest.").setValue(on)
+            "Draw this layer. Layers sort themselves by depth.").setValue(on)
         t = add(g, nuke.Enumeration_Knob(p + "type", "type", TYPE_NAMES),
                 "Sets this layer's shape knobs to the type's values (they can be tuned after).")
         t.setValue(tname)
@@ -206,15 +258,47 @@ def build_knobs(g):
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
             k.setValue(vals[name])
+        add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
+        k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
+                "The volume's overall shape, before lumps and erosion break it up.")
+        k.setValue(int(vals["vol_shape"]))
+        add(g, nuke.XYZ_Knob(p + "vol_position", "position"),
+            "Centre of the volume's base, in scene units (drag it in the 3D viewer, or link it to an Axis).")
+        add(g, nuke.XYZ_Knob(p + "vol_rotate", "rotate"), "Turns the volume, in degrees (Y, then X, then Z).")
+        k = g[p + "vol_position"]
+        if vals["volume"]:
+            # In front of the default view (no camera: looking along -Z), in decimetres.
+            k.setValue([0, vals["base"] / 0.1, -vals["place_km"] * 1000 / 0.1])
+        k = add(g, nuke.XYZ_Knob(p + "vol_size", "size"), "Width, height and depth of the volume, in metres.")
+        k.setValue(list(vals["vol_size"]))
+        add(g, nuke.PyScript_Knob(p + "place", "place in front of camera", place_script(p)),
+            "Puts the volume 'distance' ahead of the camera, on the ground at 'base height'.")
+        k = add(g, nuke.Double_Knob(p + "place_km", "distance"), "How far ahead 'place in front of camera' puts it, km.")
+        k.setValue(vals["place_km"])
+        k.clearFlag(nuke.STARTLINE)
+        for name, label, tip, lo, hi in VOLUME:
+            k = add(g, nuke.Double_Knob(p + name, label), tip)
+            k.setRange(lo, hi)
+            k.setValue(vals[name])
+        add(g, nuke.Text_Knob(p + "erosion_divider", "erosion"))
+        for name, label, tip, lo, hi in EROSION:
+            k = add(g, nuke.Double_Knob(p + name, label), tip)
+            k.setRange(lo, hi)
+            k.setValue(vals[name])
+        add(g, nuke.Text_Knob(p + "more_divider", ""))
         add(g, nuke.Double_Knob(p + "density", "density"), "Multiplies the cloud density.").setValue(1.0)
         add(g, nuke.Double_Knob(p + "wind_speed", "wind speed"), "Drift along the wind direction, m/s.").setValue(5.0)
         add(g, nuke.Double_Knob(p + "seed", "seed"), "Changes this layer's clouds.").setValue(i * 11.0)
-        add(g, nuke.Tab_Knob(p + "shape", "shape", nuke.TABBEGINCLOSEDGROUP))
+        add(g, nuke.Tab_Knob(p + "shape", "more shape", nuke.TABBEGINCLOSEDGROUP))
         for name, label, tip, lo, hi in SHAPE:
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
             k.setValue(vals[name])
         add(g, nuke.Tab_Knob(p + "shape_end", "", nuke.TABENDGROUP))
+        k = hidden(g, nuke.Int_Knob(p + "volume"))
+        k.setValue(int(vals["volume"]))
+        for name in (DECK_ONLY if vals["volume"] else VOL_ONLY):
+            g[p + name].setVisible(False)
 
     add(g, nuke.Tab_Knob("about", "About"))
     add(g, nuke.Text_Knob("version", "", "EzCloudGen v%s" % VERSION))
@@ -284,14 +368,7 @@ def build_knobs(g):
 # ---- The nodes inside --------------------------------------------------------------------
 
 def blink(name, output, src, layer, source_file):
-    n = nuke.nodes.BlinkScript(name=name)
-    # Terminal Nuke only compiles a kernel loaded from a file (setting kernelSource and pressing
-    # recompile leaves it uncompiled, and renders cancel). The file is then cleared, so the node
-    # keeps the source and needs no file.
-    n["kernelSourceFile"].setValue(source_file)
-    n["reloadKernelSourceFile"].execute()
-    n["recompile"].execute()
-    n["kernelSourceFile"].setValue("")
+    n = compiled(name, source_file)
     n.setInput(0, src)
     k = KERNEL + "_"
     p = "parent.l%d_" % layer
@@ -328,23 +405,49 @@ def blink(name, output, src, layer, source_file):
     n[k + "offset"].setExpression("%swind_speed * parent.time_s * cos(radians(%swind_deg))" % (p, p), 1)
     n[k + "gap_amount"].setExpression("parent.gap_amount")
     n[k + "gap_size"].setExpression("parent.gap_size * 1000")
-    for name, _, _, _, _ in MAIN + SHAPE:
+    for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
         n[k + name].setExpression(p + name)
+    n[k + "volume"].setExpression(p + "volume")
+    n[k + "vol_shape"].setExpression(p + "vol_shape")
+    n[k + "vol_center"].setExpression(p + "vol_position.x", 0)
+    n[k + "vol_center"].setExpression("%svol_position.y + %svol_size.y / 2 / max(parent.scene_scale, 1e-6)" % (p, p), 1)
+    n[k + "vol_center"].setExpression(p + "vol_position.z", 2)
+    for j, c in enumerate("xyz"):
+        n[k + "vol_rotate"].setExpression("%svol_rotate.%s" % (p, c), j)
+        n[k + "vol_size"].setExpression("%svol_size.%s" % (p, c), j)
     n[k + "density"].setExpression(p + "density")
     n["disable"].setExpression("!%senable" % p)
+    return n
+
+
+def lf_copy(kernel):
+    """An LF-only copy of a kernel in the temp folder (a Windows checkout may have CRLF)."""
+    import tempfile
+    with open(os.path.join(ROOT, "blink", kernel + ".blink")) as f:
+        text = f.read().replace("\r\n", "\n")
+    path = os.path.join(tempfile.gettempdir(), kernel + ".blink").replace("\\", "/")
+    with open(path, "w", newline="\n") as f:
+        f.write(text)
+    return path
+
+
+def compiled(name, source_file):
+    """A BlinkScript compiled from a file. Terminal Nuke only compiles a kernel loaded from a file
+    (setting kernelSource and pressing recompile leaves it uncompiled, and renders cancel). The
+    file is then cleared, so the node keeps the source and needs no file."""
+    n = nuke.nodes.BlinkScript(name=name)
+    n["kernelSourceFile"].setValue(source_file)
+    n["reloadKernelSourceFile"].execute()
+    n["recompile"].execute()
+    n["kernelSourceFile"].setValue("")
     return n
 
 
 def build():
     for layer, chans in LAYERS.items():
         nuke.Layer(layer, ["%s.%s" % (layer, c) for c in chans])
-    # An LF-only copy of the kernel (a Windows checkout may have CRLF).
-    import tempfile
-    with open(KERNEL_FILE) as f:
-        text = f.read().replace("\r\n", "\n")
-    source = os.path.join(tempfile.gettempdir(), KERNEL + ".blink").replace("\\", "/")
-    with open(source, "w", newline="\n") as f:
-        f.write(text)
+    source = lf_copy(KERNEL)
+    stack_source = lf_copy(STACK_KERNEL)
 
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)
@@ -371,25 +474,23 @@ def build():
         work["scale"].setExpression("parent.work_scale")
         work.setInput(0, black)
 
-        colour, sunpart, depth = [], [], []
+        colour, sunpart, depth, zkeys = [], [], [], []
         for i in range(1, 4):
             colour.append(blink("L%d_Color" % i, 0, work, i, source))
             sp = blink("L%d_Sun" % i, 1, work, i, source)
             sp["disable"].setExpression("!parent.l%d_enable || !(parent.breakout || parent.view==2)" % i)
             sunpart.append(sp)
             d = blink("L%d_Depth" % i, 2, work, i, source)
+            zkeys.append(d)
             pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
             pm.setInput(0, d)
             depth.append(pm)
 
         def stack(prefix, nodes):
-            # Layer 1 over layer 2 over layer 3.
-            m23 = nuke.nodes.Merge2(name=prefix + "_2over3", operation="over")
-            m23.setInput(0, nodes[2])
-            m23.setInput(1, nodes[1])
-            m = nuke.nodes.Merge2(name=prefix + "_1over", operation="over")
-            m.setInput(0, m23)
-            m.setInput(1, nodes[0])
+            # Nearest layer first, per pixel, ordered by the depth passes.
+            m = compiled(prefix + "_Stack", stack_source)
+            for j, n in enumerate(nodes + zkeys):
+                m.setInput(j, n)
             return m
 
         col = stack("Color", colour)
@@ -480,7 +581,7 @@ def build():
 MODULES = [
     ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|RootFormat|FormatSource|WorkClear|WorkBlack|WorkFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
-    ("Stack the layers", 0x4a5a6aff, r"(Color_.*|Sun_.*|Depth_.*|DepthUnpremult)"),
+    ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot)"),

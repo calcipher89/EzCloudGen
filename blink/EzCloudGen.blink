@@ -16,6 +16,14 @@
 // from above and ground bounce from below, energy-conserving integration, and aerial
 // perspective towards hazeColor over hazeDistance.
 //
+// volume 1: instead of a deck, the layer is one placed cloud volume: a shape (ellipsoid,
+// dome, anvil or box) centred on volCenter (scene units), turned by volRotate (degrees, Y then
+// X then Z) and sized volSize (metres, full size). Lumps (big noise) break the shape up first.
+//
+// Erosion stack, for decks and volumes: billows (detailSize/erosion, inverted Worley or value
+// noise by `billow`), wisps (fine value noise eating the thin edges), grain (finest noise).
+// swirl warps the detail's coordinates (curling wisps); shear leans the tops along the wind.
+//
 // output 0: rgb = cloud colour (premultiplied), a = opacity.
 // output 1: rgb = the direct sun share of output 0's rgb (premultiplied), a = opacity.
 // output 2: rgb = Planar Z of the clouds in scene units (opacity-weighted), a = opacity.
@@ -78,6 +86,22 @@ param:
   float streaks;
   float vary;
   float density;
+  // Placed volume.
+  int volume;
+  int volShape;
+  float3 volCenter;
+  float3 volRotate;
+  float3 volSize;
+  float lumps;
+  float lumpSize;
+  // Erosion stack.
+  float wispSize;
+  float wispAmount;
+  float grainSize;
+  float grainAmount;
+  float swirl;
+  float swirlSize;
+  float shear;
 
 local:
   float R;
@@ -88,6 +112,11 @@ local:
   float sa;
   float gapX;
   float gapZ;
+  float3 vc;
+  float3 vr0;
+  float3 vr1;
+  float3 vr2;
+  float3 vh;
 
   void define()
   {
@@ -139,6 +168,20 @@ local:
     defineParam(streaks, "streaks", 0.0f);
     defineParam(vary, "vary", 0.0f);
     defineParam(density, "density", 1.0f);
+    defineParam(volume, "volume", 0);
+    defineParam(volShape, "vol_shape", 1);
+    defineParam(volCenter, "vol_center", float3(0.0f, 20000.0f, -60000.0f));
+    defineParam(volRotate, "vol_rotate", float3(0.0f, 0.0f, 0.0f));
+    defineParam(volSize, "vol_size", float3(3000.0f, 1800.0f, 3000.0f));
+    defineParam(lumps, "lumps", 0.5f);
+    defineParam(lumpSize, "lump_size", 600.0f);
+    defineParam(wispSize, "wisp_size", 60.0f);
+    defineParam(wispAmount, "wisp_amount", 0.0f);
+    defineParam(grainSize, "grain_size", 15.0f);
+    defineParam(grainAmount, "grain_amount", 0.0f);
+    defineParam(swirl, "swirl", 0.0f);
+    defineParam(swirlSize, "swirl_size", 400.0f);
+    defineParam(shear, "shear", 0.0f);
   }
 
   void init()
@@ -158,6 +201,47 @@ local:
     float rise = base + 0.5f * thickness - camAlt;
     gapX = sun.x / up * rise;
     gapZ = sun.z / up * rise;
+
+    // The volume in the kernel's frame (camera above 0, 0; metres) and its world to local
+    // rotation: R = Rz * Rx * Ry turns local into world, so its transpose turns back.
+    vc = float3((volCenter.x - camPosition.x) * sceneScale, (volCenter.y - groundHeight) * sceneScale,
+                (volCenter.z - camPosition.z) * sceneScale);
+    float ax = volRotate.x * pi / 180.0f;
+    float ay = volRotate.y * pi / 180.0f;
+    float az = volRotate.z * pi / 180.0f;
+    float cx = cos(ax);
+    float sx = sin(ax);
+    float cy = cos(ay);
+    float sy = sin(ay);
+    float cz = cos(az);
+    float sz = sin(az);
+    // Columns of R (local axes in world), as rows of R^T.
+    vr0 = float3(cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy);
+    vr1 = float3(-sz * cx, cz * cx, sx);
+    vr2 = float3(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy);
+    vh = float3(max(volSize.x, 1.0f) * 0.5f, max(volSize.y, 1.0f) * 0.5f, max(volSize.z, 1.0f) * 0.5f);
+  }
+
+  // World (kernel frame) point or direction into the volume's unit box space.
+  float3 toLocal(float3 v)
+  {
+    return float3(dot(vr0, v) / vh.x, dot(vr1, v) / vh.y, dot(vr2, v) / vh.z);
+  }
+
+  // Ray vs the unit box [-1, 1]^3 in local space; t is the same as along the world ray.
+  bool boxHit(float3 o, float3 d, float &t0, float &t1)
+  {
+    float3 inv = float3(1.0f / (fabs(d.x) > 1e-9f ? d.x : 1e-9f), 1.0f / (fabs(d.y) > 1e-9f ? d.y : 1e-9f),
+                        1.0f / (fabs(d.z) > 1e-9f ? d.z : 1e-9f));
+    float ax0 = (-1.0f - o.x) * inv.x;
+    float ax1 = (1.0f - o.x) * inv.x;
+    float ay0 = (-1.0f - o.y) * inv.y;
+    float ay1 = (1.0f - o.y) * inv.y;
+    float az0 = (-1.0f - o.z) * inv.z;
+    float az1 = (1.0f - o.z) * inv.z;
+    t0 = max(max(min(ax0, ax1), min(ay0, ay1)), min(az0, az1));
+    t1 = min(min(max(ax0, ax1), max(ay0, ay1)), max(az0, az1));
+    return t1 > max(t0, 0.0f);
   }
 
   // ---- Noise (float only) -----------------------------------------------------------------
@@ -385,36 +469,143 @@ local:
     return (2.0f * R * y + y * y + h2) / (sqrt((R + y) * (R + y) + h2) + R);
   }
 
+  // The placed volume's coverage at p (kernel frame), positive inside; hn: 0 bottom, 1 top.
+  float volumeShape(float3 p, float &hn)
+  {
+    float3 q = toLocal(p - vc);
+    hn = clamp(q.y * 0.5f + 0.5f, 0.0f, 1.0f);
+    if (fabs(q.x) > 1.0f || fabs(q.y) > 1.0f || fabs(q.z) > 1.0f)
+      return -1.0f;
+    float rxz = sqrt(q.x * q.x + q.z * q.z);
+    float dist;
+    if (volShape == 0) {
+      // Ellipsoid.
+      dist = sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+    } else if (volShape == 1) {
+      // Dome: a flat base, rounding to the top (cumulus).
+      float r = sqrt(max(1.0f - hn * hn, 0.0f));
+      dist = rxz / max(r, 1e-3f);
+      dist = max(dist, 1.0f - hn / max(bottomRound, 0.02f));
+    } else if (volShape == 2) {
+      // Anvil: a column that spreads into a flat top.
+      float r = 0.54f - 0.12f * sstep(0.0f, 0.3f, hn) + 0.58f * sstep(0.72f, 0.95f, hn);
+      dist = max(rxz / max(r, 1e-3f), 1.0f - hn / max(bottomRound, 0.02f));
+      dist = max(dist, sstep(0.93f, 1.0f, hn) * 1.2f);
+    } else {
+      // Box with soft corners.
+      float3 a = float3(fabs(q.x), fabs(q.y), fabs(q.z));
+      dist = pow(pow(a.x, 6.0f) + pow(a.y, 6.0f) + pow(a.z, 6.0f), 1.0f / 6.0f);
+    }
+    float c = (1.0f - dist) * 0.3f + (coverage - 0.5f) * 0.3f;
+    if (lumps > 0.0f) {
+      float wx = p.x + camPosition.x * sceneScale + offset.x;
+      float wz = p.z + camPosition.z * sceneScale + offset.y;
+      float ls = max(lumpSize, 10.0f);
+      c += lumps * (fbm2(wx / ls + 5.3f, wz / ls, 2.0f) * 0.5f + vnoise3(wx / ls, p.y / ls, wz / ls) * 0.5f - 0.5f) * 0.45f;
+    }
+    return c;
+  }
+
+  float vfbm3(float x, float y, float z, float oct)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      s += amp * w * vnoise3(x, y, z);
+      tot += amp * w;
+      amp *= 0.5f;
+      x = x * 2.07f + 11.3f;
+      y = y * 2.07f + 4.7f;
+      z = z * 2.07f + 8.1f;
+    }
+    return s / max(tot, 1e-6f);
+  }
+
+  // How many octaves of noise of this size are worth drawing at this pixel footprint.
+  float lod(float size, float foot, float most)
+  {
+    return min(most, max(0.0f, lg2(max(size / max(2.5f * foot, 1.0f), 1.0f))));
+  }
+
   // Cloud density 0..1. cheap: no detail noise (for the light march).
   float cloud(float3 p, float foot, bool cheap)
   {
-    float alt = altitude(p);
-    float b = base;
-    float c = weather(p.x, p.z, foot);
-    if (c <= -0.12f)
-      return 0.0f;
-    if (vary > 0.0f) {
-      float sv = scaleKm * 2500.0f;
-      float vx = p.x + camPosition.x * sceneScale + offset.x;
-      float vz = p.z + camPosition.z * sceneScale + offset.y;
-      b += (vnoise2(vx / sv + 70.0f, vz / sv) - 0.5f) * vary * thickness;
+    float hn = 0.0f;
+    float c = 0.0f;
+    float alt = 0.0f;
+    float height = thickness;
+    if (volume == 1) {
+      c = volumeShape(p, hn);
+      if (c <= -0.15f)
+        return 0.0f;
+      alt = p.y;
+      height = volSize.y;
+    } else {
+      alt = altitude(p);
+      float b = base;
+      c = weather(p.x, p.z, foot);
+      if (c <= -0.12f)
+        return 0.0f;
+      if (vary > 0.0f) {
+        float sv = scaleKm * 2500.0f;
+        float vx = p.x + camPosition.x * sceneScale + offset.x;
+        float vz = p.z + camPosition.z * sceneScale + offset.y;
+        b += (vnoise2(vx / sv + 70.0f, vz / sv) - 0.5f) * vary * thickness;
+      }
+      hn = (alt - b) / thickness;
+      if (hn <= 0.0f || hn >= 1.0f)
+        return 0.0f;
+      c -= profile(hn);
     }
-    float hn = (alt - b) / thickness;
-    if (hn <= 0.0f || hn >= 1.0f)
-      return 0.0f;
-    c -= profile(hn);
     float e = max(edge, 1e-3f);
-    if (cheap || erosion <= 0.0f)
+    if (cheap)
       return clamp(c / e, 0.0f, 1.0f);
-    if (c < -0.12f * erosion)
+    float reach = 0.12f * (erosion + wispAmount + grainAmount);
+    if (c < -reach)
       return 0.0f;
-    float oct = min(octaves, max(0.0f, lg2(max(detailSize / max(2.5f * foot, 1.0f), 1.0f))));
-    if (oct > 0.0f) {
-      float wx = p.x + camPosition.x * sceneScale + offset.x;
-      float wz = p.z + camPosition.z * sceneScale + offset.y;
-      // The detail rises slowly (boil) with evolve.
-      float n = detail3(wx / detailSize, (alt - evolve) / detailSize, wz / detailSize, oct);
-      c += erosion * (n - 0.5f) * 0.24f;
+    // The detail's coordinates: world metres, rising slowly (boil) with evolve.
+    float wx = p.x + camPosition.x * sceneScale + offset.x;
+    float wy = alt - evolve;
+    float wz = p.z + camPosition.z * sceneScale + offset.y;
+    if (shear != 0.0f) {
+      // Lean the tops downwind.
+      float lean = shear * hn * height;
+      wx -= lean * sa;
+      wz += lean * ca;
+    }
+    if (swirl > 0.0f && lod(swirlSize, foot, 1.0f) > 0.0f) {
+      float ss = max(swirlSize, 1.0f);
+      float sw = swirl * ss;
+      float ux = vnoise3(wx / ss + 1.3f, wy / ss, wz / ss) - 0.5f;
+      float uy = vnoise3(wx / ss, wy / ss + 7.1f, wz / ss) - 0.5f;
+      float uz = vnoise3(wx / ss, wy / ss, wz / ss + 3.9f) - 0.5f;
+      wx += ux * sw * 2.0f;
+      wy += uy * sw * 2.0f;
+      wz += uz * sw * 2.0f;
+    }
+    if (erosion > 0.0f) {
+      float oct = lod(detailSize, foot, octaves);
+      if (oct > 0.0f)
+        c += erosion * (detail3(wx / detailSize, wy / detailSize, wz / detailSize, oct) - 0.5f) * 0.24f;
+    }
+    // Wisps and grain eat the thin edges more than the cores.
+    float thin = 1.0f - clamp(c / (3.0f * e), 0.0f, 1.0f);
+    if (wispAmount > 0.0f) {
+      float ws = max(wispSize, 1.0f);
+      float oct = lod(ws, foot, 2.0f);
+      if (oct > 0.0f)
+        c += wispAmount * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f + 0.6f * thin);
+    }
+    if (grainAmount > 0.0f) {
+      float gs = max(grainSize, 1.0f);
+      float oct = lod(gs, foot, 1.0f);
+      if (oct > 0.0f)
+        c += grainAmount * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
     }
     return clamp(c / e, 0.0f, 1.0f);
   }
@@ -452,9 +643,15 @@ local:
     float t0 = 0.0f;
     float t1 = 0.0f;
     float far = 0.0f;
-    if (sphere(p, sun, base + thickness * (1.0f + vary), t0, t1))
-      far = max(t1, 0.0f);
-    far = min(far, min(6.0f * thickness / max(sun.y, 0.08f), 12000.0f));
+    if (volume == 1) {
+      if (boxHit(toLocal(p - vc), toLocal(sun), t0, t1))
+        far = max(t1, 0.0f);
+      far = min(far, 12000.0f);
+    } else {
+      if (sphere(p, sun, base + thickness * (1.0f + vary), t0, t1))
+        far = max(t1, 0.0f);
+      far = min(far, min(6.0f * thickness / max(sun.y, 0.08f), 12000.0f));
+    }
     int steps = max(int(6.0f * quality), 2);
     float od = 0.0f;
     float prev = 0.0f;
@@ -508,7 +705,13 @@ local:
       float i1s = 0.0f;
       float i1e = 0.0f;
       int n = 0;
-      if (sphere(cam, d, ht, a0, a1) && a1 > 0.0f) {
+      if (volume == 1) {
+        if (boxHit(toLocal(cam - vc), toLocal(d), a0, a1) && min(a1, tmax) > max(a0, 0.0f)) {
+          i0s = max(a0, 0.0f);
+          i0e = min(a1, tmax);
+          n = 1;
+        }
+      } else if (sphere(cam, d, ht, a0, a1) && a1 > 0.0f) {
         float s0 = max(a0, 0.0f);
         float s1 = min(a1, tmax);
         if (!sphere(cam, d, hb, b0, b1)) {
@@ -540,7 +743,8 @@ local:
       float3 col = float3(0.0f);
       float3 sunPart = float3(0.0f);
       float dep = 0.0f;
-      float minStep = max(min(thickness / 24.0f, detailSize * 0.35f) / quality, 8.0f);
+      float layerH = volume == 1 ? min(min(volSize.x, volSize.y), volSize.z) : thickness;
+      float minStep = max(min(layerH / 24.0f, detailSize * 0.35f) / quality, 8.0f);
       int maxSteps = int(220.0f * quality);
       for (int k = 0; k < n; k++) {
         float t = k == 0 ? i0s : i1s;
@@ -583,8 +787,12 @@ local:
               float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
               float3 direct = sunColor * (ms * powder);
               // Sky light from above, ground bounce from below.
-              float hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
-              float th = min(thickness, 1500.0f) * 0.12f;
+              float hn = 0.0f;
+              if (volume == 1)
+                volumeShape(p, hn);
+              else
+                hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
+              float th = min(layerH, 1500.0f) * 0.12f;
               float up = exp(-sig * (1.0f - hn) * th);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
