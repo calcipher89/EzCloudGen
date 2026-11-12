@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.8.0"
+VERSION = "0.9.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -582,9 +582,11 @@ def build_knobs(g):
     add(g, nuke.Text_Knob("map_divider", "coverage map"))
     add(g, nuke.Text_Knob("map_help", "",
                           "Plug a picture into 'map' to say where the decks have clouds, as seen\n"
-                          "through the camera on 'map frame': white covers the sky, mid grey keeps\n"
-                          "the layer's coverage, black clears it. Paint it with a Roto over the plate,\n"
-                          "soft and blurred. It stays put in the world and drifts with the wind."))
+                          "through the camera on 'map frame': white piles up clouds, mid grey keeps\n"
+                          "the layer's coverage, black clears it. It marks where the clouds stand on the\n"
+                          "layer (at its middle height), and white heaps them into domes. Paint it with\n"
+                          "a Roto over the plate, soft and blurred. It stays put in the world and drifts\n"
+                          "with the wind."))
     k = add(g, nuke.Int_Knob("map_frame", "map frame"), "The frame the map is painted on.")
     k.setValue(int(nuke.root()["first_frame"].value()))
     add(g, nuke.PyScript_Knob("map_frame_here", "use this frame",

@@ -482,7 +482,10 @@ local:
       float w = i < n ? 1.0f : oct - float(n);
       if (w <= 0.0f)
         break;
-      float b = billow > 0.0f ? 1.0f - worley3(x, y, z) : 0.0f;
+      // 1 - d^2 (less 0.22 to keep the mean at 1 - d's): round caps rather than cones, so the
+      // billows read as soft cauliflower instead of sand.
+      float d = billow > 0.0f ? worley3(x, y, z) : 1.0f;
+      float b = billow > 0.0f ? 0.78f - d * d : 0.0f;
       float v = billow < 1.0f ? vnoise3(x * 1.3f, y * 1.3f, z * 1.3f) : 0.0f;
       s += amp * w * (billow * b + (1.0f - billow) * v);
       tot += amp * w;
@@ -559,18 +562,35 @@ local:
       // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
       // the painted area as one solid mass), black clears. The lookup is warped by the cloud
       // noise at the cloud size and again at a quarter of it, so the edges billow instead of
-      // taking the painted outline.
+      // taking the painted outline. The map is read at the layer's middle height for every
+      // height, so it paints a footprint on the layer that the clouds rise from, rather than
+      // a wedge along the camera's rays (a slab, or stacked shelves from a moved camera).
       float ws = sc * max(warp, 0.5f) * 0.8f;
       float hs = sc * 0.8f;
       float hx = fbm2(u * 4.0f + 17.0f, v * 4.0f + 2.0f, 3.0f, sd) - 0.5f;
       float hz = fbm2(u * 4.0f + 23.0f, v * 4.0f + 11.0f, 3.0f, sd) - 0.5f;
-      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, p.y, p.z + wz * ws + hz * hs));
+      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, base + 0.5f * thickness, p.z + wz * ws + hz * hs));
       if (m >= 0.0f) {
-        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (0.8f - coverage) * (2.0f * m - 1.0f);
+        // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
+        // instead of being extruded straight up into walls.
+        float n = clamp((p.y - base) / max(thickness, 1.0f), 0.0f, 1.0f);
+        m *= 1.0f - 0.8f * n * (1.0f - m);
+        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (0.6f - coverage) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(mapAmount, 1.0f);
       }
     }
     float c = f - (0.82f - 0.55f * cov);
+    if (cov > coverage) {
+      // Where the map adds coverage, the 2D noise alone would stand in straight columns all the
+      // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
+      float L = max(thickness, 100.0f) * 0.7f;
+      float hb = min((cov - coverage) * 4.0f, 1.0f);
+      c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
+      // And the thick middles are eased back, so the profile and taper round their tops at
+      // different heights instead of all of them reaching the layer's top as one flat lid.
+      if (c > 0.0f)
+        c -= hb * c * c / (c + 0.3f);
+    }
     if (cells > 0.0f) {
       float cs = cellKm * 1000.0f;
       float cu = (X * ca + Z * sa) / cs;
@@ -623,14 +643,31 @@ local:
       dist = sqrt(sx * sx + sy * sy + sz * sz);
     } else if (volShape == 1) {
       // Dome: a flat base, rounding to the top (cumulus).
-      float r = sqrt(max(1.0f - hs * hs, 0.0f));
+      // The base is a little narrower than the body, so the lobes overhang it.
+      float r = sqrt(max(1.0f - hs * hs, 0.0f)) * (0.82f + 0.18f * sstep(0.0f, 0.3f, hs));
       dist = rxz / max(r, 1e-3f);
       dist = max(dist, 1.0f - hn / max(bottomRound, 0.02f));
     } else if (volShape == 2) {
-      // Anvil: a column that spreads into a flat top.
-      float r = 0.54f - 0.12f * sstep(0.0f, 0.3f, hs) + 0.58f * sstep(0.72f, 0.95f, hs);
-      dist = max(rxz / max(r, 1e-3f), 1.0f - hn / max(bottomRound, 0.02f));
-      dist = max(dist, sstep(0.93f, 1.0f, hs) * 1.2f);
+      // Cumulonimbus: a broad tower with a flat base, spreading into an anvil. The anvil is a
+      // lens that thins to its rim (its underside slopes up), pushed a little downwind (local
+      // +x), with an overshooting dome above the tower.
+      float sh = hn * 1.18f;
+      float rc = 0.42f - 0.05f * sstep(0.0f, 0.6f, sh);
+      float dCol = max(rxz / rc, 1.0f - hn / max(bottomRound, 0.02f));
+      dCol = max(dCol, 1.0f + (sh - 0.76f) / 0.12f);
+      // Spreads further downwind (local +x) than upwind, with a ragged rim.
+      float ax = (sx - 0.05f) / (sx > 0.05f ? 1.15f : 0.8f);
+      float rim = 1.0f + 0.5f * (fbm2(ax * 2.2f + 31.0f + sd, sz * 2.2f, 3.0f, sd) - 0.5f);
+      float rr = sqrt(ax * ax + sz * sz) / (0.95f * rim);
+      float top = 0.86f - 0.08f * rr * rr + 0.14f * exp(-rxz * rxz / 0.06f);
+      // The underside sags near the tower.
+      float bot = 0.66f + 0.12f * rr - 0.05f * exp(-rxz * rxz / 0.3f);
+      float mid = 0.5f * (top + bot);
+      float half = max(0.5f * (top - bot), 1e-3f);
+      // The underside fades over a longer distance than the top: softer, more ragged.
+      float dv = sh < mid ? (mid - sh) / (half * 1.5f) : (sh - mid) / half;
+      float dLens = max(rr, dv);
+      dist = min(dCol, dLens);
     } else {
       // Box with soft corners.
       float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
@@ -643,7 +680,13 @@ local:
       float wy = q.y * vh.y;
       float wz = q.z * vh.z + offset.y;
       float ls = max(lumpSize, 10.0f);
-      c += lumps * (fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd) * 0.5f + vnoise3(wx / ls, wy / ls, wz / ls) * 0.5f - 0.5f) * 0.45f;
+      // Rounded lobes (inverted Worley, 1 - d^2) on a smooth swell: cauliflower turrets. The
+      // anvil's top keeps few, so it stays a smooth sheet.
+      float ld = worley3(wx / ls + sd * 3.1f, wy / ls, wz / ls);
+      float lob = 0.78f - ld * ld;
+      float sw = fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd);
+      float la = lumps * (volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
+      c += la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
     }
     // Fade out before the walls, so nothing is cut off flat by them.
     // Round across (so the corners never show) and over the top and base.
@@ -709,8 +752,11 @@ local:
       c -= profile(hn);
     }
     float e = max(edge, 1e-3f);
-    if (cheap)
-      return clamp(c / e, 0.0f, 1.0f);
+    if (cheap) {
+      // The light march sees a softer shape (it has no detail to break the edges up): a hard
+      // one makes its few coarse steps band the shading into flat patches.
+      return clamp((c + 0.03f) / (e + 0.12f), 0.0f, 1.0f);
+    }
     float reach = 0.12f * (erosion + wispAmount + grainAmount);
     if (c < -reach)
       return 0.0f;
@@ -741,10 +787,12 @@ local:
       wy += uy * sw * 2.0f;
       wz += uz * sw * 2.0f;
     }
-    if (erosion > 0.0f) {
+    // An anvil's top is a smooth, spreading ice sheet: fewer billows there.
+    float er = erosion * (volume == 1 && volShape == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f);
+    if (er > 0.0f) {
       float oct = lod(detailSize, foot, octaves);
       if (oct > 0.0f)
-        c += erosion * (detail3(wx / detailSize, wy / detailSize, wz / detailSize, oct) - 0.5f) * 0.24f;
+        c += er * (detail3(wx / detailSize, wy / detailSize, wz / detailSize, oct) - 0.5f) * 0.24f;
     }
     // Wisps and grain eat the thin edges more than the cores.
     float thin = 1.0f - clamp(c / (3.0f * e), 0.0f, 1.0f);
