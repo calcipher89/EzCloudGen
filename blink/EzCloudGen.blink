@@ -838,8 +838,11 @@ local:
     return (1.0f - gg) / (4.0f * pi * pow(1.0f + gg - 2.0f * g * c, 1.5f));
   }
 
-  // Optical depth towards the sun from p, inside the layer.
-  float sunDepth(float3 p, float foot, float sd)
+  // Optical depth towards the sun from p, inside the layer. Its loop also takes two cheap
+  // probes straight up, h1 and h2 above p, and returns their density times length in occ (sky
+  // occlusion). They share the loop's one cloud() call: Blink inlines cloud() at every call
+  // site, and a separate call made the kernel take minutes to compile on the CPU.
+  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -856,12 +859,29 @@ local:
     int steps = max(int(6.0f * quality), 2);
     float od = 0.0f;
     float prev = 0.0f;
-    for (int i = 0; i < steps; i++) {
-      float f = (float(i) + 0.5f) / float(steps);
-      float t = far * f * f;
-      float dt = t - prev;
-      prev = t;
-      od += cloud(p + sun * t, foot + t * 0.02f, i > 1, sd) * dt;
+    occ = 0.0f;
+    for (int i = 0; i < steps + 2; i++) {
+      float3 q;
+      float fq;
+      float len;
+      if (i < steps) {
+        float f = (float(i) + 0.5f) / float(steps);
+        float t = far * f * f;
+        len = t - prev;
+        prev = t;
+        q = p + sun * t;
+        fq = foot + t * 0.02f;
+      } else {
+        float h = i == steps ? h1 : h2;
+        len = i == steps ? h1 : h2 - h1;
+        q = p + float3(0.0f, h, 0.0f);
+        fq = foot + h * 0.05f;
+      }
+      float dn = cloud(q, fq, i > 1, sd) * len;
+      if (i < steps)
+        od += dn;
+      else
+        occ += dn;
     }
     return od;
   }
@@ -1049,7 +1069,10 @@ local:
             float w = T * (1.0f - ext);
             dep += w * tm;
             if (output != 2 && output != 4) {
-              float od = sunDepth(p, foot, sd) * sig0;
+              float h1 = min(layerH, 3000.0f) * 0.05f;
+              float h2 = min(layerH, 3000.0f) * 0.2f;
+              float occU = 0.0f;
+              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0;
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
               float oa = 1.0f;
@@ -1072,18 +1095,8 @@ local:
               else
                 hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
               float th = min(layerH, 1500.0f) * 0.12f;
-              // Sky occlusion: how much cloud sits just above (two cheap probes up), so folds
-              // and undersides darken instead of the whole cloud taking one flat sky tint.
-              float h1 = min(layerH, 3000.0f) * 0.05f;
-              float h2 = min(layerH, 3000.0f) * 0.2f;
-              // One call site in a loop: Blink inlines cloud() at every call, and two more
-              // copies make the kernel take many minutes to compile.
-              float occU = 0.0f;
-              for (int pi = 0; pi < 2; pi++) {
-                float ph = pi == 0 ? h1 : h2;
-                float pl = pi == 0 ? h1 : h2 - h1;
-                occU += cloud(p + float3(0.0f, ph, 0.0f), foot + ph * 0.05f, true, sd) * pl;
-              }
+              // Sky occlusion (the two probes above, from sunDepth): folds and undersides
+              // darken by the cloud overhead instead of all taking one flat sky tint.
               occU *= sig0 * 0.5f;
               float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
