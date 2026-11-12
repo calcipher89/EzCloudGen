@@ -39,7 +39,7 @@
 //           along the ray moves with the wind (decks) or with the box (volumes), and is projected
 //           through the other frame's camera. No lighting, so it is cheap.
 // output 5: the sun map, for the other layers: along the ray from the ground up towards the sun
-//           (see sunMapUV), r = this layer's optical depth, g and b = its first and second
+//           (see tauAbove), r = this layer's optical depth, g and b = its first and second
 //           moments of altitude in km (sum of optical depth x km, x km^2). Maps of several
 //           layers add up. Another layer reads the sum of the others' maps as `smap`
 //           (use_sun_map) and dims its direct sun by the part of the optical depth above the
@@ -826,25 +826,36 @@ local:
 
   // ---- Shadows from the other layers ------------------------------------------------------
 
-  // The sun map: a layer's transmittance towards the sun, seen from the ground. Texel (u, v) in
+  // The sun map: a layer's optical depth towards the sun, seen from the ground. Texel (u, v) in
   // -1..1 is the ground point g = uv * size / (1 - |uv|) (kernel frame, metres; fine near the
-  // camera, coarse far away). sunMapUV is its inverse for any point p: slide p down the sun's
-  // ray to the ground.
-  float2 sunMapUV(float3 p)
+  // camera, coarse far away), so ground point g is at uv = g / (|g| + size). A point p reads
+  // the texel where its sun ray meets the ground (see tauAbove).
+
+  // One sun map texel's optical depth above altitude altKm, at ground point g (kernel frame).
+  // The texel holds the optical depth along the sun ray and its altitude moments; the occluder
+  // is taken as a uniform slab (mean +- sqrt(3) sd), and only the part above altKm counts.
+  // Also gives the occluder's mean altitude (km), or -1 where there is none.
+  float sunMapTau(float2 g, float altKm, float w, float h, float &meanKm)
   {
-    float up = max(sun.y, 0.03f);
-    float gx = p.x - sun.x / up * p.y;
-    float gz = p.z - sun.z / up * p.y;
-    float r = sqrt(gx * gx + gz * gz);
-    float k = 1.0f / (r + sunMapSize);
-    return float2(gx * k, gz * k);
+    float k = 1.0f / (sqrt(g.x * g.x + g.y * g.y) + sunMapSize);
+    float4 m = bilinear(smap, smap.bounds.x1 + (g.x * k * 0.5f + 0.5f) * w - 0.5f,
+                        smap.bounds.y1 + (g.y * k * 0.5f + 0.5f) * h - 0.5f);
+    float tau = m.x;
+    meanKm = -1.0f;
+    if (tau < 1e-4f)
+      return 0.0f;
+    float mean = m.y / tau;
+    meanKm = mean;
+    float hw = sqrt(3.0f * max(m.z / tau - mean * mean, 0.0f)) + 0.02f;
+    float f = clamp((altKm - (mean - hw)) / (2.0f * hw), 0.0f, 1.0f);
+    return tau * (1.0f - f);
   }
 
-  // The other layers' optical depth between p and the sun (0 without a sun map). Each sun map
-  // texel holds the optical depth along the sun ray and its altitude moments; the occluder is
-  // taken as a uniform slab (mean +- sqrt(3) sd), and only the part above p shades it. It joins
-  // the layer's own sun depth in the multiple scattering octaves, so a thick layer above dims
-  // the sun to a soft glow instead of black, as real cloud shadows on cloud do.
+  // The other layers' optical depth between p and the sun (0 without a sun map). It joins the
+  // layer's own sun depth in the multiple scattering octaves, so a thick layer above dims the
+  // sun to a soft glow instead of black. Light through a cloud layer is mostly scattered
+  // forwards a few degrees, so its shadow blurs with the gap below it: five taps spread about
+  // 0.12 m per metre of gap (and at least a texel), instead of streaks of hard shadow columns.
   float tauAbove(float3 p)
   {
     if (useSunMap != 1 || sun.y <= 0.0f)
@@ -853,16 +864,21 @@ local:
     float h = float(smap.bounds.height());
     if (w < 2.0f || h < 2.0f)
       return 0.0f;
-    float2 uv = sunMapUV(p);
-    float4 m = bilinear(smap, smap.bounds.x1 + (uv.x * 0.5f + 0.5f) * w - 0.5f,
-                        smap.bounds.y1 + (uv.y * 0.5f + 0.5f) * h - 0.5f);
-    float tau = m.x;
-    if (tau < 1e-4f)
-      return 0.0f;
-    float mean = m.y / tau;
-    float hw = sqrt(3.0f * max(m.z / tau - mean * mean, 0.0f)) + 0.02f;
-    float f = clamp((altitude(p) * 0.001f - (mean - hw)) / (2.0f * hw), 0.0f, 1.0f);
-    return tau * (1.0f - f);
+    float up = max(sun.y, 0.03f);
+    float2 g = float2(p.x - sun.x / up * p.y, p.z - sun.z / up * p.y);
+    float altKm = altitude(p) * 0.001f;
+    float meanKm = -1.0f;
+    float tau = sunMapTau(g, altKm, w, h, meanKm);
+    float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
+    float rg = sqrt(g.x * g.x + g.y * g.y) + sunMapSize;
+    float texel = 2.0f * rg * rg / (sunMapSize * w);
+    float r = max(120.0f * gapKm, texel);
+    float mk = 0.0f;
+    tau += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x, g.y + r), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x, g.y - r), altKm, w, h, mk);
+    return tau * 0.2f;
   }
 
   // ---- Rays ---------------------------------------------------------------------------------
@@ -1025,7 +1041,7 @@ local:
       // The smallest detail worth marching: half a metre, or a sun map texel on the ground.
       float footMin = 0.5f;
       if (output == 5) {
-        // The sun map (see sunMapUV): march from this texel's ground point up towards the sun;
+        // The sun map (see sunMapTau): march from this texel's ground point up towards the sun;
         // the main march's transmittance is the answer, with no lighting.
         float mu = u * 2.0f - 1.0f;
         float mv = v * 2.0f - 1.0f;
