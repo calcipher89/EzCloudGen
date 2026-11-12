@@ -833,6 +833,9 @@ local:
       }
       float sw = fbm2(lx / ls + 5.3f, lz / ls, 2.0f, sd);
       float la = lumps * (volume == 1 && volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
+      // A skirt's base is soft and even: the lobes die away into it, or from below their cells
+      // show as a regular dimpled pattern.
+      la *= 1.0f - 0.8f * min(skirt, 1.0f) * (1.0f - sstep(0.0f, 0.3f, hn));
       float add = la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
       // On a deck the lobes only swell cloud that is already there: out in the clear air
       // between the clouds they would make loose floating balls.

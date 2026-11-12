@@ -58,7 +58,8 @@ and Cumulus Congestus use them), and 'small lumps' adds a second set a bit under
 riding on them, for cauliflower heads. Cumulus keep a flat base: the lobes run straight down to it
 from a fifth of the way up, and the base itself is thin and ragged, not a plate.
 'skirt' (after 'small lumps') gives smooth, firm billows on top and a wide, soft skirt of wisps
-around the base: it calms the erosion higher up, and widens the edge and feeds the wisps low down.
+around the base: it calms the erosion higher up, and widens the edge and feeds the wisps low down;
+the lobes die away into the base, so it stays soft and even from below.
 The Soft Cumulus type uses it, with more sky light, for a softer, more photographic cloud (see the
 SoftCloud demo).
 'edge steps' (main tab, by 'quality'; default 3) takes finer ray steps where a ray meets cloud, and
