@@ -70,6 +70,9 @@ SETUPS = [
      {"sun_direction": sun(44, -90), "light_from": "Manual", "sun_color": "8.4 7.5 6.2",
       "sky_color": "0.36 0.47 0.72", "ground_color": "0.3 0.3 0.3", "samples": 4,
       "_bg": "Nsoftsky", "_cam": "Nsoftcam"}),
+    ("FlyThrough", "Fly-through (its own camera, FlyCam, 1001-1024): climbs to 3 km and dives back through a Stratocumulus deck; the clouds stay put in the world and nothing trims them",
+     [("Stratocumulus", {"coverage": 0.6}), None, None],
+     {"sun_direction": sun(25, 30), "horizon_haze": 1, "_cam": "Nflycam"}),
 ]
 
 
@@ -161,6 +164,7 @@ def main():
             '10 CanyonFog: overcast canyon (its own camera, CanyonCam): ground fog, torn low cloud, a close wisp.\\n'
             '11 HighCam: GoldenHour from 1130 m up (its own camera, HighCam): the decks reach the horizon.\\n'
             '12 SoftCloud: one Soft Cumulus, on a long lens (its own camera, SoftCam) over a hazy sky.\\n'
+            '13 FlyThrough: its own camera (FlyCam) climbs to 3 km and dives back through a Stratocumulus deck, 1001-1024.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
             'view shows Comp / Clouds / Sun share / Depth / Variations / Shadow, resolution Half (Full for finals).\\n'
             'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky, cloud_shadow,\\n'
@@ -232,9 +236,9 @@ def main():
             " name CanyonPlate", " label \"stand-in canyon plate with depth.Z\"",
             " xpos 3200", " ypos -200", "}",
             "set Ncanyon [stack 0]",
-            # The high setup: the GoldenHour decks from 1130 m up (the earth's horizon dips about
-            # 1.1 degrees there). The plate has hazy ground below the horizon, since the clouds
-            # stop where the view meets the ground.
+            # The high setup: the GoldenHour decks from 1130 m up. The plate has hazy ground below
+            # the horizon, drawn from the camera's tilt and height: at eye level with a Flat earth,
+            # dipping with height with a Curved one, so moving the camera never opens a gap.
             "Camera2 {", " inputs 0",
             " translate {0 11300 0}",
             " rotate {18 {curve x1001 0 x1100 12} 0}",
@@ -244,7 +248,8 @@ def main():
             "push $Nsky",
             "Expression {",
             " temp_name0 elev",
-            " temp_expr0 {18 + degrees(atan((y / height - 0.5) * 20.25 / 24)) + 1.08}",
+            " temp_expr0 {HighCam.rotate.x + degrees(atan((y / height - 0.5) * 20.25 / 24)) + "
+            "(HighCam1.earth ? degrees(acos(6371000 / (6371000 + max(HighCam.translate.y * 0.1, 0)))) : 0)}",
             " temp_name1 gnd",
             " temp_expr1 {clamp(-elev / 0.25 + 0.5, 0, 1)}",
             " temp_name2 far",
@@ -280,7 +285,16 @@ def main():
             " expr2 {lerp(b, 0.82, hz)}",
             " name SoftPlate", " label \"stand-in plate: sky paling into haze\"",
             " xpos 5000", " ypos -200", "}",
-            "set Nsoftsky [stack 0]"]
+            "set Nsoftsky [stack 0]",
+            # The fly-through: climbs from 300 m to 3 km and dives back down through the
+            # Stratocumulus deck (1.3-1.9 km) while flying 4 km forward, frames 1001-1024.
+            "Camera2 {", " inputs 0",
+            " translate {0 {curve x1001 3000 x1012 30000 x1024 3000} {curve x1001 0 x1024 -40000}}",
+            " rotate {{curve x1001 6 x1012 -8 x1024 6} 0 0}",
+            " focal 24", " haperture 36", " vaperture 20.25",
+            " name FlyCam", " label \"climbs 300 m to 3 km and dives back, 1001-1024\"",
+            " xpos 5600", " ypos -300", "}",
+            "set Nflycam [stack 0]"]
     viewer_inputs = []
     for i, (name, label, layers, knobs) in enumerate(SETUPS):
         x = 200 + i * 400
