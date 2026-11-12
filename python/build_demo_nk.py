@@ -1,4 +1,4 @@
-"""Write examples/EzCloudGen_demo.nk: six cloud setups (two with placed volumes) through a moving shot camera.
+"""Write examples/EzCloudGen_demo.nk: seven cloud setups (three with placed volumes, one with a depth plate) through a moving shot camera.
 
 Plain Python, no Nuke needed: each setup is a copy of the Nuke-built
 groups/EzCloudGen_group.nk with its own knob values added to the group's knobs.
@@ -48,6 +48,9 @@ SETUPS = [
     ("StormFront", "Storm anvil far off, fog bank rolling in low, cirrus above",
      [("Storm Anvil", {"across": -3, "place_km": 30}), ("Fog Bank", {"place_km": 7}), ("Cirrus", {})],
      {"sun_direction": sun(18, -45), "sun_intensity": 0.8}),
+    ("Mountains", "Mountains with depth: clouds go behind the ridge and shadow it",
+     [("Cumulus", {"coverage": 0.5}), ("Hero Cumulus", {"across": 1.5, "place_km": 6}), ("Altocumulus", {})],
+     {"sun_direction": sun(32, 75), "_bg": "Nridge"}),
 ]
 
 
@@ -74,6 +77,8 @@ def group_text():
 def instance(body, name, layers, knobs, x, y):
     lines = ["xpos %d" % x, "ypos %d" % y, "resolution Half", "samples 2"]
     for k, v in knobs.items():
+        if k.startswith("_"):
+            continue
         lines.append("%s %s" % (k, ("{%s}" % v) if isinstance(v, str) and " " in v else v))
     for i, layer in enumerate(layers):
         p = "l%d_" % (i + 1)
@@ -115,14 +120,16 @@ def main():
            ' format "1920 1080 0 0 1920 1080 1 HD_1080"',
            "}"]
     for layer in ("cloud cloud.red cloud.green cloud.blue cloud.alpha", "cloud_sun cloud_sun.red cloud_sun.green cloud_sun.blue",
-                  "cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue"):
+                  "cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue",
+                  "cloud_shadow cloud_shadow.red cloud_shadow.green cloud_shadow.blue"):
         out.append("add_layer {%s}" % layer)
     out += ["StickyNote {", " inputs 0", " name ReadMe",
             ' label "EzCloudGen demo: synthetic, no files read. The scene is in decimetres (units to metres 0.1).\\n'
             'The shot camera is 300 m up and pans 12 degrees over 1001-1100; the clouds drift with the wind.\\n'
-            'View 1-6 in the Viewer for the six setups (5 and 6 use placed volumes). Each EzCloudGen: Layer tabs have the type menu,\\n'
-            'view shows Comp / Clouds / Sun share / Depth, resolution Half (Full for finals).\\n'
-            'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky."',
+            'View 1-7 in the Viewer for the seven setups (5-7 use placed volumes; 7 has a mountain ridge with depth.Z,\\n'
+            'so the clouds go behind it and shadow it). Each EzCloudGen: Layer tabs have the type menu,\\n'
+            'view shows Comp / Clouds / Sun share / Depth / Variations / Shadow, resolution Half (Full for finals).\\n'
+            'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky, cloud_shadow."',
             " note_font_size 18", " xpos 0", " ypos -420", "}",
             "Camera2 {", " inputs 0",
             " translate {0 3000 0}",
@@ -132,7 +139,27 @@ def main():
             "set Ncam [stack 0]",
             "Constant {", " inputs 0", " channels rgba", " color {0.1 0.2 0.48 1}",
             " name SkyBackdrop", " label \"stand-in sky (your plate or HDRI goes here)\"", " xpos 200", " ypos -200", "}",
-            "set Nsky [stack 0]"]
+            "set Nsky [stack 0]",
+            # A stand-in plate with depth: a ridge about 8 km away (Planar Z in decimetres), fixed in
+            # the world by working out each pixel's elevation and azimuth from the camera's pan.
+            "Expression {",
+            " temp_name0 elev",
+            " temp_expr0 {18 + degrees(atan((y / height - 0.5) * 20.25 / 24))}",
+            " temp_name1 az",
+            " temp_expr1 {ShotCamera.rotate.y - degrees(atan((x / width - 0.5) * 36 / 24))}",
+            " temp_name2 top",
+            " temp_expr2 {2.2 + 1.3 * sin(radians(az * 9)) + 0.5 * sin(radians(az * 23 + 40))}",
+            " channel0 {rgba.red -rgba.green -rgba.blue none}",
+            " expr0 {elev < top ? 0.05 : r}",
+            " channel1 {-rgba.red rgba.green -rgba.blue none}",
+            " expr1 {elev < top ? 0.065 : g}",
+            " channel2 {-rgba.red -rgba.green rgba.blue none}",
+            " expr2 {elev < top ? 0.06 : b}",
+            " channel3 depth",
+            " expr3 {elev < top ? 80000 : 0}",
+            " name MountainRidge", " label \"stand-in plate with depth.Z (a ridge 8 km away)\"",
+            " xpos 2600", " ypos -200", "}",
+            "set Nridge [stack 0]"]
     viewer_inputs = []
     for i, (name, label, layers, knobs) in enumerate(SETUPS):
         x = 200 + i * 400
@@ -140,7 +167,7 @@ def main():
                 " note_font_size 20", " tile_color 0x3a5a4aff", " xpos %d" % (x - 60), " ypos -40",
                 " bdwidth 360", " bdheight 220", "}"]
         # Inputs: sun (none), atmos (none), camera, bg; the last pushed is input 0.
-        out += ["push 0", "push 0", "push $Ncam", "push $Nsky"]
+        out += ["push 0", "push 0", "push $Ncam", "push $%s" % knobs.get("_bg", "Nsky")]
         out.append(instance(body, name, layers, knobs, x, 60))
         out.append("set N%s [stack 0]" % name)
         viewer_inputs.append(name)
