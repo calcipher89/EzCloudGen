@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.15.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.16.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -53,6 +53,10 @@ cloud: 0 glows right through with soft, luminous shadows, 1 keeps the folds and 
 Anvil uses 0.7; the rest 0). Backlit edges keep their silver lining. With Manual light, 'haze
 color' is tinted half way towards the sky colour's hue, so far clouds fade cool into the air
 instead of into flat grey.
+'lumps' and 'lump size' break a layer into big rounded lobes, on decks as well as volumes (Cumulus
+and Cumulus Congestus use them), and 'small lumps' adds a second set a bit under half the size
+riding on them, for cauliflower heads. Cumulus keep a flat base: the lobes run straight down to it
+from a fifth of the way up, and the base itself is thin and ragged, not a plate.
 'edge steps' (main tab, by 'quality'; default 3) takes finer ray steps where a ray meets cloud, and
 the sun's shadow march takes 10 steps (was 6), so surfaces and edges come out clean instead of
 grainy at one sample; it costs roughly 1.5 to 2 times the render time, and the preview turns it

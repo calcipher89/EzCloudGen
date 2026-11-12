@@ -9,7 +9,7 @@ DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, win
                 cell_km=0.5, warp=1.5, g=0.8, ambient=1.0, sky_occ=1.0, shadow=0.0, octaves=3, billow=1.0, streaks=0.0, vary=0.0,
                 # Placed volumes (volume=1): shape 0 ellipsoid, 1 dome, 2 anvil, 3 box; size in m (full);
                 # place_km: how far in front of the camera 'place in front of camera' puts it.
-                volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.5, lump_size=600, place_km=10,
+                volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.0, lump_size=600, small_lumps=0.0, place_km=10,
                 # Erosion stack (billows are detail/erosion above).
                 wisp_size=60, wisp_amount=0.0, grain_size=15, grain_amount=0.0, swirl=0.0, swirl_size=400,
                 turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0,
@@ -21,7 +21,7 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
               detail="detail_size", erosion="erosion", sigma="sigma", cells="cells", cell_km="cell_km",
               warp="warp", g="forward", ambient="ambient", sky_occ="sky_occlusion", shadow="shadow_depth", octaves="octaves", billow="billow",
               streaks="streaks", vary="vary", volume="volume", vol_shape="vol_shape", vol_size="vol_size",
-              lumps="lumps", lump_size="lump_size", place_km="place_km", wisp_size="wisp_size",
+              lumps="lumps", lump_size="lump_size", small_lumps="small_lumps", place_km="place_km", wisp_size="wisp_size",
               wisp_amount="wisp_amount", grain_size="grain_size", grain_amount="grain_amount", swirl="swirl",
               swirl_size="swirl_size", turbulence="turbulence", crumble="crumble", crumble_size="crumble_size",
               shear="shear", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
@@ -30,11 +30,12 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
 TYPES = {
     # Fair weather cumulus: flat bases, cauliflower domes, blue gaps.
     "Cumulus": dict(base=1400, thick=1300, coverage=0.42, scale=1.6, edge=0.06, taper=0.85, bottom=0.04,
-                     top=0.15, detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3.5, billow=1.0),
+                     top=0.15, detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3.5, billow=1.0,
+                     lumps=0.45, lump_size=450, small_lumps=0.3),
     # Towering cumulus: tall, few, hard edged.
     "Cumulus Congestus": dict(base=1400, thick=4200, coverage=0.42, scale=2.2, edge=0.05, taper=1.4,
                                bottom=0.02, top=0.12, detail=420, erosion=0.4, sigma=0.07, warp=1.0,
-                               octaves=4, billow=1.0),
+                               octaves=4, billow=1.0, lumps=0.5, lump_size=800, small_lumps=0.35),
     # Stratocumulus: low lumpy deck with gaps (the EzCloudShafts demo look).
     "Stratocumulus": dict(base=1300, thick=600, coverage=0.66, scale=1.1, stretch=1.4, edge=0.16,
                            taper=0.35, bottom=0.15, top=0.35, detail=120, erosion=0.45, sigma=0.035,
@@ -64,7 +65,7 @@ TYPES = {
     "Hero Cumulus": dict(volume=1, vol_shape=1, vol_size=(5000, 2600, 4000), base=1400, lumps=0.8,
                          lump_size=900, place_km=12, coverage=0.5, edge=0.06, taper=0.0, bottom=0.04,
                          detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3, billow=1.0,
-                         wisp_size=80, wisp_amount=0.12, grain_size=20, grain_amount=0.08),
+                         wisp_size=80, wisp_amount=0.08, grain_size=20, grain_amount=0.04, small_lumps=0.35),
     # A thunderstorm: a tall column spreading into a flat anvil, leaning downwind.
     "Storm Anvil": dict(volume=1, vol_shape=2, vol_size=(15000, 11000, 15000), base=1200, lumps=0.6,
                         lump_size=1500, place_km=40, coverage=0.5, edge=0.05, bottom=0.02, detail=450,
@@ -96,7 +97,7 @@ TYPES = {
     # A single small puff.
     "Puff": dict(volume=1, vol_shape=0, vol_size=(600, 450, 600), base=800, lumps=0.4, lump_size=150,
                  place_km=2, coverage=0.5, edge=0.08, detail=60, erosion=0.5, sigma=0.05, octaves=3,
-                 billow=1.0, wisp_size=20, wisp_amount=0.4, grain_size=6, grain_amount=0.3),
+                 billow=1.0, wisp_size=20, wisp_amount=0.4, grain_size=6, grain_amount=0.3, small_lumps=0.3),
 }
 
 

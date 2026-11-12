@@ -132,6 +132,7 @@ param:
   float3 volSize;
   float lumps;
   float lumpSize;
+  float lumps2;
   // Per-side fades of a volume: how far in from each face of the box (0..1 of the box) the
   // density is eaten away; the erosion noise then tears that margin up.
   float fadeTop;
@@ -261,6 +262,7 @@ local:
     defineParam(volSize, "vol_size", float3(3000.0f, 1800.0f, 3000.0f));
     defineParam(lumps, "lumps", 0.5f);
     defineParam(lumpSize, "lump_size", 600.0f);
+    defineParam(lumps2, "small_lumps", 0.0f);
     defineParam(fadeTop, "fade_top", 0.0f);
     defineParam(fadeBottom, "fade_bottom", 0.0f);
     defineParam(fadeLeft, "fade_left", 0.0f);
@@ -711,20 +713,6 @@ local:
       dist = pow(pow(a.x, 6.0f) + pow(a.y, 6.0f) + pow(a.z, 6.0f), 1.0f / 6.0f);
     }
     float c = (1.0f - dist) * 0.3f + (coverage - 0.5f) * 0.3f;
-    if (lumps > 0.0f) {
-      // In the box's own frame (metres), so the cloud moves and turns with the box.
-      float wx = q.x * vh.x + offset.x;
-      float wy = q.y * vh.y;
-      float wz = q.z * vh.z + offset.y;
-      float ls = max(lumpSize, 10.0f);
-      // Rounded lobes (inverted Worley, 1 - d^2) on a smooth swell: cauliflower turrets. The
-      // anvil's top keeps few, so it stays a smooth sheet.
-      float ld = worley3(wx / ls + sd * 3.1f, wy / ls, wz / ls);
-      float lob = 0.78f - ld * ld;
-      float sw = fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd);
-      float la = lumps * (volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
-      c += la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
-    }
     // Fade out before the walls, so nothing is cut off flat by them.
     // Round across (so the corners never show) and over the top and base.
     float wall = max(sqrt(q.x * q.x + q.z * q.z), fabs(q.y));
@@ -776,17 +764,26 @@ local:
     float c = 0.0f;
     float alt = 0.0f;
     float height = thickness;
+    float lx = 0.0f;
+    float ly = 0.0f;
+    float lz = 0.0f;
+    float lreach = 0.3f * lumps * (1.0f + lumps2);
     if (volume == 1) {
       c = volumeShape(p, hn, sd);
-      if (c <= -0.15f)
+      if (c <= -0.15f - lreach)
         return 0.0f;
       alt = p.y;
       height = volSize.y;
+      // In the box's own frame (metres), so the cloud moves and turns with the box.
+      float3 lq = toLocal(p - vc);
+      lx = lq.x * vh.x + offset.x;
+      ly = lq.y * vh.y;
+      lz = lq.z * vh.z + offset.y;
     } else {
       alt = altitude(p);
       float b = base;
       c = weather(p, foot, sd);
-      if (c <= -0.12f)
+      if (c <= -0.12f - lreach)
         return 0.0f;
       if (vary > 0.0f) {
         float sv = scaleKm * 2500.0f;
@@ -798,6 +795,35 @@ local:
       if (hn <= 0.0f || hn >= 1.0f)
         return 0.0f;
       c -= profile(hn);
+      lx = p.x + camPosition.x * sceneScale + offset.x;
+      ly = alt - b - 0.5f * thickness;
+      lz = p.z + camPosition.z * sceneScale + offset.y;
+    }
+    if (lumps > 0.0f) {
+      // Lobes: rounded caps (inverted Worley, 1 - d^2) on a smooth swell, with a second, smaller
+      // set riding on them ('small lumps'): cauliflower turrets. An anvil's top keeps few, so
+      // it stays a smooth sheet. Cumulus (domes and decks) have flat bases: their lobes run
+      // straight down from a fifth of the way up, so the base has the body's scalloped outline
+      // rather than being a round plate under it, and the base itself is thinned and ragged.
+      bool flatBase = volume == 0 || volShape == 1;
+      float ls = max(lumpSize, 10.0f);
+      float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : -0.4f) * height) : ly;
+      float lob = 0.0f;
+      float lamp = 1.0f;
+      float lf = 1.0f;
+      for (int lo = 0; lo < 2; lo++) {
+        float ld = worley3(lx / ls * lf + sd * 3.1f + 13.7f * float(lo), lyl / ls * lf, lz / ls * lf);
+        lob += lamp * (0.78f - ld * ld - (lo > 0 ? 0.48f : 0.0f));
+        lamp *= lumps2;
+        lf *= 2.3f;
+        if (lamp <= 0.0f)
+          break;
+      }
+      float sw = fbm2(lx / ls + 5.3f, lz / ls, 2.0f, sd);
+      float la = lumps * (volume == 1 && volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
+      c += la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
+      if (flatBase)
+        c -= 0.1f * min(lumps, 1.0f) * (1.0f - sstep(0.0f, 0.14f, hn));
     }
     float e = max(edge, 1e-3f);
     if (cheap) {
