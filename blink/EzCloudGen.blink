@@ -33,6 +33,11 @@
 // output 3: rgb = ground shadow: how much of the sun this layer blocks at the bg's surface
 //           (0 lit, 1 fully shaded), a = 1 where the bg has a surface. Needs the bg depth.
 //
+// output 4: rg = motion vector, in pixels, to the frame the other* params describe (the next frame
+//           for forward vectors, the previous for backward), a = opacity. The clouds' mean point
+//           along the ray moves with the wind (decks) or with the box (volumes), and is projected
+//           through the other frame's camera. No lighting, so it is cheap.
+//
 // Occlusion: `zin` red is the bg's depth (scene units, as depthMode says). With occlude on, the
 // march stops at the bg's surface, so clouds go behind mountains and buildings. Depth of 0, or
 // beyond skyDepth, is sky. The tiles sheet ignores it.
@@ -137,6 +142,15 @@ param:
   int tiles;
   // Occlusion by the bg depth, and ground shadows.
   int occlude;
+  // Motion vectors: the camera, wind offset and volume centre on the other frame.
+  float3 otherRow0;
+  float3 otherRow1;
+  float3 otherRow2;
+  float3 otherPosition;
+  float otherFocal;
+  float otherHaperture;
+  float2 otherOffset;
+  float3 otherVolCenter;
   int depthMode;
   float skyDepth;
 
@@ -234,6 +248,14 @@ local:
     defineParam(occlude, "occlude", 0);
     defineParam(depthMode, "depth_mode", 0);
     defineParam(skyDepth, "sky_depth", 500000.0f);
+    defineParam(otherRow0, "other_row0", float3(1.0f, 0.0f, 0.0f));
+    defineParam(otherRow1, "other_row1", float3(0.0f, 1.0f, 0.0f));
+    defineParam(otherRow2, "other_row2", float3(0.0f, 0.0f, 1.0f));
+    defineParam(otherPosition, "other_position", float3(0.0f, 3000.0f, 0.0f));
+    defineParam(otherFocal, "other_focal", 24.0f);
+    defineParam(otherHaperture, "other_haperture", 36.0f);
+    defineParam(otherOffset, "other_offset", float2(0.0f, 0.0f));
+    defineParam(otherVolCenter, "other_vol_center", float3(0.0f, 20000.0f, -60000.0f));
   }
 
   void init()
@@ -963,7 +985,7 @@ local:
             float ext = exp(-sig * dt);
             float w = T * (1.0f - ext);
             dep += w * tm;
-            if (output != 2) {
+            if (output != 2 && output != 4) {
               float od = sunDepth(p, foot, sd) * sig0;
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
@@ -1003,6 +1025,36 @@ local:
       if (output == 2) {
         float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
+      } else if (output == 4) {
+        float2 mv = float2(0.0f, 0.0f);
+        if (alpha > 1e-5f && tiles <= 1) {
+          float3 p = cam + d * (dep / alpha);
+          // Where that bit of cloud is on the other frame (in this frame's kernel space).
+          if (volume == 1) {
+            p += float3((otherVolCenter.x - volCenter.x) * sceneScale, (otherVolCenter.y - volCenter.y) * sceneScale,
+                        (otherVolCenter.z - volCenter.z) * sceneScale);
+          } else {
+            // The field is sampled at x + offset, so the clouds move by minus its change.
+            p.x -= otherOffset.x - offset.x;
+            p.z -= otherOffset.y - offset.y;
+          }
+          float3 oc = float3((otherPosition.x - camPosition.x) * sceneScale,
+                             (otherPosition.y - groundHeight) * sceneScale,
+                             (otherPosition.z - camPosition.z) * sceneScale);
+          float3 rel = p - oc;
+          // Into the other camera: the transpose of its rotation.
+          float cx = otherRow0.x * rel.x + otherRow1.x * rel.y + otherRow2.x * rel.z;
+          float cy = otherRow0.y * rel.x + otherRow1.y * rel.y + otherRow2.y * rel.z;
+          float cz = otherRow0.z * rel.x + otherRow1.z * rel.y + otherRow2.z * rel.z;
+          if (cz < -1.0f) {
+            float ohap = otherHaperture;
+            float ovap = otherHaperture * frameSize.y / frameSize.x;
+            float ou = cx / -cz * otherFocal / ohap + 0.5f;
+            float ov = cy / -cz * otherFocal / ovap + 0.5f;
+            mv = float2((ou - u) * frameSize.x, (ov - v) * frameSize.y);
+          }
+        }
+        acc += float4(mv.x, mv.y, 0.0f, alpha);
       } else if (output == 1) {
         acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha);
       } else {

@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.5.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.6.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -44,6 +44,8 @@ Output: rgba (the comp, or a view), depth.Z (Planar Z of the clouds, scene units
 EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky, and
 cloud_shadow (how much sun the clouds block on the bg's surface, 1 fully shaded; needs its depth).
 The Comp view darkens the bg by 'shadow amount'; the Shadow view shows the shadows alone.
+With 'motion vectors' on: forward.u/v and backward.u/v, in pixels, for VectorBlur. They follow
+the camera, the wind drift and moving 3D boxes (the nearest layer wins where layers overlap).
 
 Building (in NukeX, it compiles the kernel and writes its hash):
 
