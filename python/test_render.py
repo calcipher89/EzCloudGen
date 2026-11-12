@@ -95,9 +95,13 @@ def main():
         if g[p + "volume"].value() > 0.5:
             g[p + "place"].execute()
 
+    # The fog types sit low: look level at them (the test camera is pitched 18 degrees up).
+    FOG = ("Ground Fog", "Wispy Fog", "Torn Low Cloud")
     for tname in cloud_types.TYPES:
+        cam["rotate"].setValue([2 if tname in FOG else 18, 0, 0])
         set_type("l1_", tname)
         render(tname.replace(" ", "_").lower())
+    cam["rotate"].setValue([18, 0, 0])
 
     # The erosion stack on a hero cumulus. Grain is finer than a pixel at the type's 12 km (the
     # kernel fades detail out by footprint), so grain is checked on a close hero at 4 km.
@@ -114,6 +118,30 @@ def main():
         if knob == "grain_amount":
             g["l1_place_km"].setValue(12)
             g["l1_place"].execute()
+
+    # Torn edges: crumble and turbulence on the torn low cloud, and the ground fog's per-side
+    # fades: with them off it fills more of its box.
+    cam["rotate"].setValue([2, 0, 0])
+    set_type("l1_", "Torn Low Cloud")
+    for knob in ("crumble", "turbulence"):
+        old = g["l1_" + knob].value()
+        g["l1_" + knob].setValue(0)
+        render("torn_low_cloud_no_" + knob)
+        g["l1_" + knob].setValue(old)
+    set_type("l1_", "Ground Fog")
+    fades = ("fade_top", "fade_bottom", "fade_left", "fade_right", "fade_front", "fade_back")
+    with_fades = mean_alpha()
+    olds = [g["l1_" + k].value() for k in fades]
+    for k in fades:
+        g["l1_" + k].setValue(0)
+    render("ground_fog_no_fades")
+    no_fades = mean_alpha()
+    for k, v in zip(fades, olds):
+        g["l1_" + k].setValue(v)
+    print("fades: ground fog alpha %.3f with, %.3f without" % (with_fades, no_fades))
+    if not with_fades < no_fades - 0.005:
+        raise RuntimeError("the per-side fades didn't thin the ground fog")
+    cam["rotate"].setValue([18, 0, 0])
 
     # Layer check: a deck, a hero volume in front of it, and cirrus, sorted by depth.
     set_type("l1_", "Cumulus")

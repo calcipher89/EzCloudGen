@@ -54,6 +54,11 @@ SETUPS = [
     ("PaintedSky", "Coverage map: clouds only where the map is painted white (a disc left, a band right)",
      [("Cumulus", {"coverage": 0.35}), None, ("Cirrus", {"coverage": 0.3})],
      {"sun_direction": sun(28, 30), "map_frame": 1001, "_map": True}),
+    ("CanyonFog", "Fog and torn low cloud drifting in front of a ridge, backlit (fog presets, per-side fades, crumble)",
+     [("Ground Fog", {"base": 60, "place_km": 4.5, "across": 0.5}),
+      ("Torn Low Cloud", {"base": 330, "place_km": 3, "across": -0.8}),
+      ("Wispy Fog", {"base": 180, "place_km": 1.8, "across": 0.4})],
+     {"sun_direction": sun(14, 20), "_bg": "Nridge"}),
 ]
 
 
@@ -142,6 +147,7 @@ def main():
             'Viewer inputs: 1-4 sky decks. 5 HeroVolume: layer 2 fills the wireframe Cube in its box2 input (move it in 3D).\\n'
             '6 StormFront. 7 Mountains: a ridge plate with depth.Z, so the clouds go behind it and shadow it (view Shadow),\\n'
             'with motion vectors on; 8 is its VectorBlur. 9 PaintedSky: a coverage map says where the clouds go.\\n'
+            '10 CanyonFog: ground fog, torn low cloud and wispy fog in front of a ridge, backlit.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
             'view shows Comp / Clouds / Sun share / Depth / Variations / Shadow, resolution Half (Full for finals).\\n'
             'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky, cloud_shadow,\\n'

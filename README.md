@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.11.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.12.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -39,7 +39,12 @@ TransformGeo, parented or tracked) into the layer's **box1/box2/box3** input: th
 that box and follows it. 'make 3D box' makes a wireframe Cube and plugs it in; view it with your
 camera and move, rotate and scale it in the 3D viewer ('release box' unplugs it, keeping the
 volume where it is). Every layer has the erosion stack: billows,
-wisps, grain, swirl and wind shear. Layers are put over each other nearest first, per pixel.
+wisps, grain, swirl, turbulence (a finer swirl that makes edges roll), crumble (chunks bitten
+out of the edges, for torn cloud and fog) and wind shear. A volume can also fade towards each
+face of its box ('fade top', 'fade bottom', left, right, front, back), so fog sits flat on the
+ground and tears away above it. The fog types (Ground Fog, Wispy Fog, Torn Low Cloud) are made
+for low cloud drifting through a valley; layer two or three at different distances for
+parallax. Layers are put over each other nearest first, per pixel.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).

@@ -12,7 +12,9 @@ DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, win
                 volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.5, lump_size=600, place_km=10,
                 # Erosion stack (billows are detail/erosion above).
                 wisp_size=60, wisp_amount=0.0, grain_size=15, grain_amount=0.0, swirl=0.0, swirl_size=400,
-                shear=0.0)
+                turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0,
+                # Per-side fades of a volume's box, 0..1 of the box in from that face.
+                fade_top=0.0, fade_bottom=0.0, fade_left=0.0, fade_right=0.0, fade_front=0.0, fade_back=0.0)
 
 KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_km", stretch="stretch",
               wind_deg="wind_deg", edge="edge", taper="taper", bottom="bottom_round", top="top_round",
@@ -21,7 +23,9 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
               streaks="streaks", vary="vary", volume="volume", vol_shape="vol_shape", vol_size="vol_size",
               lumps="lumps", lump_size="lump_size", place_km="place_km", wisp_size="wisp_size",
               wisp_amount="wisp_amount", grain_size="grain_size", grain_amount="grain_amount", swirl="swirl",
-              swirl_size="swirl_size", shear="shear")
+              swirl_size="swirl_size", turbulence="turbulence", crumble="crumble", crumble_size="crumble_size",
+              shear="shear", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
+              fade_right="fade_right", fade_front="fade_front", fade_back="fade_back")
 
 TYPES = {
     # Fair weather cumulus: flat bases, cauliflower domes, blue gaps.
@@ -71,6 +75,24 @@ TYPES = {
                      place_km=6, coverage=0.5, edge=0.3, bottom=0.4, detail=120, erosion=0.3, sigma=0.01,
                      billow=0.2, octaves=2, wisp_size=40, wisp_amount=0.6, swirl=0.4, swirl_size=200,
                      g=0.7, ambient=1.2),
+    # Fog that sits on the ground and tears away above it, drifting and rolling: low cloud in a
+    # valley. Lit softly from all round, with a strong forward glow when backlit.
+    "Ground Fog": dict(volume=1, vol_shape=3, vol_size=(3000, 250, 3000), base=0, lumps=0.5, lump_size=300,
+                       place_km=2, coverage=0.55, edge=0.25, bottom=0.4, detail=60, erosion=0.35, sigma=0.012,
+                       billow=0.2, octaves=2.5, wisp_size=25, wisp_amount=0.6, swirl=0.5, swirl_size=150,
+                       turbulence=0.5, crumble=0.5, crumble_size=60, g=0.75, ambient=1.3, fade_top=0.75,
+                       fade_left=0.25, fade_right=0.25, fade_front=0.3, fade_back=0.2),
+    # Thin, curling veils of fog: little body, all edge.
+    "Wispy Fog": dict(volume=1, vol_shape=0, vol_size=(1500, 300, 1200), base=50, lumps=0.7, lump_size=250,
+                      place_km=1.5, coverage=0.45, edge=0.3, detail=50, erosion=0.4, sigma=0.008, billow=0.0,
+                      octaves=2.5, wisp_size=20, wisp_amount=0.9, swirl=0.8, swirl_size=120, turbulence=0.7,
+                      crumble=0.6, crumble_size=40, g=0.8, ambient=1.3, fade_top=0.4, fade_bottom=0.3),
+    # Ragged low cloud (scud): a dense lumpy core torn to shreds at its edges.
+    "Torn Low Cloud": dict(volume=1, vol_shape=0, vol_size=(1200, 500, 900), base=200, lumps=0.9,
+                           lump_size=250, place_km=2, coverage=0.55, edge=0.12, bottom=0.2, detail=70,
+                           erosion=0.5, sigma=0.03, billow=0.6, octaves=3, wisp_size=25, wisp_amount=0.6,
+                           grain_size=8, grain_amount=0.3, swirl=0.5, swirl_size=150, turbulence=0.5,
+                           crumble=0.8, crumble_size=70, g=0.7, ambient=1.1, fade_bottom=0.25),
     # A single small puff.
     "Puff": dict(volume=1, vol_shape=0, vol_size=(600, 450, 600), base=800, lumps=0.4, lump_size=150,
                  place_km=2, coverage=0.5, edge=0.08, detail=60, erosion=0.5, sigma=0.05, octaves=3,

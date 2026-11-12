@@ -130,6 +130,14 @@ param:
   float3 volSize;
   float lumps;
   float lumpSize;
+  // Per-side fades of a volume: how far in from each face of the box (0..1 of the box) the
+  // density is eaten away; the erosion noise then tears that margin up.
+  float fadeTop;
+  float fadeBottom;
+  float fadeLeft;
+  float fadeRight;
+  float fadeFront;
+  float fadeBack;
   // Erosion stack.
   float wispSize;
   float wispAmount;
@@ -137,6 +145,9 @@ param:
   float grainAmount;
   float swirl;
   float swirlSize;
+  float turbulence;
+  float crumble;
+  float crumbleSize;
   float shear;
   // Coverage map.
   int useMap;
@@ -246,12 +257,21 @@ local:
     defineParam(volSize, "vol_size", float3(3000.0f, 1800.0f, 3000.0f));
     defineParam(lumps, "lumps", 0.5f);
     defineParam(lumpSize, "lump_size", 600.0f);
+    defineParam(fadeTop, "fade_top", 0.0f);
+    defineParam(fadeBottom, "fade_bottom", 0.0f);
+    defineParam(fadeLeft, "fade_left", 0.0f);
+    defineParam(fadeRight, "fade_right", 0.0f);
+    defineParam(fadeFront, "fade_front", 0.0f);
+    defineParam(fadeBack, "fade_back", 0.0f);
     defineParam(wispSize, "wisp_size", 60.0f);
     defineParam(wispAmount, "wisp_amount", 0.0f);
     defineParam(grainSize, "grain_size", 15.0f);
     defineParam(grainAmount, "grain_amount", 0.0f);
     defineParam(swirl, "swirl", 0.0f);
     defineParam(swirlSize, "swirl_size", 400.0f);
+    defineParam(turbulence, "turbulence", 0.0f);
+    defineParam(crumble, "crumble", 0.0f);
+    defineParam(crumbleSize, "crumble_size", 120.0f);
     defineParam(shear, "shear", 0.0f);
     defineParam(useMap, "use_map", 0);
     defineParam(mapAmount, "map_amount", 1.0f);
@@ -705,6 +725,17 @@ local:
     // Round across (so the corners never show) and over the top and base.
     float wall = max(sqrt(q.x * q.x + q.z * q.z), fabs(q.y));
     c -= 0.6f * sstep(0.88f, 1.0f, wall);
+    // Per-side fades: eaten away towards each face that has one (local +y top, +x right,
+    // +z front), so fog can sit on the ground and tear away above, or thin out towards the
+    // camera.
+    float f = 0.0f;
+    f = max(f, fadeTop > 0.0f ? 1.0f - sstep(0.0f, fadeTop, (1.0f - q.y) * 0.5f) : 0.0f);
+    f = max(f, fadeBottom > 0.0f ? 1.0f - sstep(0.0f, fadeBottom, (1.0f + q.y) * 0.5f) : 0.0f);
+    f = max(f, fadeRight > 0.0f ? 1.0f - sstep(0.0f, fadeRight, (1.0f - q.x) * 0.5f) : 0.0f);
+    f = max(f, fadeLeft > 0.0f ? 1.0f - sstep(0.0f, fadeLeft, (1.0f + q.x) * 0.5f) : 0.0f);
+    f = max(f, fadeFront > 0.0f ? 1.0f - sstep(0.0f, fadeFront, (1.0f - q.z) * 0.5f) : 0.0f);
+    f = max(f, fadeBack > 0.0f ? 1.0f - sstep(0.0f, fadeBack, (1.0f + q.z) * 0.5f) : 0.0f);
+    c -= 0.45f * f;
     return c;
   }
 
@@ -790,9 +821,14 @@ local:
       wx -= lean * sa;
       wz += lean * ca;
     }
-    if (swirl > 0.0f && lod(swirlSize, foot, 1.0f) > 0.0f) {
-      float ss = max(swirlSize, 1.0f);
-      float sw = swirl * ss;
+    // Swirl curls the detail around; turbulence adds a second, finer octave of it (a third the
+    // size) so the edges roll and churn as evolve boils them.
+    for (int so = 0; so < 2; so++) {
+      float amt = so == 0 ? swirl : turbulence;
+      float ss = max(swirlSize, 1.0f) * (so == 0 ? 1.0f : 0.33f);
+      if (amt <= 0.0f || lod(ss, foot, 1.0f) <= 0.0f)
+        continue;
+      float sw = amt * ss;
       float ux = vnoise3(wx / ss + 1.3f, wy / ss, wz / ss) - 0.5f;
       float uy = vnoise3(wx / ss, wy / ss + 7.1f, wz / ss) - 0.5f;
       float uz = vnoise3(wx / ss, wy / ss, wz / ss + 3.9f) - 0.5f;
@@ -820,6 +856,19 @@ local:
       float oct = lod(gs, foot, 1.0f);
       if (oct > 0.0f)
         c += grainAmount * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
+    }
+    if (crumble > 0.0f) {
+      // Crumble: chunks bitten out of the thin margins (torn edges), two octaves.
+      float cs = max(crumbleSize, 1.0f);
+      float oct = lod(cs, foot, 1.0f);
+      if (oct > 0.0f) {
+        float n = 0.0f;
+        for (int co = 0; co < 2; co++) {
+          float k = co == 0 ? 1.0f : 2.3f;
+          n += (co == 0 ? 0.65f : 0.35f) * vnoise3(wx / cs * k + 17.0f * float(co), wy / cs * k, wz / cs * k);
+        }
+        c -= crumble * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
+      }
     }
     return clamp(c / e, 0.0f, 1.0f);
   }
