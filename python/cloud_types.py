@@ -59,12 +59,12 @@ TYPES = {
     # A hero cumulus: flat base, lumpy towers, wispy edges.
     "Hero Cumulus": dict(volume=1, vol_shape=1, vol_size=(5000, 2600, 4000), base=1400, lumps=0.8,
                          lump_size=900, place_km=12, coverage=0.5, edge=0.06, taper=0.0, bottom=0.04,
-                         detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3.5, billow=1.0,
-                         wisp_size=80, wisp_amount=0.3, grain_size=20, grain_amount=0.2),
+                         detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3, billow=1.0,
+                         wisp_size=80, wisp_amount=0.12, grain_size=20, grain_amount=0.08),
     # A thunderstorm: a tall column spreading into a flat anvil, leaning downwind.
-    "Storm Anvil": dict(volume=1, vol_shape=2, vol_size=(9000, 11000, 9000), base=1200, lumps=0.6,
+    "Storm Anvil": dict(volume=1, vol_shape=2, vol_size=(15000, 11000, 15000), base=1200, lumps=0.6,
                         lump_size=1500, place_km=40, coverage=0.5, edge=0.05, bottom=0.02, detail=450,
-                        erosion=0.4, sigma=0.07, octaves=4, billow=1.0, wisp_size=200, wisp_amount=0.4,
+                        erosion=0.4, sigma=0.07, octaves=4, billow=1.0, wisp_size=200, wisp_amount=0.25,
                         shear=0.3),
     # A low fog bank: wide, thin, soft and swirly.
     "Fog Bank": dict(volume=1, vol_shape=3, vol_size=(8000, 600, 8000), base=0, lumps=0.6, lump_size=600,
