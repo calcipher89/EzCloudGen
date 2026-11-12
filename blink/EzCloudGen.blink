@@ -88,6 +88,7 @@ param:
   float3 hazeColor;
   float hazeDistance;
   float maxDistance;
+  float horizonHaze;
   float quality;
   int samples;
   float edgeSteps;
@@ -221,6 +222,7 @@ local:
     defineParam(hazeColor, "haze_color", float3(0.6f, 0.68f, 0.8f));
     defineParam(hazeDistance, "haze_distance", 60000.0f);
     defineParam(maxDistance, "max_distance", 400000.0f);
+    defineParam(horizonHaze, "horizon_haze", 1.0f);
     defineParam(quality, "quality", 1.0f);
     defineParam(samples, "samples", 1);
     defineParam(edgeSteps, "edge_steps", 3.0f);
@@ -794,6 +796,8 @@ local:
         float vx = p.x + camPosition.x * sceneScale + offset.x;
         float vz = p.z + camPosition.z * sceneScale + offset.y;
         b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary * thickness;
+        // And a finer ripple, so a base seen at eye level is a ragged edge, not a ruled line.
+        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary * thickness * 0.35f;
       }
       hn = (alt - b) / thickness;
       if (hn <= 0.0f || hn >= 1.0f)
@@ -1183,8 +1187,12 @@ local:
         tmax = min(tmax, sceneT);
       float g0 = 0.0f;
       float g1 = 0.0f;
-      if (sphere(o, d, 0.0f, g0, g1) && g0 > 0.0f)
+      // Where the ray ends on the bare ground (no plate in front of it).
+      bool onGround = false;
+      if (sphere(o, d, 0.0f, g0, g1) && g0 > 0.0f) {
+        onGround = g0 < tmax;
         tmax = min(tmax, g0);
+      }
       float a0 = 0.0f;
       float a1 = 0.0f;
       float b0 = 0.0f;
@@ -1395,6 +1403,15 @@ local:
       } else if (output == 1) {
         acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha);
       } else {
+        if (volume == 0 && onGround && horizonHaze > 0.0f && hazeDistance > 0.0f) {
+          // Horizon haze: a deck ends where the view meets the ground, which with no ground in
+          // the plate is a dead straight line with nothing under it. So the far ground takes
+          // the haze too, thick at the horizon and thinning towards the camera, and the deck
+          // sinks into it.
+          float ha = T * clamp(horizonHaze, 0.0f, 1.0f) * (1.0f - exp(-2.5f * tmax / hazeDistance));
+          col += ha * hazeColor;
+          alpha += ha;
+        }
         acc += float4(col.x, col.y, col.z, alpha);
       }
     }

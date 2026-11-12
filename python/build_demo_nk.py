@@ -68,7 +68,7 @@ SETUPS = [
     ("SoftCloud", "Soft Cumulus alone: smooth billows, a wispy skirt, bright sky-lit shadows; sun high to the left, on a long lens (its own camera, SoftCam)",
      [None, ("Soft Cumulus", {"place_km": 15}), None],
      {"sun_direction": sun(44, -90), "light_from": "Manual", "sun_color": "8.4 7.5 6.2",
-      "sky_color": "0.3 0.46 0.82", "ground_color": "0.3 0.3 0.3", "samples": 4,
+      "sky_color": "0.36 0.47 0.72", "ground_color": "0.3 0.3 0.3", "samples": 4,
       "_bg": "Nsoftsky", "_cam": "Nsoftcam"}),
 ]
 
