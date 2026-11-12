@@ -57,8 +57,8 @@ SETUPS = [
     ("CanyonFog", "Overcast canyon from 450 m up: ground fog in the floor, torn low cloud, a wisp passing close",
      [("Ground Fog", {"base": -40, "place_km": 2.6, "across": 0.1, "vol_size": (4500, 550, 5000)}),
       ("Torn Low Cloud", {"base": 230, "place_km": 1.7, "across": -0.5}),
-      ("Wispy Fog", {"base": 300, "place_km": 0.6, "across": 0.2, "vol_size": (1800, 300, 900)})],
-     {"sun_direction": sun(14, 20), "sun_intensity": 0.2, "sky_color": "0.3 0.34 0.42", "sky_intensity": 0.6,
+      ("Wispy Fog", {"base": -30, "place_km": 1.15, "across": 0.0, "vol_size": (1400, 320, 1400)})],
+     {"sun_direction": sun(14, 20), "sun_intensity": 0.18, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
       "haze_color": "0.2 0.23 0.28", "haze_distance": 8, "_bg": "Ncanyon", "_cam": "Ncanyoncam"}),
 ]
 
@@ -200,18 +200,22 @@ def main():
             " temp_expr1 {CanyonCam.rotate.y - degrees(atan((x / width - 0.5) * 36 / 24))}",
             " temp_name2 wall",
             # A V-shaped canyon: the walls lean back with height, with a rough, broken edge.
-            " temp_expr2 {abs(az) > 11 + 0.7 * (elev + 12) + 2.5 * noise(elev / 2.5, az / 4, 1) + "
-            "1.2 * noise(elev * 1.3, az, 2) && elev < 9 + 2 * sin(radians(az * 11)) + noise(az / 2, 0, 3)}",
+            # wall: degrees inside the rock (> 0), used soft for the colour (anti-aliased edge).
+            " temp_expr2 {min(abs(az) - 11 - 0.7 * (elev + 12) - 2.5 * noise(elev / 2.5, az / 4, 1) - "
+            "1.2 * noise(elev * 1.3, az, 2), 9 + 2 * sin(radians(az * 11)) + noise(az / 2, 0, 3) - elev)}",
             " temp_name3 ridge",
             " temp_expr3 {elev < 1.2 + 0.8 * sin(radians(az * 9))}",
             " channel0 {rgba.red rgba.green rgba.blue none}",
             # Rock in layered strata, a darker floor, a hazy far ridge.
-            " expr0 {wall ? 0.06 + 0.03 * noise(az / 3, elev * 2.5, 0) + 0.015 * noise(x / 6, y / 20, 5) "
-            ": elev < -4.3 ? 0.04 + 0.012 * noise(az / 2, elev * 4, 3) : ridge ? 0.09 : r}",
+            # Rock: broad irregular bands broken by vertical cracks, a darker floor, a hazy far
+            # ridge; the cliff's edge is blended over about 0.2 degrees.
+            " expr0 {lerp(elev < -4.3 ? 0.04 + 0.012 * noise(az / 2, elev * 2, 3) : ridge ? 0.16 : r, "
+            "0.055 + 0.03 * noise(az / 5, elev * 0.7, 0) + 0.02 * noise(az * 2.5, elev / 5, 7) * noise(az / 2, elev, 9), "
+            "clamp(wall / 0.2 + 0.5, 0, 1))}",
             " channel3 depth",
             # Planar Z: the floor's range along the view axis (the camera looks 12 degrees down);
             # the walls recede with their angle from the view axis.
-            " expr3 {wall ? 9000 + 300 * abs(az) : elev < -4.3 ? 4500 / tan(radians(-elev)) * cos(radians(12)) + "
+            " expr3 {wall > 0 ? 9000 + 300 * abs(az) : elev < -4.3 ? 4500 / tan(radians(-elev)) * cos(radians(12)) + "
             "4500 * sin(radians(12)) : ridge ? 60000 : 0}",
             " name CanyonPlate", " label \"stand-in canyon plate with depth.Z\"",
             " xpos 3200", " ypos -200", "}",
