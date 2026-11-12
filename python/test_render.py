@@ -333,7 +333,11 @@ def main():
     for f, yaw in ((1000, -0.5), (1001, 0.0), (1002, 0.5)):
         cam["rotate"].setValueAt(yaw, f, 1)
     render("motion_pan")
-    want = W * 24.0 / 36.0 * math.tan(math.radians(0.5))
+    # The camera's own aperture (Nuke's default is 24.576 mm, not 36), and its 18 degree tilt:
+    # a pan about world Y turns a tilted camera about its own Y by only cos(tilt) of it.
+    print("test camera: focal %g, haperture %g" % (cam["focal"].value(), cam["haperture"].value()))
+    want = (W * cam["focal"].value() / cam["haperture"].value() * math.tan(math.radians(0.5))
+            * math.cos(math.radians(18)))
     n, fu, fv, bu = 0, 0.0, 0.0, 0.0
     for y in range(H // 3, 2 * H // 3, H // 30):
         for x in range(W // 3, 2 * W // 3, W // 48):
