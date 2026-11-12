@@ -1236,13 +1236,17 @@ local:
           steps++;
           float foot = max(t * pixAng, footMin);
           float dt = max(minStep, t * 0.012f / quality);
-          if (fine)
-            dt /= edgeSteps;
+          if (fine) {
+            // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
+            dt = min(dt / edgeSteps, max(1.5f / max(sig0, 1e-6f), 4.0f));
+          }
           if (first) {
             // Jitter the first step per pixel, so the steps don't band: interleaved gradient
             // noise, which spreads the error evenly between neighbours, shifted per sample.
-            float ign = fr(52.9829189f * fr(0.06711056f * pos.x + 0.00583715f * pos.y));
-            dt *= fr(ign + 0.618034f * float(s + 5 * k) + seed * 0.37f) + 0.02f;
+            // Each sample has its own lattice, so two or more samples average the weave away.
+            float io = 5.588238f * float(s);
+            float ign = fr(52.9829189f * fr(0.06711056f * (pos.x + io) + 0.00583715f * (pos.y + io)));
+            dt *= fr(ign + 0.618034f * float(5 * k) + seed * 0.37f) + 0.02f;
             first = false;
           }
           dt = min(dt, tEnd - t + 1e-3f);
