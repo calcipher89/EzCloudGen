@@ -40,6 +40,9 @@ that box and follows it. 'make 3D box' makes a wireframe Cube and plugs it in; v
 camera and move, rotate and scale it in the 3D viewer ('release box' unplugs it, keeping the
 volume where it is). Every layer has the erosion stack: billows,
 wisps, grain, swirl and wind shear. Layers are put over each other nearest first, per pixel.
+'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
+sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
+storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
 
 For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
 the passes the view needs (the node's label says PREVIEW). For fast playback, **bake now** renders
