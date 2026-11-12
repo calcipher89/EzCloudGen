@@ -99,11 +99,12 @@ TYPES = {
                  place_km=2, coverage=0.5, edge=0.08, detail=60, erosion=0.5, sigma=0.05, octaves=3,
                  billow=1.0, wisp_size=20, wisp_amount=0.4, grain_size=6, grain_amount=0.3, small_lumps=0.3),
     # A soft, photographic cumulus: big smooth billows on top, a wide soft skirt of wisps
-    # around the base, bright sky-lit shadows.
-    "Soft Cumulus": dict(volume=1, vol_shape=1, vol_size=(5000, 2600, 4000), base=1400, lumps=1.0,
-                         lump_size=900, place_km=12, coverage=0.5, edge=0.09, taper=0.0, bottom=0.04,
+    # around the base, bright sky-lit shadows. The shape is small in its box (low coverage), so
+    # the lobes and the swirled, torn fringe never reach the walls.
+    "Soft Cumulus": dict(volume=1, vol_shape=1, vol_size=(6400, 3100, 5200), base=1400, lumps=1.0,
+                         lump_size=900, place_km=12, coverage=0.38, edge=0.09, taper=0.0, bottom=0.04,
                          detail=160, erosion=0.45, sigma=0.09, warp=1.2, octaves=5, billow=1.0,
-                         wisp_size=300, wisp_amount=0.6, small_lumps=0.2, skirt=1.0, ambient=1.3,
+                         wisp_size=300, wisp_amount=0.6, small_lumps=0.2, skirt=1.0, ambient=1.4, swirl=0.25, swirl_size=500,
                          sky_occ=0.4, fade_left=0.12, fade_right=0.12, fade_bottom=0.18),
 }
 
