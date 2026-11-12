@@ -1099,10 +1099,11 @@ local:
               float th = min(layerH, 1500.0f) * 0.12f;
               // Sky occlusion (the two probes above, from sunDepth): folds and undersides
               // darken by the cloud overhead instead of all taking one flat sky tint.
-              // Scaled by the layer's 'sky occlusion': cumulus folds want it strong, while tall
-              // storms and thick overcast decks go flat grey under their own mass, so their
-              // presets turn it down. Soft-capped at 3 (the sky light keeps at least ~5%).
-              occU = 3.0f * (1.0f - exp(-occU * sig0 * 1.25f * skyOcclusion / 3.0f));
+              // Soft-capped at 3 times the layer's 'sky occlusion': cumulus folds want a high
+              // ceiling (1: at least ~5% sky light), while tall storms and thick overcast decks
+              // go flat grey under their own mass, so their presets lower it.
+              float occK = 3.0f * skyOcclusion;
+              occU = occK > 1e-4f ? occK * (1.0f - exp(-occU * sig0 * 1.25f / occK)) : 0.0f;
               float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
