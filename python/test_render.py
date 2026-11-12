@@ -324,6 +324,45 @@ def main():
         raise RuntimeError("depth.Z on the knob gave DepthSource " + g.node("DepthSource")["from0"].value())
     g.setInput(0, sky)
 
+    # Motion vectors: the camera pans 0.5 degrees left per frame (rotate.y), no wind. The clouds
+    # move right by about W * (focal / haperture) * tan(0.5 deg) at the centre, and back again.
+    set_type("l1_", "Cumulus")
+    g["l1_wind_speed"].setValue(0)
+    g["motion_vectors"].setValue(True)
+    cam["rotate"].setAnimated(1)
+    for f, yaw in ((1000, -0.5), (1001, 0.0), (1002, 0.5)):
+        cam["rotate"].setValueAt(yaw, f, 1)
+    render("motion_pan")
+    want = W * 24.0 / 36.0 * math.tan(math.radians(0.5))
+    n, fu, fv, bu = 0, 0.0, 0.0, 0.0
+    for y in range(H // 3, 2 * H // 3, H // 30):
+        for x in range(W // 3, 2 * W // 3, W // 48):
+            if g.sample("cloud.alpha", x + 0.5, y + 0.5, frame=1001) > 0.5:
+                fu += g.sample("forward.u", x + 0.5, y + 0.5, frame=1001)
+                fv += g.sample("forward.v", x + 0.5, y + 0.5, frame=1001)
+                bu += g.sample("backward.u", x + 0.5, y + 0.5, frame=1001)
+                n += 1
+    n = max(n, 1)
+    fu, fv, bu = fu / n, fv / n, bu / n
+    print("motion: forward.u %.2f (about %.2f), forward.v %.2f, backward.u %.2f, %d samples"
+          % (fu, want, fv, bu, n))
+    if not 0.8 * want < fu < 1.4 * want:
+        raise RuntimeError("forward vectors don't follow the camera pan")
+    if abs(bu + fu) > 0.1 * abs(fu):
+        raise RuntimeError("backward vectors aren't the reverse of forward ones")
+    # Wind alone (static camera): the deck drifts, so the vectors aren't zero, and are zero without it.
+    cam["rotate"].clearAnimated()
+    cam["rotate"].setValue([18, 0, 0])
+    g["l1_wind_speed"].setValue(30)
+    render("motion_wind")
+    wu = g.sample("forward.u", W / 2 + 0.5, H / 2 + 0.5, frame=1001)
+    wv = g.sample("forward.v", W / 2 + 0.5, H / 2 + 0.5, frame=1001)
+    print("motion: wind 30 m/s, centre vector (%.3f, %.3f)" % (wu, wv))
+    g["l1_wind_speed"].setValue(5.0)
+    g["motion_vectors"].setValue(False)
+    if "forward" in set(c.split(".")[0] for c in g.channels()):
+        raise RuntimeError("motion vectors off still outputs forward")
+
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 

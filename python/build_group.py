@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.5.0"
+VERSION = "0.6.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -276,6 +276,11 @@ def build_knobs(g):
         "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the "
         "plate, and cloud_shadow (rgb, the shadows on the bg; needs its depth). Takes extra passes per "
         "layer.").setValue(True)
+    add(g, nuke.Boolean_Knob("motion_vectors", "motion vectors"),
+        "Adds forward (u, v) and backward (u, v) motion vectors of the clouds, in pixels, for VectorBlur "
+        "or a motion blur in comp. They follow the camera, the wind drift and moving 3D boxes. Takes two "
+        "more (cheap) passes per layer.")
+    g["motion_vectors"].clearFlag(nuke.STARTLINE)
     r = add(g, nuke.Enumeration_Knob("resolution", "resolution", ["Full", "Half", "Quarter"]),
             "Render the clouds smaller and scale them back up: much faster, softer.")
     r.setValue("Half")
@@ -469,6 +474,16 @@ def build_knobs(g):
         k = hidden(g, nuke.Double_Knob("cam_" + name))
         k.setExpression(py(FIND_CAMERA + "ret = c['%s'].getValueAt(nuke.frame()) if c is not None else %g"
                            % (name, default)))
+    # The camera one frame later and one frame earlier, for motion vectors.
+    for which, step in (("next", 1), ("prev", -1)):
+        m = hidden(g, nuke.Array_Knob("cam_%s_matrix" % which, "camera matrix", 16))
+        for i in range(16):
+            m.setExpression(py(FIND_CAMERA + "ret = c['world_matrix'].getValueAt(nuke.frame() + (%d), %d) "
+                                             "if c is not None else %g" % (step, i, identity[i])), i)
+        for name, default in (("focal", 24), ("haperture", 36)):
+            k = hidden(g, nuke.Double_Knob("cam_%s_%s" % (which, name)))
+            k.setExpression(py(FIND_CAMERA + "ret = c['%s'].getValueAt(nuke.frame() + (%d)) if c is not None else %g"
+                               % (name, step, default)))
     # The camera on the map frame.
     m = hidden(g, nuke.Array_Knob("map_cam_matrix", "map camera matrix", 16))
     for i in range(16):
@@ -532,7 +547,7 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, cmap, zin, layer, source_file):
+def blink(name, output, src, cmap, zin, layer, source_file, step=1):
     n = compiled(name, source_file)
     n.setInput(0, src)
     n.setInput(1, cmap)
@@ -599,6 +614,23 @@ def blink(name, output, src, cmap, zin, layer, source_file):
     n[k + "map_drift"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p), 1)
     # The variations sheet.
     n[k + "tiles"].setExpression("parent.view==4 && parent.variations_of==%d ? 3 : 1" % (layer - 1))
+    # Motion vectors: the camera, wind and volume on the other frame (step frames away).
+    which = "next" if step > 0 else "prev"
+    for r, idx in enumerate(rows):
+        for j, m in enumerate(idx):
+            n[k + "other_row%d" % r].setExpression("parent.cam_%s_matrix.%d" % (which, m), j)
+    for j, m in enumerate((3, 7, 11)):
+        n[k + "other_position"].setExpression("parent.cam_%s_matrix.%d" % (which, m), j)
+    n[k + "other_focal"].setExpression("parent.cam_%s_focal" % which)
+    n[k + "other_haperture"].setExpression("parent.cam_%s_haperture" % which)
+    t_other = "(parent.time_s + (%d) / max(root.fps, 1))" % step
+    n[k + "other_offset"].setExpression("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, t_other, p), 0)
+    n[k + "other_offset"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, t_other, p), 1)
+    f_other = "(frame + (%d))" % step
+    n[k + "other_vol_center"].setExpression("%svol_position.x%s" % (p, f_other), 0)
+    n[k + "other_vol_center"].setExpression("%svol_position.y%s + %svol_size.y / 2 / max(parent.scene_scale, 1e-6)"
+                                            % (p, f_other, p), 1)
+    n[k + "other_vol_center"].setExpression("%svol_position.z%s" % (p, f_other), 2)
     n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
     n[k + "depth_mode"].setExpression("parent.depth_mode")
     n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
@@ -684,6 +716,7 @@ def build():
         zwork.setInput(0, zsrc)
 
         colour, sunpart, depth, zkeys, shadows = [], [], [], [], []
+        motion = {1: [], -1: []}
         for i in range(1, 4):
             colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, i, source))
             sp = blink("L%d_Sun" % i, 1, work, mp, zwork, i, source)
@@ -694,6 +727,12 @@ def build():
                                         "!(parent.breakout || parent.view==0 || parent.view==5)"
                                         % (DISABLE % (i, i - 1)))
             shadows.append(sh)
+            for step, nm in ((1, "Fwd"), (-1, "Bwd")):
+                mvn = blink("L%d_%s" % (i, nm), 4, work, mp, zwork, i, source, step)
+                mvn["disable"].setExpression("(%s) || !parent.motion_vectors" % (DISABLE % (i, i - 1)))
+                mpm = nuke.nodes.Premult(name="L%d_%sPremult" % (i, nm), channels="rgb")
+                mpm.setInput(0, mvn)
+                motion[step].append(mpm)
             d = blink("L%d_Depth" % i, 2, work, mp, zwork, i, source)
             zkeys.append(d)
             pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
@@ -728,6 +767,23 @@ def build():
         dep_up["box_width"].setExpression("FormatSource.width")
         dep_up["box_height"].setExpression("FormatSource.height")
         dep_up.setInput(0, unp)
+
+        # Motion vectors: stacked like depth (nearest layer wins), back to full size and full-size
+        # pixels.
+        mv_up = {}
+        for step, nm in ((1, "Fwd"), (-1, "Bwd")):
+            ms = stack(nm, motion[step])
+            mu = nuke.nodes.Unpremult(name="%sUnpremult" % nm, channels="rgb")
+            mu.setInput(0, ms)
+            mr = nuke.nodes.Reformat(name="%sUp" % nm, type="to box", box_fixed=True, resize="distort",
+                                     filter="Impulse", black_outside=True)
+            mr["box_width"].setExpression("FormatSource.width")
+            mr["box_height"].setExpression("FormatSource.height")
+            mr.setInput(0, mu)
+            mx = nuke.nodes.Multiply(name="%sScale" % nm, channels="rgb")
+            mx["value"].setExpression("1 / max(parent.work_scale, 1e-6)")
+            mx.setInput(0, mr)
+            mv_up[step] = mx
 
         # Shadows: each layer lets 1 - s of the sun through, so together they block
         # 1 - (1 - a)(1 - b)(1 - c): a screen. A disabled layer passes black (no shadow).
@@ -792,6 +848,19 @@ def build():
         layers.setInput(0, z)
         layers.setInput(1, cw)
         layers["which"].setExpression("parent.breakout")
+        fw = nuke.nodes.Copy(name="Layer_Forward", from0="rgba.red", to0="forward.u",
+                             from1="rgba.green", to1="forward.v")
+        fw.setInput(0, layers)
+        fw.setInput(1, mv_up[1])
+        bw = nuke.nodes.Copy(name="Layer_Backward", from0="rgba.red", to0="backward.u",
+                             from1="rgba.green", to1="backward.v")
+        bw.setInput(0, fw)
+        bw.setInput(1, mv_up[-1])
+        mvs = nuke.nodes.Switch(name="MotionOrNot")
+        mvs.setInput(0, layers)
+        mvs.setInput(1, bw)
+        mvs["which"].setExpression("parent.motion_vectors")
+        layers = mvs
 
         # Views.
         clouds_view = nuke.nodes.Copy(name="View_Clouds", channels="rgba")
@@ -824,15 +893,15 @@ def build():
 MODULES = [
     ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
-    ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
-    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp)"),
+    ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
+    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale)"),
     ("Shadows", 0x4a4a3aff, r"(Shadow_.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
-    ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot)"),
+    ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot|MotionOrNot)"),
     ("Views", 0x5a4a6aff, r"(View_.*|ViewOutput)"),
     ("Output", 0x6a4a4aff, r"(Output\d*)"),
 ]
-LABELS = {"FormatSource": "bg plugged in", "CompOrClouds": "bg plugged in", "BreakoutOrNot": "breakout",
+LABELS = {"FormatSource": "bg plugged in", "CompOrClouds": "bg plugged in", "BreakoutOrNot": "breakout", "MotionOrNot": "motion vectors",
           "ViewOutput": "view"}
 
 
