@@ -812,8 +812,11 @@ local:
     float sk = skirt * (1.0f - sstep(0.1f, 0.55f, hn));
     float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk);
     // Far away the edge softens with the pixel's footprint: a hard edge on detail a few pixels
-    // across is speckle.
-    e *= 1.0f + min(foot / 18.0f, 2.5f);
+    // across is speckle. The edge widens about its middle (soften) and by no more than 0.12, so
+    // a thin, already soft sheet keeps its density.
+    float e1 = e;
+    e += min(e1 * min(foot / 18.0f, 2.5f), 0.12f);
+    float soften = 0.5f * (e - e1);
     // The light march sees no small lumps, and skips the lobes deep inside the cloud, where
     // they can't open it up (they take at most 0.31 * lumps away).
     bool core = cheap && (c - 0.31f * lumps + 0.03f) >= e + 0.12f;
@@ -859,7 +862,7 @@ local:
     }
     float wispAmt = wispAmount * (1.0f + 2.0f * sk);
     float reach = 0.12f * (erosion + wispAmt + grainAmount);
-    if (c < -reach)
+    if (c < -reach - soften)
       return 0.0f;
     // The detail's coordinates: world metres, rising slowly (boil) with evolve.
     float wx = p.x + camPosition.x * sceneScale + offset.x;
@@ -928,7 +931,7 @@ local:
         c -= crumble * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
       }
     }
-    return clamp(c / e, 0.0f, 1.0f);
+    return clamp((c + soften) / e, 0.0f, 1.0f);
   }
 
   // ---- Shadows from the other layers ------------------------------------------------------

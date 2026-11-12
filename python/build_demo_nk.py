@@ -42,7 +42,7 @@ SETUPS = [
      [("Cumulus Congestus", {}), None, ("Cirrocumulus", {})],
      {"sun_direction": sun(22, -60)}),
     ("HeroVolume", "Placed hero cumulus over a light cumulus deck, with a puff close by",
-     [("Cumulus", {"coverage": 0.33}), ("Hero Cumulus", {"across": -1.5, "wisp_amount": 0.5}),
+     [("Cumulus", {"coverage": 0.27}), ("Hero Cumulus", {"across": -1.5, "wisp_amount": 0.5}),
       ("Puff", {"across": 0.75, "place_km": 2.5})],
      {"sun_direction": sun(30, 40), "_box": 2}),
     ("StormFront", "Storm anvil far off, fog bank rolling in low, cirrus above",
