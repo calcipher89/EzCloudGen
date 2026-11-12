@@ -112,6 +112,10 @@ def main():
             g["l1_place_km"].setValue(4)
             g["l1_place"].execute()
             render("hero_cumulus_near")
+            # The same with the fine edge steps off: grainier (the reference shows the difference).
+            g["edge_steps"].setValue(1)
+            render("hero_cumulus_near_edge_steps_off")
+            g["edge_steps"].setValue(3)
         old = g["l1_" + knob].value()
         g["l1_" + knob].setValue(value)
         render("hero_cumulus_" + knob)
