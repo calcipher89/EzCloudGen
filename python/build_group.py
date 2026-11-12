@@ -134,10 +134,17 @@ import math
 
 
 def find_box(n, idx):
+    # The 3D transforms in the box input, outermost first: TransformGeos down to the geometry
+    # (a Cube), or one Axis (its world_matrix already holds its parents). Dots pass through.
+    chain = []
     b = n.input(idx)
-    while b is not None and not (b.knob('world_matrix') or b.knob('rot_order')):
-        b = b.input(0) if b.inputs() else None
-    return b
+    while b is not None:
+        if b.knob('world_matrix') or b.knob('rot_order'):
+            chain.append(b)
+            if b.knob('world_matrix') or b.knob('cube'):
+                break
+        b = b.input(0) if b.maxInputs() else None
+    return chain
 
 
 def mul(a, c):
@@ -186,8 +193,8 @@ def box_matrix(b, f):
     if b.knob('world_matrix'):
         return [b['world_matrix'].getValueAt(f, i) for i in range(16)]
     M = local_matrix(b, f)
-    # A parent Axis on the node's axis input.
-    for i in range(1, b.inputs()):
+    # A parent Axis on the node's axis input (a TransformGeo's input 1; a Cube has none).
+    for i in range(1, b.maxInputs()):
         p = b.input(i)
         if p is not None and p.knob('world_matrix'):
             M = mul([p['world_matrix'].getValueAt(f, j) for j in range(16)], M)
@@ -197,14 +204,17 @@ def box_matrix(b, f):
 
 def box_value(n, idx, step, what):
     # what: found, center (3), axis_x/y/z (3, unit), size (3, metres). One float, index in what.
-    b = find_box(n, idx)
-    if b is None:
+    chain = find_box(n, idx)
+    if not chain:
         return 0.0
     if what == 'found':
         return 1.0
     name, i = what.rsplit(':', 1)
     i = int(i)
-    M = box_matrix(b, nuke.frame() + step)
+    M = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    for t in chain:
+        M = mul(M, box_matrix(t, nuke.frame() + step))
+    b = chain[-1]
     # The geometry's own extent: a Cube's 'cube' knob, else a unit cube about the origin.
     e = [b['cube'].value(j) for j in range(6)] if b.knob('cube') else [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]
     c = [(e[0] + e[3]) / 2.0, (e[1] + e[4]) / 2.0, (e[2] + e[5]) / 2.0]
@@ -225,9 +235,14 @@ def box_value(n, idx, step, what):
 
 def box_expr(layer, what, step=0):
     """Expression: one value of the 3D node in layer's box input (see BOX_LIB)."""
-    return py("g = {'nuke': nuke}\n"
-              "exec(nuke.thisNode()['box_lib'].value(), g)\n"
-              "ret = g['box_value'](nuke.thisNode(), %d, %d, '%s')" % (BOX_INPUT + layer, step, what))
+    # getText, not value: an eval string knob's value() runs the text through TCL first.
+    # Nothing plugged in: 0 at once, without running the library (these are read every frame).
+    return py("ret = 0\n"
+              "if nuke.thisNode().input(%d) is not None:\n"
+              "    g = {'nuke': nuke}\n"
+              "    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+              "    ret = g['box_value'](nuke.thisNode(), %d, %d, '%s')"
+              % (BOX_INPUT + layer, BOX_INPUT + layer, step, what))
 
 
 # ---- The type menu ------------------------------------------------------------------------

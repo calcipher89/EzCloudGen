@@ -132,6 +132,8 @@ def main():
             a, b = g[k], g["l2_" + k[3:]]
             if isinstance(a, (nuke.PyScript_Knob, nuke.Text_Knob, nuke.Tab_Knob)):
                 continue
+            if k[3:].startswith("box_"):
+                continue  # the box readers belong to the layer's own input (box1, box2...)
             sa, sb = a.toScript(), b.toScript()
             a.fromScript(sb)
             b.fromScript(sa)
@@ -238,20 +240,25 @@ def main():
     box.setName("RenamedBox")
     if g["l1_box_found"].value() < 0.5:
         raise RuntimeError("renaming the box lost it")
-    # A parent Axis on the Cube's axis input moves it too.
+    # A parent Axis: Nuke 15's Cube has no axis input, so geometry is parented through a
+    # TransformGeo (Cube -> TransformGeo, Axis in its axis input). Turned 90 degrees about Y and
+    # moved 1000 in x, the centre (x, y, z) must go to (z + 1000, y, -x).
     parent_axis = nuke.nodes.Axis3() if hasattr(nuke.nodes, "Axis3") else nuke.nodes.Axis2()
     parent_axis["translate"].setValue([1000, 0, 0])
+    parent_axis["rotate"].setValue([0, 90, 0])
+    tgeo = nuke.nodes.TransformGeo()
+    tgeo.setInput(0, box)
+    tgeo.setInput(1, parent_axis)
     c_before = g["l1_box_center"].value()
-    for i in range(1, box.inputs() if box.inputs() > 1 else box.maxInputs()):
-        box.setInput(i, parent_axis)
-        break
+    g.setInput(5, tgeo)
     c_after = g["l1_box_center"].value()
-    print("parent axis: centre x %.1f -> %.1f (inputs %d)" % (c_before[0], c_after[0], box.maxInputs()))
-    if abs(c_after[0] - c_before[0] - 1000) > 1:
-        print("WARNING: a parent Axis on the Cube's axis input is not followed")
-    for i in range(box.maxInputs()):
-        if box.input(i) is parent_axis:
-            box.setInput(i, None)
+    want = [c_before[2] + 1000, c_before[1], -c_before[0]]
+    print("parent axis (TransformGeo): centre %s -> %s, want %s" % (
+        ["%.1f" % v for v in c_before], ["%.1f" % v for v in c_after], ["%.1f" % v for v in want]))
+    if max(abs(a - b) for a, b in zip(c_after, want)) > 1:
+        raise RuntimeError("a parent Axis through a TransformGeo is not followed")
+    g.setInput(5, box)
+    nuke.delete(tgeo)
     nuke.delete(parent_axis)
     t0 = box["translate"].value()
     g["l1_place"].execute()
