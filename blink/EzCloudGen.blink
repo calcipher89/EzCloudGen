@@ -858,14 +858,16 @@ local:
   // 0.12 m per metre of gap (and at least a texel), instead of streaks of hard shadow columns.
   float tauAbove(float3 p)
   {
-    if (useSunMap != 1 || sun.y <= 0.0f)
+    // With the sun within ~1 degree of the horizon the ground point runs off to the map's
+    // coarse rim, so the shadows fade out there instead.
+    if (useSunMap != 1 || sun.y <= 0.01f)
       return 0.0f;
     float w = float(smap.bounds.width());
     float h = float(smap.bounds.height());
     if (w < 2.0f || h < 2.0f)
       return 0.0f;
-    float up = max(sun.y, 0.03f);
-    float2 g = float2(p.x - sun.x / up * p.y, p.z - sun.z / up * p.y);
+    // The true sun ray, as the sun map pass marches it.
+    float2 g = float2(p.x - sun.x / sun.y * p.y, p.z - sun.z / sun.y * p.y);
     float altKm = altitude(p) * 0.001f;
     float meanKm = -1.0f;
     float tau = sunMapTau(g, altKm, w, h, meanKm);
@@ -878,7 +880,7 @@ local:
     tau += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk);
     tau += sunMapTau(float2(g.x, g.y + r), altKm, w, h, mk);
     tau += sunMapTau(float2(g.x, g.y - r), altKm, w, h, mk);
-    return tau * 0.2f;
+    return tau * 0.2f * clamp((sun.y - 0.01f) / 0.02f, 0.0f, 1.0f);
   }
 
   // ---- Rays ---------------------------------------------------------------------------------
