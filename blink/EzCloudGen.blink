@@ -811,6 +811,9 @@ local:
     // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
     float sk = skirt * (1.0f - sstep(0.1f, 0.55f, hn));
     float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk);
+    // Far away the edge softens with the pixel's footprint: a hard edge on detail a few pixels
+    // across is speckle.
+    e *= 1.0f + min(foot / 18.0f, 2.5f);
     // The light march sees no small lumps, and skips the lobes deep inside the cloud, where
     // they can't open it up (they take at most 0.31 * lumps away).
     bool core = cheap && (c - 0.31f * lumps + 0.03f) >= e + 0.12f;

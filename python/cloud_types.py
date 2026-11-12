@@ -29,8 +29,8 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
 
 TYPES = {
     # Fair weather cumulus: flat bases, cauliflower domes, blue gaps.
-    "Cumulus": dict(base=1400, thick=1300, coverage=0.43, scale=1.6, edge=0.06, taper=0.85, bottom=0.04,
-                     top=0.15, detail=180, erosion=0.45, sigma=0.08, warp=1.2, octaves=4.5, billow=1.0,
+    "Cumulus": dict(base=1400, thick=1300, coverage=0.41, scale=1.6, edge=0.06, taper=0.6, bottom=0.04,
+                     top=0.25, detail=180, erosion=0.45, sigma=0.08, warp=1.2, octaves=4.5, billow=1.0,
                      lumps=0.6, lump_size=520, small_lumps=0.3, skirt=0.6, ambient=1.25, sky_occ=0.7,
                      vary=0.08),
     # Towering cumulus: tall, few, hard edged.
