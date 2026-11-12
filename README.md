@@ -134,6 +134,10 @@ and sky colours are simple stand-ins; in Nuke they come from EzAtmosScatter.
 
 ## Known gaps
 
+- 'earth' (scene section) is Flat by default: the ground is a plane pinned to the world, so a
+  camera can climb, dive and fly through the decks and every cloud keeps its shape and place out
+  to an eye-level horizon. Curved is the real earth (6371 km), its top at the scene origin: from
+  high up the far decks sink behind the true horizon and lose their bases, as in aerial photos.
 - Below the horizon the node draws no ground. 'horizon haze' (by 'haze distance', default 1) lays
   the haze over the far ground, thick at the horizon and thinning towards the camera, so the decks
   sink into haze instead of ending on a straight line; turn it off over a plate that has its own

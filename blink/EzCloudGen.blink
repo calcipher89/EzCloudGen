@@ -1,10 +1,11 @@
 // EzCloudGen: one procedural, volumetric cloud layer, ray marched through the shot camera.
 // Ported from the prototype in reference/clouds.py.
 //
-// Metres inside, +Y up. The earth is curved: the layer is a shell from `base` to
-// `base + thickness` above the ground, so a deck converges on the horizon. The camera sits at
-// camPosition (scene units, times sceneScale for metres) with its height above the ground at
-// (camPosition.y - groundHeight) * sceneScale.
+// Metres inside, +Y up. The layer is a shell from `base` to `base + thickness` above the
+// ground. The ground is pinned to the world: flat by default (earthCurvature 0), or with
+// earthCurvature 1 the true curved earth, its top at the scene origin, so far decks sink behind
+// the real horizon. The camera sits at camPosition (scene units, times sceneScale for metres)
+// with its height above the ground plane at (camPosition.y - groundHeight) * sceneScale.
 //
 // Shape: a 2D weather field (warped fbm, ridged streaks, Worley cells) thresholded by coverage
 // and shrunk with height by a profile (flat base, rounded top, domes with `taper`). Then the
@@ -89,6 +90,7 @@ param:
   float hazeDistance;
   float maxDistance;
   float horizonHaze;
+  float earthCurvature;
   float quality;
   int samples;
   float edgeSteps;
@@ -188,6 +190,8 @@ param:
 
 local:
   float R;
+  float ex;
+  float ez;
   float pi;
   float3 sun;
   float camAlt;
@@ -223,6 +227,7 @@ local:
     defineParam(hazeDistance, "haze_distance", 60000.0f);
     defineParam(maxDistance, "max_distance", 400000.0f);
     defineParam(horizonHaze, "horizon_haze", 1.0f);
+    defineParam(earthCurvature, "earth_curvature", 0.0f);
     defineParam(quality, "quality", 1.0f);
     defineParam(samples, "samples", 1);
     defineParam(edgeSteps, "edge_steps", 3.0f);
@@ -313,7 +318,13 @@ local:
 
   void init()
   {
-    R = 6371000.0f;
+    // Flat is a planet so big that the ground drops ~10 m at 400 km (the sphere maths below
+    // stays exact enough); 1 is the earth.
+    R = 6371000.0f / max(earthCurvature, 1e-3f);
+    // The earth's top sits at the scene origin, not under the camera, so the ground and the
+    // decks stay put while the camera flies about.
+    ex = camPosition.x * sceneScale;
+    ez = camPosition.z * sceneScale;
     pi = 3.14159265358979f;
     // The sun direction turned by sunRotation about +Y (an EzAtmosScatter's HDRI rotation).
     float r = -sunRotation * pi / 180.0f;
@@ -657,10 +668,12 @@ local:
     return k;
   }
 
-  // Height above the curved ground of local point p (camera above 0, 0).
+  // Height above the ground of local point p (camera above 0, 0; the earth's top at -ex, -ez).
   float altitude(float3 p)
   {
-    float h2 = p.x * p.x + p.z * p.z;
+    float wx = p.x + ex;
+    float wz = p.z + ez;
+    float h2 = wx * wx + wz * wz;
     float y = p.y;
     // sqrt((R + y)^2 + h2) - R, without losing the metres in R^2.
     return (2.0f * R * y + y * y + h2) / (sqrt((R + y) * (R + y) + h2) + R);
@@ -995,13 +1008,15 @@ local:
 
   // ---- Rays ---------------------------------------------------------------------------------
 
-  // Ray from local o along d vs the sphere of radius R + h around (0, -R, 0).
+  // Ray from local o along d vs the sphere of radius R + h around (-ex, -R, -ez).
   bool sphere(float3 o, float3 d, float h, float &t0, float &t1)
   {
+    float ox = o.x + ex;
+    float oz = o.z + ez;
     float oy = o.y + R;
-    float b = o.x * d.x + oy * d.y + o.z * d.z;
+    float b = ox * d.x + oy * d.y + oz * d.z;
     // |o - centre|^2 - r^2, without losing the metres in R^2.
-    float c = o.x * o.x + o.z * o.z + (o.y - h) * (2.0f * R + o.y + h);
+    float c = ox * ox + oz * oz + (o.y - h) * (2.0f * R + o.y + h);
     float disc = b * b - c;
     if (disc < 0.0f)
       return false;
@@ -1199,6 +1214,11 @@ local:
         onGround = g0 < tmax;
         tmax = min(tmax, g0);
       }
+      // On flat ground a ray just above the horizon never lands, and the deck fades out at
+      // maxDistance: count it as the far ground too while it is still in the deck's heights
+      // there, or a sliver of bare sky shows between the deck and the hazy ground.
+      if (!onGround && tmax >= maxDistance && altitude(o + d * maxDistance) < ht)
+        onGround = true;
       float a0 = 0.0f;
       float a1 = 0.0f;
       float b0 = 0.0f;

@@ -529,6 +529,10 @@ def build_knobs(g):
         "Height of the ground in scene units; the camera's height above it places it under the clouds."
         ).setValue(0)
     g["ground_height"].setRange(-10000, 10000)
+    add(g, nuke.Enumeration_Knob("earth", "earth", ["Flat", "Curved"]),
+        "Flat: the ground is a plane pinned to the world, so a moving camera can climb, dive and fly "
+        "through the decks and the clouds keep their shape out to the horizon. Curved: the real earth, "
+        "its top at the scene origin; from high up the far decks sink behind the true horizon.")
 
     add(g, nuke.Text_Knob("bg_depth_divider", "bg depth"))
     add(g, nuke.Boolean_Knob("occlude", "hide behind bg"),
@@ -833,6 +837,7 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "frame_size"].setExpression("height", 1)
     n[k + "scene_scale"].setExpression("parent.scene_scale")
     n[k + "ground_height"].setExpression("parent.ground_height")
+    n[k + "earth_curvature"].setExpression("parent.earth")
     for j, c in enumerate("xyz"):
         n[k + "sun_direction"].setExpression("parent.sun_in_use.%s" % c, j)
     n[k + "sun_rotation"].setExpression("parent.sun_rotation_in_use")
