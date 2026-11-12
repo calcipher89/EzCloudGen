@@ -30,8 +30,9 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
 TYPES = {
     # Fair weather cumulus: flat bases, cauliflower domes, blue gaps.
     "Cumulus": dict(base=1400, thick=1300, coverage=0.43, scale=1.6, edge=0.06, taper=0.85, bottom=0.04,
-                     top=0.15, detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3.5, billow=1.0,
-                     lumps=0.45, lump_size=450, small_lumps=0.3),
+                     top=0.15, detail=180, erosion=0.45, sigma=0.08, warp=1.2, octaves=4.5, billow=1.0,
+                     lumps=0.6, lump_size=520, small_lumps=0.3, skirt=0.6, ambient=1.25, sky_occ=0.7,
+                     vary=0.08),
     # Towering cumulus: tall, few, hard edged.
     "Cumulus Congestus": dict(base=1400, thick=4200, coverage=0.42, scale=2.2, edge=0.05, taper=1.4,
                                bottom=0.02, top=0.12, detail=420, erosion=0.4, sigma=0.07, warp=1.0,
@@ -39,7 +40,7 @@ TYPES = {
     # Stratocumulus: low lumpy deck with gaps (the EzCloudShafts demo look).
     "Stratocumulus": dict(base=1300, thick=600, coverage=0.66, scale=1.1, stretch=1.4, edge=0.16,
                            taper=0.35, bottom=0.15, top=0.35, detail=120, erosion=0.45, sigma=0.035,
-                           warp=1.8, octaves=3, billow=0.8, vary=0.15, sky_occ=0.7),
+                           warp=1.8, octaves=3, billow=0.8, vary=0.3, sky_occ=0.7),
     # Stratus: low grey sheet, soft base, little texture.
     "Stratus": dict(base=500, thick=450, coverage=0.97, scale=4.0, stretch=1.5, edge=0.35, taper=0.0,
                      bottom=0.35, top=0.3, detail=220, erosion=0.25, sigma=0.02, warp=1.0, octaves=2,
@@ -47,7 +48,7 @@ TYPES = {
     # Altocumulus: mid level mackerel rows of small puffs.
     "Altocumulus": dict(base=4200, thick=350, coverage=0.62, scale=2.5, stretch=2.0, edge=0.14, taper=0.3,
                          bottom=0.25, top=0.35, detail=60, erosion=0.5, sigma=0.03, cells=0.85,
-                         cell_km=0.35, warp=1.6, octaves=2.5, billow=0.9),
+                         cell_km=0.35, warp=1.6, octaves=2.5, billow=0.9, vary=0.25),
     # Altostratus / overcast: thick mid grey layer, sun as a dim disk.
     "Altostratus": dict(base=3000, thick=1500, coverage=1.0, scale=6.0, stretch=1.5, edge=0.4, taper=0.0,
                          bottom=0.3, top=0.3, detail=300, erosion=0.2, sigma=0.006, warp=1.0, octaves=2,

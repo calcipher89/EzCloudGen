@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.17.0"
+VERSION = "0.18.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -577,6 +577,11 @@ def build_knobs(g):
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
         "Distance (km) over which far clouds fade into the haze colour. 0: off.").setValue(60)
     g["haze_distance"].setRange(0, 200)
+    add(g, nuke.Double_Knob("horizon_haze", "horizon haze"),
+        "Lays the haze over the far ground too (thick at the horizon, thinning towards the camera), so the "
+        "decks sink into haze there instead of ending on a straight line when the plate has no ground. "
+        "0: off (for a plate with its own ground and no depth).").setValue(1)
+    g["horizon_haze"].setRange(0, 1)
     c = add(g, nuke.Color_Knob("haze_color", "haze color"),
             "Colour far clouds fade to. With the light from an atmos it multiplies the atmos's sky colour; "
             "with Manual light it's tinted half way towards the sky colour's hue.")
@@ -830,6 +835,9 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
         n[k + "haze_color"].setExpression("parent.haze_color_in_use.%s" % c, j)
     n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
     n[k + "max_distance"].setExpression("parent.max_distance * 1000")
+    # Only the first deck that is on lays the horizon haze, or it would pile up once per deck.
+    earlier = " && ".join("!(parent.l%d_enable && !parent.l%d_volume)" % (j, j) for j in range(1, layer))
+    n[k + "horizon_haze"].setExpression("parent.horizon_haze" + (" * (%s)" % earlier if earlier else ""))
     n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
     n[k + "edge_steps"].setExpression("parent.preview ? 1 : parent.edge_steps")
     n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
