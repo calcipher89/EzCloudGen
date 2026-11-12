@@ -534,11 +534,9 @@ local:
   }
 
   // Coverage at local point p (m, camera above 0, 0; only x, z for the noise, y for the map):
-  // positive inside a cloud. heap: how much the map pushed the coverage up (0..1), which heaps
-  // the tops up into domes instead of a flat slab.
-  float weather(float3 p, float foot, float sd, float &heap)
+  // positive inside a cloud.
+  float weather(float3 p, float foot, float sd)
   {
-    heap = 0.0f;
     float X = p.x;
     float Z = p.z;
     float sc = scaleKm * 1000.0f;
@@ -573,9 +571,12 @@ local:
       float hz = fbm2(u * 4.0f + 23.0f, v * 4.0f + 11.0f, 3.0f, sd) - 0.5f;
       float m = mapCoverage(float3(p.x + wx * ws + hx * hs, base + 0.5f * thickness, p.z + wz * ws + hz * hs));
       if (m >= 0.0f) {
+        // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
+        // instead of being extruded straight up into walls.
+        float n = clamp((p.y - base) / max(thickness, 1.0f), 0.0f, 1.0f);
+        m *= 1.0f - 0.8f * n * (1.0f - m);
         float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (0.66f - coverage) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(mapAmount, 1.0f);
-        heap = max(cov - coverage, 0.0f) * 3.0f;
       }
     }
     float c = f - (0.82f - 0.55f * cov);
@@ -643,11 +644,11 @@ local:
       float rc = 0.42f - 0.05f * sstep(0.0f, 0.6f, sh);
       float dCol = max(rxz / rc, 1.0f - hn / max(bottomRound, 0.02f));
       dCol = max(dCol, 1.0f + (sh - 0.82f) / 0.12f);
-      float ax = sx - 0.1f;
-      // A ragged rim: the anvil's reach wanders around the tower.
-      float rim = 1.0f + 0.35f * (fbm2(ax * 1.6f + 31.0f + sd, sz * 1.6f, 2.0f, sd) - 0.5f);
+      // Spreads further downwind (local +x) than upwind, with a ragged rim.
+      float ax = (sx - 0.05f) / (sx > 0.05f ? 1.15f : 0.8f);
+      float rim = 1.0f + 0.5f * (fbm2(ax * 2.2f + 31.0f + sd, sz * 2.2f, 3.0f, sd) - 0.5f);
       float rr = sqrt(ax * ax + sz * sz) / (0.95f * rim);
-      float top = 0.95f - 0.1f * rr * rr + 0.05f * exp(-rxz * rxz / 0.05f);
+      float top = 0.93f - 0.1f * rr * rr + 0.08f * exp(-rxz * rxz / 0.08f);
       float bot = 0.72f + 0.12f * rr;
       float mid = 0.5f * (top + bot);
       float half = max(0.5f * (top - bot), 1e-3f);
@@ -672,7 +673,7 @@ local:
       float ld = worley3(wx / ls + sd * 3.1f, wy / ls, wz / ls);
       float lob = 0.78f - ld * ld;
       float sw = fbm2(wx / ls + 5.3f, wz / ls, 2.0f, sd);
-      float la = lumps * (volShape == 2 ? 1.0f - 0.75f * sstep(0.6f, 0.72f, hn) : 1.0f);
+      float la = lumps * (volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
       c += la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
     }
     // Fade out before the walls, so nothing is cut off flat by them.
@@ -724,8 +725,7 @@ local:
     } else {
       alt = altitude(p);
       float b = base;
-      float heap = 0.0f;
-      c = weather(p, foot, sd, heap);
+      c = weather(p, foot, sd);
       if (c <= -0.12f)
         return 0.0f;
       if (vary > 0.0f) {
@@ -738,9 +738,6 @@ local:
       if (hn <= 0.0f || hn >= 1.0f)
         return 0.0f;
       c -= profile(hn);
-      // Where the map piles on coverage, the extra mass rises in domes (by the layer's taper):
-      // the thick middles reach the top, the rest rounds off below it.
-      c -= max(taper, 0.5f) * heap * 0.3f * hn * sqrt(hn);
     }
     float e = max(edge, 1e-3f);
     if (cheap) {
