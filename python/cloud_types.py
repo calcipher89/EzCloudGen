@@ -104,7 +104,7 @@ TYPES = {
                          lump_size=900, place_km=12, coverage=0.5, edge=0.09, taper=0.0, bottom=0.04,
                          detail=160, erosion=0.45, sigma=0.09, warp=1.2, octaves=5, billow=1.0,
                          wisp_size=300, wisp_amount=0.6, small_lumps=0.2, skirt=1.0, ambient=1.3,
-                         sky_occ=0.4, shadow=0.2, fade_left=0.12, fade_right=0.12, fade_bottom=0.1),
+                         sky_occ=0.4, fade_left=0.12, fade_right=0.12, fade_bottom=0.18),
 }
 
 
