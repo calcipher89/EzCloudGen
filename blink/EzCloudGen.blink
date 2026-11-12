@@ -13,7 +13,7 @@
 //
 // Light: a short march towards the sun, four multiple-scattering octaves with a dual
 // Henyey-Greenstein phase (silver linings when backlit), a powder term (dark edges), sky light
-// from above and ground bounce from below, energy-conserving integration, and aerial
+// from above (occluded by the cloud just above, probed twice) and ground bounce from below, energy-conserving integration, and aerial
 // perspective towards hazeColor over hazeDistance.
 //
 // volume 1: instead of a deck, the layer is one placed cloud volume: a shape (ellipsoid,
@@ -1072,7 +1072,14 @@ local:
               else
                 hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
               float th = min(layerH, 1500.0f) * 0.12f;
-              float up = exp(-sig * (1.0f - hn) * th);
+              // Sky occlusion: how much cloud sits just above (two cheap probes up), so folds
+              // and undersides darken instead of the whole cloud taking one flat sky tint.
+              float h1 = min(layerH, 3000.0f) * 0.05f;
+              float h2 = min(layerH, 3000.0f) * 0.2f;
+              float pu1 = cloud(p + float3(0.0f, h1, 0.0f), foot + h1 * 0.05f, true, sd);
+              float pu2 = cloud(p + float3(0.0f, h2, 0.0f), foot + h2 * 0.05f, true, sd);
+              float occU = sig0 * (pu1 * h1 + pu2 * (h2 - h1)) * 0.5f;
+              float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
               float hz = hazeDistance > 0.0f ? exp(-tm / hazeDistance) : 1.0f;
