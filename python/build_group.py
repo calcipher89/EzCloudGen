@@ -483,8 +483,8 @@ def build_knobs(g):
     s = add(g, nuke.Int_Knob("samples", "samples"), "Jittered samples per pixel: anti-aliasing and less grain.")
     s.setValue(1)
     add(g, nuke.Double_Knob("max_distance", "max distance"),
-        "Clouds further than this (km) are not drawn.").setValue(80)
-    g["max_distance"].setRange(5, 200)
+        "Clouds fade out towards this distance (km). The default reaches past the horizon from high up.").setValue(400)
+    g["max_distance"].setRange(5, 500)
 
     add(g, nuke.Text_Knob("bake_divider", "bake"))
     k = add(g, nuke.File_Knob("bake_folder", "bake folder"),

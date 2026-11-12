@@ -60,6 +60,11 @@ SETUPS = [
       ("Wispy Fog", {"base": -30, "place_km": 1.15, "across": 0.0, "vol_size": (1400, 320, 1400)})],
      {"sun_direction": sun(14, 20), "sun_intensity": 0.18, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
       "haze_color": "0.2 0.23 0.28", "haze_distance": 8, "_bg": "Ncanyon", "_cam": "Ncanyoncam"}),
+    ("HighCam", "Golden hour from 1130 m up: the decks run out to the horizon, ground below it",
+     [("Stratocumulus", {"coverage": 0.6}), ("Altocumulus", {}), None],
+     {"sun_direction": sun(6, 8), "light_from": "Manual", "sun_color": "14 7 2.6",
+      "sky_color": "0.12 0.15 0.27", "ground_color": "0.1 0.05 0.02", "haze_color": "1.6 1.1 0.75",
+      "gap_amount": 0.7, "gap_size": 3, "_bg": "Nhighsky", "_cam": "Nhighcam"}),
 ]
 
 
@@ -149,6 +154,7 @@ def main():
             '6 StormFront. 7 Mountains: a ridge plate with depth.Z, so the clouds go behind it and shadow it (view Shadow),\\n'
             'with motion vectors on; 8 is its VectorBlur. 9 PaintedSky: a coverage map says where the clouds go.\\n'
             '10 CanyonFog: overcast canyon (its own camera, CanyonCam): ground fog, torn low cloud, a close wisp.\\n'
+            '11 HighCam: GoldenHour from 1130 m up (its own camera, HighCam): the decks reach the horizon.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
             'view shows Comp / Clouds / Sun share / Depth / Variations / Shadow, resolution Half (Full for finals).\\n'
             'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky, cloud_shadow,\\n'
@@ -219,7 +225,33 @@ def main():
             "4500 * sin(radians(12)) : ridge ? 60000 : 0}",
             " name CanyonPlate", " label \"stand-in canyon plate with depth.Z\"",
             " xpos 3200", " ypos -200", "}",
-            "set Ncanyon [stack 0]"]
+            "set Ncanyon [stack 0]",
+            # The high setup: the GoldenHour decks from 1130 m up (the earth's horizon dips about
+            # 1.1 degrees there). The plate has hazy ground below the horizon, since the clouds
+            # stop where the view meets the ground.
+            "Camera2 {", " inputs 0",
+            " translate {0 11300 0}",
+            " rotate {18 {curve x1001 0 x1100 12} 0}",
+            " focal 24", " haperture 36", " vaperture 20.25",
+            " name HighCam", " label \"1130 m up, pitched 18 deg\"", " xpos 4000", " ypos -300", "}",
+            "set Nhighcam [stack 0]",
+            "push $Nsky",
+            "Expression {",
+            " temp_name0 elev",
+            " temp_expr0 {18 + degrees(atan((y / height - 0.5) * 20.25 / 24)) + 1.08}",
+            " temp_name1 gnd",
+            " temp_expr1 {clamp(-elev / 0.25 + 0.5, 0, 1)}",
+            " temp_name2 far",
+            " temp_expr2 {clamp(-elev / 2.5, 0, 1)}",
+            " channel0 {rgba.red -rgba.green -rgba.blue none}",
+            " expr0 {lerp(r, lerp(0.62, 0.07, far), gnd)}",
+            " channel1 {-rgba.red rgba.green -rgba.blue none}",
+            " expr1 {lerp(g, lerp(0.42, 0.055, far), gnd)}",
+            " channel2 {-rgba.red -rgba.green rgba.blue none}",
+            " expr2 {lerp(b, lerp(0.3, 0.045, far), gnd)}",
+            " name HighPlate", " label \"stand-in plate: sky, hazy ground below the horizon\"",
+            " xpos 4200", " ypos -200", "}",
+            "set Nhighsky [stack 0]"]
     viewer_inputs = []
     for i, (name, label, layers, knobs) in enumerate(SETUPS):
         x = 200 + i * 400
