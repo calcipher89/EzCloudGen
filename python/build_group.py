@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.15.0"
+VERSION = "0.17.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -89,8 +89,13 @@ EROSION = [
 ]
 # A placed volume (types with volume on).
 VOLUME = [
-    ("lumps", "lumps", "Big noise that breaks the shape into towers and bulges.", 0, 1.5),
+    ("lumps", "lumps", "Big rounded lobes that break the shape into towers and bulges (volumes and decks). "
+                       "Cumulus keep a flat, ragged base under them.", 0, 1.5),
     ("lump_size", "lump size", "Size of the lumps, in metres.", 20, 5000),
+    ("small_lumps", "small lumps", "A second set of lobes, a bit under half the size, riding on the lumps: "
+                                   "cauliflower heads.", 0, 1),
+    ("skirt", "skirt", "Smooth, firm billows on top and a wide, soft skirt of wisps around the base: it calms "
+                       "the erosion higher up, and widens the edge and feeds the wisps low down.", 0, 2),
     ("fade_top", "fade top", "Eats the cloud away towards the top of its box, this far in (0..1 of the box): "
                              "the erosion tears the margin up. Fog that sits low and thins out above.", 0, 1),
     ("fade_bottom", "fade bottom", "The same towards the bottom of the box.", 0, 1),
@@ -105,7 +110,7 @@ DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", 
              "map_amount", "map_channel"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
-            "release_box", "lumps", "lump_size", "fade_top", "fade_bottom", "fade_left", "fade_right",
+            "release_box", "fade_top", "fade_bottom", "fade_left", "fade_right",
             "fade_front", "fade_back"]
 
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
@@ -837,6 +842,8 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "gap_size"].setExpression("parent.gap_size * 1000")
     for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
         n[k + name].setExpression(p + name)
+    # The preview drops the small lumps: they cost a second lobe lookup at every step.
+    n[k + "small_lumps"].setExpression("parent.preview ? 0 : %ssmall_lumps" % p)
     n[k + "volume"].setExpression(p + "volume")
     n[k + "vol_shape"].setExpression(p + "vol_shape")
     # A 3D node in the layer's box input sets the centre, axes and size; else the knobs do.
