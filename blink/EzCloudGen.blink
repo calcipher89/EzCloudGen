@@ -38,6 +38,12 @@
 //           for forward vectors, the previous for backward), a = opacity. The clouds' mean point
 //           along the ray moves with the wind (decks) or with the box (volumes), and is projected
 //           through the other frame's camera. No lighting, so it is cheap.
+// output 5: the sun map, for the other layers: along the ray from the ground up towards the sun
+//           (see tauAbove), r = this layer's optical depth, g and b = its first and second
+//           moments of altitude in km (sum of optical depth x km, x km^2). Maps of several
+//           layers add up. Another layer reads the sum of the others' maps as `smap`
+//           (use_sun_map) and dims its direct sun by the part of the optical depth above the
+//           point (see tauAbove), so a layer only shadows what is below it.
 //
 // Occlusion: `zin` red is the bg's depth (scene units, as depthMode says). With occlude on, the
 // march stops at the bg's surface, so clouds go behind mountains and buildings. Depth of 0, or
@@ -60,6 +66,7 @@ kernel EzCloudGen : ImageComputationKernel<ePixelWise>
   Image<eRead, eAccessPoint, eEdgeClamped> src;
   Image<eRead, eAccessRandom, eEdgeClamped> cmap;
   Image<eRead, eAccessPoint, eEdgeClamped> zin;
+  Image<eRead, eAccessRandom, eEdgeClamped> smap;
   Image<eWrite> dst;
 
 param:
@@ -108,6 +115,8 @@ param:
   float forward;
   float ambient;
   float skyOcclusion;
+  int useSunMap;
+  float sunMapSize;
   float octaves;
   float billow;
   float streaks;
@@ -223,6 +232,8 @@ local:
     defineParam(forward, "forward", 0.8f);
     defineParam(ambient, "ambient", 1.0f);
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
+    defineParam(useSunMap, "use_sun_map", 0);
+    defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
     defineParam(billow, "billow", 1.0f);
     defineParam(streaks, "streaks", 0.0f);
@@ -813,6 +824,65 @@ local:
     return clamp(c / e, 0.0f, 1.0f);
   }
 
+  // ---- Shadows from the other layers ------------------------------------------------------
+
+  // The sun map: a layer's optical depth towards the sun, seen from the ground. Texel (u, v) in
+  // -1..1 is the ground point g = uv * size / (1 - |uv|) (kernel frame, metres; fine near the
+  // camera, coarse far away), so ground point g is at uv = g / (|g| + size). A point p reads
+  // the texel where its sun ray meets the ground (see tauAbove).
+
+  // One sun map texel's optical depth above altitude altKm, at ground point g (kernel frame).
+  // The texel holds the optical depth along the sun ray and its altitude moments; the occluder
+  // is taken as a uniform slab (mean +- sqrt(3) sd), and only the part above altKm counts.
+  // Also gives the occluder's mean altitude (km), or -1 where there is none.
+  float sunMapTau(float2 g, float altKm, float w, float h, float &meanKm)
+  {
+    float k = 1.0f / (sqrt(g.x * g.x + g.y * g.y) + sunMapSize);
+    float4 m = bilinear(smap, smap.bounds.x1 + (g.x * k * 0.5f + 0.5f) * w - 0.5f,
+                        smap.bounds.y1 + (g.y * k * 0.5f + 0.5f) * h - 0.5f);
+    float tau = m.x;
+    meanKm = -1.0f;
+    if (tau < 1e-4f)
+      return 0.0f;
+    float mean = m.y / tau;
+    meanKm = mean;
+    float hw = sqrt(3.0f * max(m.z / tau - mean * mean, 0.0f)) + 0.02f;
+    float f = clamp((altKm - (mean - hw)) / (2.0f * hw), 0.0f, 1.0f);
+    return tau * (1.0f - f);
+  }
+
+  // The other layers' optical depth between p and the sun (0 without a sun map). It joins the
+  // layer's own sun depth in the multiple scattering octaves, so a thick layer above dims the
+  // sun to a soft glow instead of black. Light through a cloud layer is mostly scattered
+  // forwards a few degrees, so its shadow blurs with the gap below it: five taps spread about
+  // 0.12 m per metre of gap (and at least a texel), instead of streaks of hard shadow columns.
+  float tauAbove(float3 p)
+  {
+    // With the sun within ~1 degree of the horizon the ground point runs off to the map's
+    // coarse rim, so the shadows fade out there instead.
+    if (useSunMap != 1 || sun.y <= 0.01f)
+      return 0.0f;
+    float w = float(smap.bounds.width());
+    float h = float(smap.bounds.height());
+    if (w < 2.0f || h < 2.0f)
+      return 0.0f;
+    // The true sun ray, as the sun map pass marches it.
+    float2 g = float2(p.x - sun.x / sun.y * p.y, p.z - sun.z / sun.y * p.y);
+    float altKm = altitude(p) * 0.001f;
+    float meanKm = -1.0f;
+    float tau = sunMapTau(g, altKm, w, h, meanKm);
+    float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
+    float rg = sqrt(g.x * g.x + g.y * g.y) + sunMapSize;
+    float texel = 2.0f * rg * rg / (sunMapSize * w);
+    float r = max(120.0f * gapKm, texel);
+    float mk = 0.0f;
+    tau += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x, g.y + r), altKm, w, h, mk);
+    tau += sunMapTau(float2(g.x, g.y - r), altKm, w, h, mk);
+    return tau * 0.2f * clamp((sun.y - 0.01f) / 0.02f, 0.0f, 1.0f);
+  }
+
   // ---- Rays ---------------------------------------------------------------------------------
 
   // Ray from local o along d vs the sphere of radius R + h around (0, -R, 0).
@@ -929,7 +999,7 @@ local:
     float3 cam = float3(0.0f, camAlt, 0.0f);
     float hap = haperture;
     float vap = haperture * frameSize.y / frameSize.x;
-    float pixAng = hap / focal / frameSize.x;
+    float pixAng = output == 5 ? 0.02f : hap / focal / frameSize.x;
     // A variations sheet: which tile, where in it, and its seed.
     float sd = seed;
     float px = float(pos.x);
@@ -969,6 +1039,24 @@ local:
       float3 d = normalize(float3(dot(camRow0, cd), dot(camRow1, cd), dot(camRow2, cd)));
       // Planar Z per metre along the ray.
       float zPer = 1.0f / length(cd);
+      float3 o = cam;
+      // The smallest detail worth marching: half a metre, or a sun map texel on the ground.
+      float footMin = 0.5f;
+      if (output == 5) {
+        // The sun map (see sunMapTau): march from this texel's ground point up towards the sun;
+        // the main march's transmittance is the answer, with no lighting.
+        float mu = u * 2.0f - 1.0f;
+        float mv = v * 2.0f - 1.0f;
+        float r = sqrt(mu * mu + mv * mv);
+        if (r > 0.995f || sun.y <= 0.0f) {
+          acc += float4(0.0f, 0.0f, 0.0f, 1.0f);
+          continue;
+        }
+        float k = sunMapSize / (1.0f - r);
+        o = float3(mu * k, 1.0f, mv * k);
+        footMin = 2.0f * sunMapSize / (frameSize.x * (1.0f - r) * (1.0f - r));
+        d = sun;
+      }
       float cosT = dot(d, sun);
 
       // Where the ray is inside the shell: [a0, a1] (outer) minus (b0, b1) (inner), before
@@ -976,7 +1064,7 @@ local:
       float tmax = maxDistance;
       // The bg's surface along this ray, from its depth (sceneT < 0: sky, or no depth).
       float sceneT = -1.0f;
-      if (occlude == 1 && tiles <= 1) {
+      if (occlude == 1 && tiles <= 1 && output != 5) {
         float z = zin().x;
         if (depthMode == 1)
           z = z > 0.0f ? 1.0f / z : 0.0f;
@@ -986,7 +1074,7 @@ local:
       if (output == 3) {
         if (sceneT > 0.0f) {
           float jit = hash3(pos.x * 1.3f, pos.y * 1.9f, float(s) + seed);
-          float sh = groundShadow(cam + d * sceneT, jit, sd);
+          float sh = groundShadow(o + d * sceneT, jit, sd);
           acc += float4(sh, sh, sh, 1.0f);
         }
         continue;
@@ -995,7 +1083,7 @@ local:
         tmax = min(tmax, sceneT);
       float g0 = 0.0f;
       float g1 = 0.0f;
-      if (sphere(cam, d, 0.0f, g0, g1) && g0 > 0.0f)
+      if (sphere(o, d, 0.0f, g0, g1) && g0 > 0.0f)
         tmax = min(tmax, g0);
       float a0 = 0.0f;
       float a1 = 0.0f;
@@ -1007,15 +1095,15 @@ local:
       float i1e = 0.0f;
       int n = 0;
       if (volume == 1) {
-        if (boxHit(toLocal(cam - vc), toLocal(d), a0, a1) && min(a1, tmax) > max(a0, 0.0f)) {
+        if (boxHit(toLocal(o - vc), toLocal(d), a0, a1) && min(a1, tmax) > max(a0, 0.0f)) {
           i0s = max(a0, 0.0f);
           i0e = min(a1, tmax);
           n = 1;
         }
-      } else if (sphere(cam, d, ht, a0, a1) && a1 > 0.0f) {
+      } else if (sphere(o, d, ht, a0, a1) && a1 > 0.0f) {
         float s0 = max(a0, 0.0f);
         float s1 = min(a1, tmax);
-        if (!sphere(cam, d, hb, b0, b1)) {
+        if (!sphere(o, d, hb, b0, b1)) {
           if (s1 > s0) {
             i0s = s0;
             i0e = s1;
@@ -1041,6 +1129,12 @@ local:
       }
 
       float T = 1.0f;
+      // The sun map: optical depth and its altitude moments (km).
+      float tau = 0.0f;
+      float tm1 = 0.0f;
+      float tm2 = 0.0f;
+      // The sun map marches on through thick cloud, to see where its optical depth ends.
+      float tStop = output == 5 ? 1e-4f : 0.01f;
       float3 col = float3(0.0f);
       float3 sunPart = float3(0.0f);
       float dep = 0.0f;
@@ -1052,9 +1146,9 @@ local:
         float tEnd = k == 0 ? i0e : i1e;
         bool first = true;
         int steps = 0;
-        while (t < tEnd && T > 0.01f && steps < maxSteps) {
+        while (t < tEnd && T > tStop && steps < maxSteps) {
           steps++;
-          float foot = max(t * pixAng, 0.5f);
+          float foot = max(t * pixAng, footMin);
           float dt = max(minStep, t * 0.012f / quality);
           if (first) {
             // Jitter the first step per pixel, so the steps don't band.
@@ -1063,18 +1157,24 @@ local:
           }
           dt = min(dt, tEnd - t + 1e-3f);
           float tm = t + 0.5f * dt;
-          float3 p = cam + d * tm;
+          float3 p = o + d * tm;
           float dn = cloud(p, foot, false, sd);
           if (dn > 0.0f) {
             float sig = dn * sig0;
             float ext = exp(-sig * dt);
             float w = T * (1.0f - ext);
             dep += w * tm;
-            if (output != 2 && output != 4) {
+            if (output == 5) {
+              float km = altitude(p) * 0.001f;
+              tau += sig * dt;
+              tm1 += sig * dt * km;
+              tm2 += sig * dt * km * km;
+            }
+            if (output != 2 && output != 4 && output != 5) {
               float h1 = min(layerH, 3000.0f) * 0.05f;
               float h2 = min(layerH, 3000.0f) * 0.2f;
               float occU = 0.0f;
-              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0;
+              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0 + tauAbove(p);
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
               float oa = 1.0f;
@@ -1118,13 +1218,15 @@ local:
         }
       }
       float alpha = 1.0f - T;
-      if (output == 2) {
+      if (output == 5) {
+        acc += float4(tau, tm1, tm2, 1.0f);
+      } else if (output == 2) {
         float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
       } else if (output == 4) {
         float2 mv = float2(0.0f, 0.0f);
         if (alpha > 1e-5f && tiles <= 1) {
-          float3 p = cam + d * (dep / alpha);
+          float3 p = o + d * (dep / alpha);
           // Where that bit of cloud is on the other frame (in this frame's kernel space).
           if (volume == 1) {
             p += float3((otherVolCenter.x - volCenter.x) * sceneScale, (otherVolCenter.y - volCenter.y) * sceneScale,

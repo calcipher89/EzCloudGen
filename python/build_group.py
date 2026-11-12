@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.10.0"
+VERSION = "0.11.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -526,6 +526,9 @@ def build_knobs(g):
     add(g, nuke.Double_Knob("shadow_amount", "shadow amount"),
         "How much the shadows darken the bg in the Comp view. The cloud_shadow layer is always the "
         "full shadow, for grading the plate yourself.").setValue(0.6)
+    add(g, nuke.Boolean_Knob("layer_shadows", "layers shadow each other"),
+        "A layer shades the sunlit side of the clouds below it in the other layers (a map of its "
+        "shadow seen from the sun, one small pass per layer).").setValue(True)
 
     add(g, nuke.Text_Knob("sun_divider", "sun"))
     sf = add(g, nuke.Enumeration_Knob("sun_from", "sun from", ["Auto", "Axis", "EzAtmosScatter", "Manual"]),
@@ -768,11 +771,12 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, cmap, zin, layer, source_file, step=1):
+def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n = compiled(name, source_file)
     n.setInput(0, src)
     n.setInput(1, cmap)
     n.setInput(2, zin)
+    n.setInput(3, smap)
     k = KERNEL + "_"
     p = "parent.l%d_" % layer
     n[k + "output"].setValue(output)
@@ -862,9 +866,17 @@ def blink(name, output, src, cmap, zin, layer, source_file, step=1):
     n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
     n[k + "depth_mode"].setExpression("parent.depth_mode")
     n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
+    # The shadows of the layers above, from the sun (only the colour and sun passes read them).
+    n[k + "use_sun_map"].setExpression("parent.layer_shadows && %d < 2" % output)
+    n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
     n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
 
+
+# The sun maps: SUN_MAP_RES square, covering the ground out to about SUN_MAP_SIZE metres at
+# full detail (coarser further out, see sunMapUV in the kernel).
+SUN_MAP_RES = 768
+SUN_MAP_SIZE = 10000.0
 
 # A layer is off when disabled, and in the Variations view unless it is the one shown.
 DISABLE = "!parent.l%d_enable || (parent.view==4 && parent.variations_of!=%d)"
@@ -946,26 +958,52 @@ def build():
         zwork["scale"].setExpression("parent.work_scale")
         zwork.setInput(0, zsrc)
 
+        # Inter-layer shadows: each layer renders its optical depth towards the sun from the
+        # ground up, with its altitude moments (a small square map); a layer adds up the other
+        # layers' maps into its smap (the kernel keeps only the part above each point). A
+        # disabled layer's map is black: no shadow.
+        smfmt = nuke.nodes.Reformat(name="SunMapFormat", type="to box", box_fixed=True, resize="distort",
+                                    filter="Impulse", black_outside=True)
+        smfmt["box_width"].setValue(SUN_MAP_RES)
+        smfmt["box_height"].setValue(SUN_MAP_RES)
+        smfmt.setInput(0, nuke.toNode("WorkBlack"))
+        sunmaps = []
+        for i in range(1, 4):
+            sm = blink("L%d_SunMap" % i, 5, smfmt, mp, smfmt, smfmt, i, source)
+            k = KERNEL + "_"
+            sm[k + "samples"].setExpression("1")
+            sm[k + "tiles"].setExpression("1")
+            sm["disable"].setExpression("(%s) || !parent.layer_shadows" % (DISABLE % (i, i - 1)))
+            sunmaps.append(sm)
+        above = []
+        for i in range(1, 4):
+            others = [sunmaps[j - 1] for j in range(1, 4) if j != i]
+            m = nuke.nodes.Merge2(name="L%d_SunOthers" % i, operation="plus")
+            m.setInput(0, others[0])
+            m.setInput(1, others[1])
+            above.append(m)
+
         colour, sunpart, depth, zkeys, shadows = [], [], [], [], []
         motion = {1: [], -1: []}
         for i in range(1, 4):
-            colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, i, source))
-            sp = blink("L%d_Sun" % i, 1, work, mp, zwork, i, source)
+            sa = above[i - 1]
+            colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, sa, i, source))
+            sp = blink("L%d_Sun" % i, 1, work, mp, zwork, sa, i, source)
             sp["disable"].setExpression("(%s) || !((parent.breakout && !parent.preview) || parent.view==2)"
                                         % (DISABLE % (i, i - 1)))
             sunpart.append(sp)
-            sh = blink("L%d_Shadow" % i, 3, work, mp, zwork, i, source)
+            sh = blink("L%d_Shadow" % i, 3, work, mp, zwork, smfmt, i, source)
             sh["disable"].setExpression("(%s) || !(parent.occlude && parent.bg_found) || "
                                         "!(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"
                                         % (DISABLE % (i, i - 1)))
             shadows.append(sh)
             for step, nm in ((1, "Fwd"), (-1, "Bwd")):
-                mvn = blink("L%d_%s" % (i, nm), 4, work, mp, zwork, i, source, step)
+                mvn = blink("L%d_%s" % (i, nm), 4, work, mp, zwork, smfmt, i, source, step)
                 mvn["disable"].setExpression("(%s) || !parent.motion_vectors || parent.preview" % (DISABLE % (i, i - 1)))
                 mpm = nuke.nodes.Premult(name="L%d_%sPremult" % (i, nm), channels="rgb")
                 mpm.setInput(0, mvn)
                 motion[step].append(mpm)
-            d = blink("L%d_Depth" % i, 2, work, mp, zwork, i, source)
+            d = blink("L%d_Depth" % i, 2, work, mp, zwork, smfmt, i, source)
             zkeys.append(d)
             pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
             pm.setInput(0, d)
@@ -1144,7 +1182,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale)"),
