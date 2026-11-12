@@ -282,6 +282,15 @@ BAKE_NOW = (BAKE_HASH +
             "n['bake_hash'].setValue(h)\n"
             "n.node('BakeRead')['reload'].execute()\n"
             "n['use_bake'].setValue(True)\n")
+# A String_Knob can't hold an expression (and would show TCL as text), so knobChanged writes the
+# status after every change (setting bake_hash after a bake counts too).
+# Its own namespace: knob scripts share one, and its n, k, s... would clobber a running button's.
+BAKE_STATUS_UPDATE = ("if k.name() != 'bake_status':\n    exec(%r, {'nuke': nuke})\n" % (
+    BAKE_HASH + "s = 'no bake yet' if not n['bake_hash'].value() else "
+                "('up to date' if h == n['bake_hash'].value() else "
+                "'OUT OF DATE: settings changed since the bake, bake again')\n"
+                "if n['bake_status'].value() != s:\n"
+                "    n['bake_status'].setValue(s)\n"))
 
 
 # ---- The type menu ------------------------------------------------------------------------
@@ -324,7 +333,7 @@ def knob_changed():
             "    for name in %r:\n"
             "        n[p + name].setVisible(not vol)\n"
             "    for name in %r:\n"
-            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY))
+            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY)) + BAKE_STATUS_UPDATE
 
 
 def place_script(p):
@@ -484,9 +493,7 @@ def build_knobs(g):
             "Plays the Comp view back from the baked frames instead of rendering. The other views still render.")
     k.clearFlag(nuke.STARTLINE)
     k = add(g, nuke.String_Knob("bake_status", "status"), "Whether the settings changed since the bake.")
-    k.setExpression(py(BAKE_HASH + "ret = 'no bake yet' if not n['bake_hash'].value() else "
-                                   "('up to date' if h == n['bake_hash'].value() else "
-                                   "'OUT OF DATE: settings changed since the bake, bake again')"))
+    k.setValue("no bake yet")  # kept current by knobChanged (BAKE_STATUS_UPDATE)
     k.setEnabled(False)
     hidden(g, nuke.String_Knob("bake_hash"))
 
