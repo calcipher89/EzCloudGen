@@ -543,6 +543,12 @@ def build_knobs(g):
         "have, so backlit edges and veils near the sun glow hot while the thick cores stay dark. "
         "0: off. 0.3 to 1 for shots into the sun (use 'highlight rolloff' with it).").setValue(0)
     g["sun_glow"].setRange(0, 2)
+    add(g, nuke.Double_Knob("diffusion", "light diffusion"),
+        "How the sunlight spreads inside the clouds. 0: the older, darker look. 1: as in thick real "
+        "cloud, where light scattered many times fades slowly with depth: sunlit sides go bright white, "
+        "billows shade off gradually round their sides and cores stay luminous grey instead of dead. "
+        "Use 'highlight rolloff' with it.").setValue(0)
+    g["diffusion"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -880,6 +886,7 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "use_sun_map"].setExpression("parent.layer_shadows && %d < 2" % output)
     n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
     n[k + "sun_glow"].setExpression("parent.sun_glow")
+    n[k + "diffusion"].setExpression("parent.diffusion")
     n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
 

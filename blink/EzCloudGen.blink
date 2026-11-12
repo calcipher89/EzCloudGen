@@ -121,6 +121,7 @@ param:
   float skyOcclusion;
   float shadowDepth;
   float sunGlow;
+  float diffusion;
   int useSunMap;
   float sunMapSize;
   float octaves;
@@ -258,6 +259,7 @@ local:
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
     defineParam(shadowDepth, "shadow_depth", 0.0f);
     defineParam(sunGlow, "sun_glow", 0.0f);
+    defineParam(diffusion, "diffusion", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
@@ -855,7 +857,7 @@ local:
       // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
-      bool flatBase = volume == 0 || volShape == 1 || volShape == 4;
+      bool flatBase = volume == 0 || volShape == 1;
       float ls = max(lumpSize, 10.0f);
       float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
@@ -1383,6 +1385,18 @@ local:
               float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
               powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
               float3 direct = sunColor * (ms * powder);
+              if (diffusion > 0.0f) {
+                // Light diffusion: what a thick cloud really does with sunlight. Single
+                // scattering keeps the forward peak (the silver lining), and the many times
+                // scattered light follows diffusion theory: it falls off as 1 / (1 + k tau),
+                // not exponentially, so the sunlit side is bright white, billows shade off
+                // gradually round their sides, and even the far side of a tower still glows.
+                float single = exp(-od) * (0.75f * hg(forward, cosT) + 0.25f * hg(-0.25f, cosT)
+                                           + sunGlow * hg(0.93f, cosT));
+                float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward) * od);
+                float3 soft = sunColor * (single + many);
+                direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
+              }
               // Sky light from above, ground bounce from below.
               float hn = 0.0f;
               if (volume == 1)

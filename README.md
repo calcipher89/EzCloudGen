@@ -65,6 +65,11 @@ SoftCloud demo).
 'sun glow' (by the light knobs; 0 = off) adds the narrow forward peak real cloud droplets have: thin
 cloud in front of the sun blazes and backlit edges get a hot silver lining, while thick cores stay
 dark. Use 0.3 to 1 for shots into the sun, with 'highlight rolloff'.
+'light diffusion' (by 'sun glow'; 0 = the older look) lights the clouds the way thick real cloud
+takes sunlight: light scattered many times fades slowly with depth (1 / (1 + k tau), from diffusion
+theory) instead of dying off, so sunlit sides are bright white, billows shade off gradually round
+their sides and the cores stay a luminous grey. Use 1 for photographic clouds, with 'highlight
+rolloff' 0.3 to 0.5 and 'exposure' to place the whites.
 The Towering Cumulus type (shape Towers) is a cumulus complex: a few tall towers on a wider,
 flat-based shelf with a ragged footprint, made to stand in front of the sun.
 With an EzAtmosScatter that is self-lit (no HDRI), 'light from' Auto takes the sky light from the
