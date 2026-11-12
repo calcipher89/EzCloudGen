@@ -58,7 +58,6 @@ SETUPS = [
 
 
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
-BOXES = []  # (setup, layer, position, size, scene scale) of volumes linked to a Cube
 
 
 def knob_value(k, v):
@@ -76,18 +75,6 @@ def group_text():
     start = text.index("Group {")
     end = text.index("end_group", start) + len("end_group")
     return text[start:end]
-
-
-def box_links(name, layer):
-    """Group knob lines that link a volume layer to its Cube, as 'make 3D box' does."""
-    b = "%s_L%d_Box" % (name, layer)
-    p = "l%d_" % layer
-    return ['%sbox "%s"' % (p, b),
-            "%svol_position {{%s.translate.x} {%s.translate.y-%s.scaling.y*%s.uniform_scale/2} {%s.translate.z}}"
-            % (p, b, b, b, b, b),
-            "%svol_rotate {{%s.rotate.x} {%s.rotate.y} {%s.rotate.z}}" % (p, b, b, b),
-            "%svol_size {%s}" % (p, " ".join("{%s.scaling.%s*%s.uniform_scale*scene_scale}" % (b, a, b)
-                                             for a in "xyz"))]
 
 
 def box_node(name, layer, pos, size, scale, x, y):
@@ -125,10 +112,6 @@ def instance(body, name, layers, knobs, x, y, inputs=4):
             s = float(knobs.get("scene_scale", 0.1))
             pos = (across * 1000.0 / s, vals["base"] / s, -vals["place_km"] * 1000.0 / s)
             lines.append("%svol_position {%g %g %g}" % ((p,) + pos))
-            if knobs.get("_box") == i + 1:
-                # Linked to a Cube (written by main()), as 'make 3D box' leaves it.
-                lines += box_links(name, i + 1)
-                BOXES.append((name, i + 1, pos, vals["vol_size"], s))
     # The group's own knobs end at the first line that is just "}"; later values win.
     head_end = body.index("\n}\n")
     body = re.sub(r"^ name EzCloudGen\n", "", body, count=1, flags=re.M)
@@ -156,7 +139,7 @@ def main():
     out += ["StickyNote {", " inputs 0", " name ReadMe",
             ' label "EzCloudGen demo: synthetic, no files read. The scene is in decimetres (units to metres 0.1).\\n'
             'The shot camera is 300 m up and pans 12 degrees over 1001-1100; the clouds drift with the wind.\\n'
-            'Viewer inputs: 1-4 sky decks. 5 HeroVolume: layer 2 follows the wireframe Cube beside it (move it in 3D).\\n'
+            'Viewer inputs: 1-4 sky decks. 5 HeroVolume: layer 2 fills the wireframe Cube in its box2 input (move it in 3D).\\n'
             '6 StormFront. 7 Mountains: a ridge plate with depth.Z, so the clouds go behind it and shadow it (view Shadow),\\n'
             'with motion vectors on; 8 is its VectorBlur. 9 PaintedSky: a coverage map says where the clouds go.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
@@ -199,7 +182,20 @@ def main():
         out += ["BackdropNode {", " inputs 0", " name Backdrop_%s" % name, ' label "%s"' % label,
                 " note_font_size 20", " tile_color 0x3a5a4aff", " xpos %d" % (x - 60), " ypos -40",
                 " bdwidth 360", " bdheight 220", "}"]
-        inputs = 4
+        # The node's inputs by number: bg 0, camera 1, atmos 2, sun 3, map 4, box1-3 5-7.
+        srcs = {0: knobs.get("_bg", "Nsky"), 1: "Ncam"}
+        box = knobs.get("_box")
+        if box:
+            # A Cube in the layer's box input, as 'make 3D box' leaves it: placed and sized like
+            # the volume (its translate is the volume's centre).
+            tname, extra = layers[box - 1]
+            vals = cloud_types.full(tname)
+            vals.update(extra)
+            sc = float(knobs.get("scene_scale", 0.1))
+            pos = (vals.get("across", 0.0) * 1000.0 / sc, vals["base"] / sc, -vals["place_km"] * 1000.0 / sc)
+            out.append(box_node(name, box, pos, vals["vol_size"], sc, x + 150, -120))
+            out.append("set N%s_Box [stack 0]" % name)
+            srcs[4 + box] = "N%s_Box" % name
         if knobs.get("_map"):
             # A painted coverage map (a Roto over the plate in a real shot): a white disc on the
             # left, a white band on the right, soft.
@@ -212,17 +208,15 @@ def main():
                     "Blur {", " size 48", " name %s_Map" % name,
                     ' label "coverage map: white = clouds,\\nblack = clear (paint your own)"',
                     " xpos %d" % (x + 150), " ypos -70", "}",
-                    "set N%s_Map [stack 0]" % name,
-                    "push $N%s_Map" % name]
-            inputs = 5
-        # Inputs: (map), sun (none), atmos (none), camera, bg; the last pushed is input 0.
-        out += ["push 0", "push 0", "push $Ncam", "push $%s" % knobs.get("_bg", "Nsky")]
+                    "set N%s_Map [stack 0]" % name]
+            srcs[4] = "N%s_Map" % name
+        # Pushed from the last input to the first: the last pushed is input 0.
+        inputs = max(4, max(srcs) + 1)
+        for j in range(inputs - 1, -1, -1):
+            out.append("push $%s" % srcs[j] if j in srcs else "push 0")
         out.append(instance(body, name, layers, knobs, x, 60, inputs))
         out.append("set N%s [stack 0]" % name)
         viewer_inputs.append(name)
-        for bname, layer, pos, size, scale in BOXES:
-            if bname == name:
-                out.append(box_node(name, layer, pos, size, scale, x + 150, 160))
         if knobs.get("_vectorblur"):
             # Motion blur from the clouds' forward vectors (the camera pans; the clouds drift).
             out += ["push $N%s" % name, "VectorBlur2 {", " uv forward", " scale 2",
