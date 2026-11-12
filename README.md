@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.18.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.19.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -62,6 +62,10 @@ around the base: it calms the erosion higher up, and widens the edge and feeds t
 the lobes die away into the base, so it stays soft and even from below.
 The Soft Cumulus type uses it, with more sky light, for a softer, more photographic cloud (see the
 SoftCloud demo).
+'exposure' (stops) and 'highlight rolloff' (by the light knobs) act on the clouds only, not the bg.
+Rolloff bends the highlights towards 1 instead of letting them run past it (sunlit tops seen towards
+the sun blow out in a plain sRGB view); it keeps the hue, scales the sun share alike, and 0 leaves the
+render linear.
 'edge steps' (main tab, by 'quality'; default 3) takes finer ray steps where a ray meets cloud, and
 the sun's shadow march takes 10 steps (was 6), so surfaces and edges come out clean instead of
 grainy at one sample; it costs roughly 1.5 to 2 times the render time, and the preview turns it

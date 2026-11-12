@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.18.0"
+VERSION = "0.19.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -572,6 +572,14 @@ def build_knobs(g):
     c.setValue([0.08, 0.07, 0.06])
     add(g, nuke.Double_Knob("sun_intensity", "sun intensity"), "Multiplies the sunlight.").setValue(1.0)
     add(g, nuke.Double_Knob("sky_intensity", "sky intensity"), "Multiplies the sky light.").setValue(1.0)
+    add(g, nuke.Double_Knob("exposure", "exposure"),
+        "Brightens or darkens the clouds, in stops (rgba and the cloud layers; not the bg).").setValue(0)
+    g["exposure"].setRange(-4, 4)
+    add(g, nuke.Double_Knob("highlight_rolloff", "highlight rolloff"),
+        "Rolls the clouds' highlights off towards 1 instead of letting them run past it: sunlit tops seen "
+        "towards the sun are several times brighter than the bodies and blow out in a plain sRGB view. "
+        "0: off (linear, as rendered). 0.5: the top half of the range is compressed. The hue is kept.").setValue(0)
+    g["highlight_rolloff"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -1070,6 +1078,25 @@ def build():
 
         col_up = up("ColorUp", col)
         sun_up = up("SunUp", sunm)
+        # Exposure and highlight rolloff: one scale per pixel, from the cloud colour's brightest
+        # channel (unpremultiplied), applied to the colour and to its sun share alike, so the
+        # layers still add up and the hue is kept.
+        tone = nuke.nodes.Expression(name="ToneScale", temp_name0="gain", temp_expr0="pow(2, parent.exposure)",
+                                     temp_name1="m", temp_expr1="max(r, g, b) / max(a, 1e-6) * gain",
+                                     temp_name2="k", temp_expr2="1 - clamp(parent.highlight_rolloff, 0, 0.999)",
+                                     channel0="rgb",
+                                     expr0="parent.highlight_rolloff <= 0 || m <= k ? gain : "
+                                           "gain * (k + (1 - k) * (1 - exp(-(m - k) / (1 - k)))) / m",
+                                     channel1="none", channel2="none", channel3="none")
+        tone.setInput(0, col_up)
+        toned = []
+        for nm, src in (("ToneColor", col_up), ("ToneSun", sun_up)):
+            t = nuke.nodes.Merge2(name=nm, operation="multiply", output="rgb")
+            t.setInput(0, src)
+            t.setInput(1, tone)
+            t["disable"].setExpression("parent.exposure == 0 && parent.highlight_rolloff <= 0")
+            toned.append(t)
+        col_up, sun_up = toned
         dep_up = nuke.nodes.Reformat(name="DepthUp", type="to box", box_fixed=True, resize="distort",
                                      filter="Impulse", black_outside=True)
         dep_up["box_width"].setExpression("FormatSource.width")
