@@ -35,7 +35,7 @@ TYPES = {
     # Towering cumulus: tall, few, hard edged.
     "Cumulus Congestus": dict(base=1400, thick=4200, coverage=0.42, scale=2.2, edge=0.05, taper=1.4,
                                bottom=0.02, top=0.12, detail=420, erosion=0.4, sigma=0.07, warp=1.0,
-                               octaves=4, billow=1.0, lumps=0.5, lump_size=800, small_lumps=0.35),
+                               octaves=4, billow=1.0, lumps=0.55, lump_size=1400, small_lumps=0.55),
     # Stratocumulus: low lumpy deck with gaps (the EzCloudShafts demo look).
     "Stratocumulus": dict(base=1300, thick=600, coverage=0.66, scale=1.1, stretch=1.4, edge=0.16,
                            taper=0.35, bottom=0.15, top=0.35, detail=120, erosion=0.45, sigma=0.035,
