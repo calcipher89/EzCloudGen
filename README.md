@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.12.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.13.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -112,5 +112,7 @@ and sky colours are simple stand-ins; in Nuke they come from EzAtmosScatter.
 
 ## Known gaps
 
-- Layers don't shadow each other yet.
+- Below the horizon the node draws no ground: put a plate with ground (or EzAtmosScatter's sky and
+  ground) in the bg input, or the decks end in a straight line at the horizon (see the HighCam demo).
+  'max distance' (default 400 km) fades the clouds out towards it, so it never cuts them hard.
 - Stratus and Altostratus are too flat; Cirrus needs finer fibres; Congestus is grainy up close.
