@@ -797,7 +797,7 @@ local:
         float vz = p.z + camPosition.z * sceneScale + offset.y;
         b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary * thickness;
         // And a finer ripple, so a base seen at eye level is a ragged edge, not a ruled line.
-        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary * thickness * 0.35f;
+        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary * thickness * 0.8f;
       }
       hn = (alt - b) / thickness;
       if (hn <= 0.0f || hn >= 1.0f)

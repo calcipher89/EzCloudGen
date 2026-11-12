@@ -835,7 +835,9 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
         n[k + "haze_color"].setExpression("parent.haze_color_in_use.%s" % c, j)
     n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
     n[k + "max_distance"].setExpression("parent.max_distance * 1000")
-    n[k + "horizon_haze"].setExpression("parent.horizon_haze")
+    # Only the first deck that is on lays the horizon haze, or it would pile up once per deck.
+    earlier = " && ".join("!(parent.l%d_enable && !parent.l%d_volume)" % (j, j) for j in range(1, layer))
+    n[k + "horizon_haze"].setExpression("parent.horizon_haze" + (" * (%s)" % earlier if earlier else ""))
     n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
     n[k + "edge_steps"].setExpression("parent.preview ? 1 : parent.edge_steps")
     n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
