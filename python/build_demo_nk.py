@@ -72,7 +72,7 @@ SETUPS = [
       "_bg": "Nsoftsky", "_cam": "Nsoftcam"}),
     ("FlyThrough", "Fly-through (its own camera, FlyCam, 1001-1024): climbs to 3 km and dives back through a Stratocumulus deck; the clouds stay put in the world and nothing trims them",
      [("Stratocumulus", {"coverage": 0.6}), None, None],
-     {"sun_direction": sun(25, 30), "horizon_haze": 1, "_cam": "Nflycam"}),
+     {"sun_direction": sun(25, 30), "horizon_haze": 1, "highlight_rolloff": 0.6, "_cam": "Nflycam"}),
 ]
 
 
@@ -162,7 +162,7 @@ def main():
             '6 StormFront. 7 Mountains: a ridge plate with depth.Z, so the clouds go behind it and shadow it (view Shadow),\\n'
             'with motion vectors on; 8 is its VectorBlur. 9 PaintedSky: a coverage map says where the clouds go.\\n'
             '10 CanyonFog: overcast canyon (its own camera, CanyonCam): ground fog, torn low cloud, a close wisp.\\n'
-            '11 HighCam: GoldenHour from 1130 m up (its own camera, HighCam): the decks reach the horizon.\\n'
+            '11 HighCam: GoldenHour from 1130 m up (its own camera, HighCamera): the decks reach the horizon.\\n'
             '12 SoftCloud: one Soft Cumulus, on a long lens (its own camera, SoftCam) over a hazy sky.\\n'
             '13 FlyThrough: its own camera (FlyCam) climbs to 3 km and dives back through a Stratocumulus deck, 1001-1024.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
@@ -243,13 +243,13 @@ def main():
             " translate {0 11300 0}",
             " rotate {18 {curve x1001 0 x1100 12} 0}",
             " focal 24", " haperture 36", " vaperture 20.25",
-            " name HighCam", " label \"1130 m up, pitched 18 deg\"", " xpos 4000", " ypos -300", "}",
+            " name HighCamera", " label \"1130 m up, pitched 18 deg\"", " xpos 4000", " ypos -300", "}",
             "set Nhighcam [stack 0]",
             "push $Nsky",
             "Expression {",
             " temp_name0 elev",
-            " temp_expr0 {HighCam.rotate.x + degrees(atan((y / height - 0.5) * 20.25 / 24)) + "
-            "(HighCam1.earth ? degrees(acos(6371000 / (6371000 + max(HighCam.translate.y * 0.1, 0)))) : 0)}",
+            " temp_expr0 {HighCamera.rotate.x + degrees(atan((y / height - 0.5) * 20.25 / 24)) + "
+            "(HighCam.earth ? degrees(acos(6371000 / (6371000 + max(HighCamera.translate.y * 0.1, 0)))) : 0)}",
             " temp_name1 gnd",
             " temp_expr1 {clamp(-elev / 0.25 + 0.5, 0, 1)}",
             " temp_name2 far",
