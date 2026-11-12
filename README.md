@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.20.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.21.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -62,6 +62,16 @@ around the base: it calms the erosion higher up, and widens the edge and feeds t
 the lobes die away into the base, so it stays soft and even from below.
 The Soft Cumulus type uses it, with more sky light, for a softer, more photographic cloud (see the
 SoftCloud demo).
+'sun glow' (by the light knobs; 0 = off) adds the narrow forward peak real cloud droplets have: thin
+cloud in front of the sun blazes and backlit edges get a hot silver lining, while thick cores stay
+dark. Use 0.3 to 1 for shots into the sun, with 'highlight rolloff'.
+The Towering Cumulus type (shape Towers) is a cumulus complex: a few tall towers on a wider,
+flat-based shelf with a ragged footprint, made to stand in front of the sun.
+With an EzAtmosScatter that is self-lit (no HDRI), 'light from' Auto takes the sky light from the
+atmos's own sky and the sun from its manual sun, dimmed by the air it crosses at that sun height.
+'sun shadow layer' (main tab, on by default, with 'breakout layers') adds cloud_sunmap: all the
+layers' shadow seen from the sun. Plug the node into EzCloudShafts' clouds input and its rays and
+ground shadows are cast by the real volumes, tall clouds and clouds outside the frame included.
 'exposure' (stops) and 'highlight rolloff' (by the light knobs) act on the clouds only, not the bg.
 Rolloff bends the highlights towards 1 instead of letting them run past it (sunlit tops seen towards
 the sun blow out in a plain sRGB view); it keeps the hue, scales the sun share alike, and 0 leaves the

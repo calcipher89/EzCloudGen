@@ -120,6 +120,7 @@ param:
   float ambient;
   float skyOcclusion;
   float shadowDepth;
+  float sunGlow;
   int useSunMap;
   float sunMapSize;
   float octaves;
@@ -256,6 +257,7 @@ local:
     defineParam(ambient, "ambient", 1.0f);
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
     defineParam(shadowDepth, "shadow_depth", 0.0f);
+    defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
@@ -724,6 +726,19 @@ local:
       float dv = sh < mid ? (mid - sh) / (half * 1.5f) : (sh - mid) / half;
       float dLens = max(rr, dv);
       dist = min(dCol, dLens);
+    } else if (volShape == 4) {
+      // Towers: a towering cumulus complex. A flat base under an uneven skyline (a few tall
+      // towers standing on a lower, wider shelf), in a ragged footprint with breaks between
+      // its cells. The skyline falls away to the rim, so nothing meets the box walls.
+      float n1 = fbm2(sx * 1.6f + 17.0f + sd * 3.1f, sz * 1.6f - 9.0f, 3.0f, sd);
+      float n2 = fbm2(sx * 3.7f - 5.0f, sz * 3.7f + 23.0f + sd * 1.7f, 2.0f, sd);
+      float tower = sstep(0.42f, 0.66f, n1);
+      float rimF = sqrt(max(1.0f - rxz * rxz, 0.0f));
+      // Breaks between the cells, where the sun gets through ('coverage' closes or opens them).
+      float body = sstep(0.34f, 0.48f, 0.6f * n2 + 0.4f * n1 + (coverage - 0.5f) * 0.6f);
+      float skyline = (0.26f + 0.16f * n2 + 0.58f * tower) * (0.35f + 0.65f * rimF) * body;
+      float foot = rxz / (0.8f + 0.35f * (n2 - 0.5f) + 0.2f * tower);
+      dist = max(max(hs / max(skyline, 0.03f), foot), 1.0f - hn / max(bottomRound, 0.02f));
     } else {
       // Box with soft corners.
       float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
@@ -840,7 +855,7 @@ local:
       // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
-      bool flatBase = volume == 0 || volShape == 1;
+      bool flatBase = volume == 0 || volShape == 1 || volShape == 4;
       float ls = max(lumpSize, 10.0f);
       float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
@@ -1124,7 +1139,9 @@ local:
     float3 cam = float3(0.0f, camAlt, 0.0f);
     float hap = haperture;
     float vap = haperture * frameSize.y / frameSize.x;
-    float pixAng = output == 5 ? 0.02f : hap / focal / frameSize.x;
+    // The sun map is also what EzCloudShafts casts its rays from, so it keeps the clouds'
+    // outlines: a footprint of 6 m per km along the sun ray, and steps to match.
+    float pixAng = output == 5 ? 0.006f : hap / focal / frameSize.x;
     // A variations sheet: which tile, where in it, and its seed.
     float sd = seed;
     float px = float(pos.x);
@@ -1274,7 +1291,7 @@ local:
       float dep = 0.0f;
       float layerH = volume == 1 ? min(min(volSize.x, volSize.y), volSize.z) : thickness;
       float minStep = max(min(layerH / 24.0f, detailSize * 0.35f) / quality, 8.0f);
-      int maxSteps = int(220.0f * quality * max(edgeSteps, 1.0f));
+      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(edgeSteps, 1.0f));
       for (int k = 0; k < n; k++) {
         float t = k == 0 ? i0s : i1s;
         float tEnd = k == 0 ? i0e : i1e;
@@ -1290,7 +1307,7 @@ local:
         while (t < tEnd && T > tStop && steps < maxSteps) {
           steps++;
           float foot = max(t * pixAng, footMin);
-          float dt = max(minStep, t * 0.012f / quality);
+          float dt = max(minStep, t * (output == 5 ? 0.005f : 0.012f) / quality);
           if (fine) {
             // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
             dt = min(dt / edgeSteps, max(1.5f / max(sig0, 1e-6f), 4.0f));
@@ -1352,7 +1369,10 @@ local:
               float ob = 1.0f;
               float oc = 1.0f;
               for (int o = 0; o < 4; o++) {
-                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT);
+                // 'sun glow' adds the narrow forward peak of real cloud droplets: thin cloud in front
+                // of the sun blazes, and backlit edges get a hot silver lining (0: as before).
+                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT)
+                           + sunGlow * hg(0.93f * oc, cosT);
                 ms += ob * exp(-od * oa) * ph;
                 oa *= oaK;
                 ob *= 0.6f;
