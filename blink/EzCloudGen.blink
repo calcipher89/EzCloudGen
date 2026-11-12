@@ -90,6 +90,7 @@ param:
   float maxDistance;
   float quality;
   int samples;
+  float edgeSteps;
   float seed;
   float evolve;
   float2 offset;
@@ -220,6 +221,7 @@ local:
     defineParam(maxDistance, "max_distance", 400000.0f);
     defineParam(quality, "quality", 1.0f);
     defineParam(samples, "samples", 1);
+    defineParam(edgeSteps, "edge_steps", 3.0f);
     defineParam(seed, "seed", 0.0f);
     defineParam(evolve, "evolve", 0.0f);
     defineParam(offset, "offset", float2(0.0f, 0.0f));
@@ -979,7 +981,7 @@ local:
         far = max(t1, 0.0f);
       far = min(far, min(6.0f * thickness / max(sun.y, 0.08f), 12000.0f));
     }
-    int steps = max(int(6.0f * quality), 2);
+    int steps = max(int(10.0f * quality), 2);
     float od = 0.0f;
     float prev = 0.0f;
     occ = 0.0f;
@@ -1191,19 +1193,30 @@ local:
       float dep = 0.0f;
       float layerH = volume == 1 ? min(min(volSize.x, volSize.y), volSize.z) : thickness;
       float minStep = max(min(layerH / 24.0f, detailSize * 0.35f) / quality, 8.0f);
-      int maxSteps = int(220.0f * quality);
+      int maxSteps = int(220.0f * quality * max(edgeSteps, 1.0f));
       for (int k = 0; k < n; k++) {
         float t = k == 0 ? i0s : i1s;
         float tEnd = k == 0 ? i0e : i1e;
         bool first = true;
+        // Coarse steps through clear air; on meeting cloud, go back a step and take fine ones
+        // (edgeSteps to a coarse step), so the surface is found to a fraction of a step and
+        // thick cloud isn't lit from one random point per step (which shows as grain).
+        bool fine = false;
+        bool armed = true;
+        int clear = 0;
+        int fineSteps = 0;
         int steps = 0;
         while (t < tEnd && T > tStop && steps < maxSteps) {
           steps++;
           float foot = max(t * pixAng, footMin);
           float dt = max(minStep, t * 0.012f / quality);
+          if (fine)
+            dt /= edgeSteps;
           if (first) {
-            // Jitter the first step per pixel, so the steps don't band.
-            dt *= hash3(pos.x * 1.7f, pos.y * 2.3f, float(s + 31 * k) + seed) + 0.02f;
+            // Jitter the first step per pixel, so the steps don't band: interleaved gradient
+            // noise, which spreads the error evenly between neighbours, shifted per sample.
+            float ign = fr(52.9829189f * fr(0.06711056f * pos.x + 0.00583715f * pos.y));
+            dt *= fr(ign + 0.618034f * float(s + 5 * k) + seed * 0.37f) + 0.02f;
             first = false;
           }
           dt = min(dt, tEnd - t + 1e-3f);
@@ -1212,6 +1225,23 @@ local:
           float dn = cloud(p, foot, false, sd);
           // Fade out over the last quarter of maxDistance, so the cap never cuts the deck hard.
           dn *= clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
+          if (dn > 0.0f && !fine && armed && edgeSteps > 1.5f) {
+            fine = true;
+            armed = false;
+            clear = 0;
+            fineSteps = 0;
+            continue;
+          }
+          if (fine) {
+            // Back to coarse steps after a clear stretch, or four coarse steps deep: by then
+            // the surface is behind, and a long path inside a deck would cost too much.
+            clear = dn > 0.0f ? 0 : clear + 1;
+            fineSteps++;
+            if (float(clear) > edgeSteps || float(fineSteps) > 4.0f * edgeSteps)
+              fine = false;
+          } else if (dn <= 0.0f) {
+            armed = true;
+          }
           if (dn > 0.0f) {
             float sig = dn * sig0;
             float ext = exp(-sig * dt);

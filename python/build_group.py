@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.14.0"
+VERSION = "0.15.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -480,6 +480,10 @@ def build_knobs(g):
     add(g, nuke.Double_Knob("quality", "quality"),
         "Ray march step count: higher is smoother and slower.").setValue(1.0)
     g["quality"].setRange(0.25, 4)
+    add(g, nuke.Double_Knob("edge_steps", "edge steps"),
+        "Finer ray steps where a ray meets cloud (this many to a normal step): clean, grain-free "
+        "surfaces and edges. 1: off (faster, grainy). The preview uses 1.").setValue(3)
+    g["edge_steps"].setRange(1, 6)
     s = add(g, nuke.Int_Knob("samples", "samples"), "Jittered samples per pixel: anti-aliasing and less grain.")
     s.setValue(1)
     add(g, nuke.Double_Knob("max_distance", "max distance"),
@@ -822,6 +826,7 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
     n[k + "max_distance"].setExpression("parent.max_distance * 1000")
     n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
+    n[k + "edge_steps"].setExpression("parent.preview ? 1 : parent.edge_steps")
     n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
     n[k + "seed"].setExpression("parent.seed + %sseed" % p)
     n[k + "evolve"].setExpression("parent.evolve_speed * parent.time_s")
