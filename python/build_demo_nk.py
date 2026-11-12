@@ -58,7 +58,7 @@ SETUPS = [
      [("Ground Fog", {"base": -40, "place_km": 2.6, "across": 0.1, "vol_size": (4500, 550, 5000)}),
       ("Torn Low Cloud", {"base": 230, "place_km": 1.7, "across": -0.5}),
       ("Wispy Fog", {"base": -30, "place_km": 1.15, "across": 0.0, "vol_size": (1400, 320, 1400)})],
-     {"sun_direction": sun(14, 20), "sun_intensity": 0.18, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
+     {"sun_direction": sun(14, 20), "sun_intensity": 0.13, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
       "haze_color": "0.2 0.23 0.28", "haze_distance": 8, "_bg": "Ncanyon", "_cam": "Ncanyoncam"}),
     ("HighCam", "Golden hour from 1130 m up: the decks run out to the horizon, ground below it",
      [("Stratocumulus", {"coverage": 0.6}), ("Altocumulus", {}), None],
