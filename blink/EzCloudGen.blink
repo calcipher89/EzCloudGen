@@ -1097,7 +1097,7 @@ local:
               float th = min(layerH, 1500.0f) * 0.12f;
               // Sky occlusion (the two probes above, from sunDepth): folds and undersides
               // darken by the cloud overhead instead of all taking one flat sky tint.
-              occU *= sig0 * 0.5f;
+              occU *= sig0 * 1.25f;
               float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
