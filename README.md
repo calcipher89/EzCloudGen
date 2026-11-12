@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.4.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.5.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -14,7 +14,10 @@ render in NukeX 15.1. `reference/` holds the Python prototype the kernel was por
 Paste `groups/EzCloudGen_group.nk` into a script (or put `gizmos/` on the plugin path and create
 EzCloudGen). Inputs:
 
-- **bg** (optional): the plate or sky to comp over; it also sets the format.
+- **bg** (optional): the plate or sky to comp over; it also sets the format. With a depth
+  channel (depth.Z by default; 'depth is' Planar Z, ScanlineRender's 1/Z or distance), the
+  clouds go behind its mountains and buildings, and their shadows fall on it ('hide behind bg').
+  Depth of 0, or beyond 'sky beyond' (km), is sky.
 - **camera**: the shot camera. Without one the node looks level from 300 m up.
 - **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
   measures in its HDRI light the clouds ('light from' Auto).
@@ -38,7 +41,9 @@ more); type the number of the one you like (1 top left, 9 bottom right) into 'us
 press 'use it'.
 
 Output: rgba (the comp, or a view), depth.Z (Planar Z of the clouds, scene units, for
-EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky.
+EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky, and
+cloud_shadow (how much sun the clouds block on the bg's surface, 1 fully shaded; needs its depth).
+The Comp view darkens the bg by 'shadow amount'; the Shadow view shows the shadows alone.
 
 Building (in NukeX, it compiles the kernel and writes its hash):
 

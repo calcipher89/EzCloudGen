@@ -248,6 +248,82 @@ def main():
     render("box_released")  # must match the last placed state
     nuke.delete(box)
 
+    # Occlusion and ground shadows: a ridge 8 km away (depth.Z, Planar Z in decimetres) across
+    # the bottom of the frame, in front of a cumulus deck.
+    g["l1_enable"].setValue(True)
+    g["l2_enable"].setValue(False)
+    g["l3_enable"].setValue(False)
+    set_type("l1_", "Cumulus")
+    ridge_line = "(y < %g * (0.3 + 0.05 * sin(x / %g)))" % (H, W / 14.0)
+    ridge = nuke.nodes.Expression(name="TestRidge", channel0="rgb", expr0="%s ? 0.03 : r" % ridge_line,
+                                  channel1="depth", expr1="%s ? 80000 : 0" % ridge_line,
+                                  channel2="none", channel3="none")
+    ridge.setInput(0, sky)
+    g.setInput(0, ridge)
+
+    def region_mean(channel, below):
+        # Mean of a channel over the grid points below (or well above) the ridge.
+        n, tot = 0, 0.0
+        for y in range(H // 60, H, H // 30):
+            for x in range(W // 96, W, W // 48):
+                top = H * (0.3 + 0.05 * math.sin(x / (W / 14.0)))
+                if (y < top - 2) if below else (y > top + H * 0.08):
+                    tot += g.sample(channel, x + 0.5, y + 0.5, frame=1001)
+                    n += 1
+        return tot / max(n, 1)
+
+    g["occlude"].setValue(False)
+    render("occlude_off")
+    off_below, off_above = region_mean("cloud.alpha", True), region_mean("cloud.alpha", False)
+    g["occlude"].setValue(True)
+    render("occlude")
+    on_below, on_above = region_mean("cloud.alpha", True), region_mean("cloud.alpha", False)
+    shade = region_mean("cloud_shadow.red", True)
+    print("occlusion: alpha below the ridge %.3f -> %.3f, above %.3f -> %.3f, shadow on it %.3f"
+          % (off_below, on_below, off_above, on_above, shade))
+    if not on_below < 0.5 * off_below:
+        raise RuntimeError("the ridge didn't hide the clouds behind it")
+    if abs(on_above - off_above) > 0.01:
+        raise RuntimeError("occlusion changed the sky above the ridge")
+    if not 0.02 < shade < 0.98:
+        raise RuntimeError("no believable cloud shadow on the ridge")
+    if region_mean("cloud_shadow.red", False) > 1e-4:
+        raise RuntimeError("cloud shadow on the sky")
+    g["view"].setValue("Shadow")
+    render("shadow_view")
+    g["view"].setValue("Comp")
+    # ScanlineRender's 1/Z, same ridge: must match.
+    ridge["expr1"].setValue("%s ? 1.0 / 80000 : 0" % ridge_line)
+    g["depth_mode"].setValue("1/Z (ScanlineRender)")
+    render("occlude_inverse_z")
+    inv_below = region_mean("cloud.alpha", True)
+    print("1/Z: alpha below the ridge %.3f (Planar Z %.3f)" % (inv_below, on_below))
+    if abs(inv_below - on_below) > 0.01:
+        raise RuntimeError("1/Z depth doesn't match Planar Z")
+    g["depth_mode"].setValue("Planar Z")
+    # The depth channel knob reaches the DepthSource node inside (checked, not rendered).
+    g["depth_channel"].setValue("rgba.alpha")
+    saved = nuke.thisNode, nuke.thisKnob
+    nuke.thisNode, nuke.thisKnob = (lambda: g), (lambda: g["depth_channel"])
+    try:
+        exec(g["knobChanged"].value(), {"nuke": nuke})
+    finally:
+        nuke.thisNode, nuke.thisKnob = saved
+    # Nuke gives channels back by short name ('alpha' for rgba.alpha).
+    if (g.node("DepthSource")["from0"].value() not in ("rgba.alpha", "alpha")
+            or g.node("DepthEnsure")["channels"].value() not in ("rgba.alpha", "alpha")):
+        raise RuntimeError("depth channel knob didn't reach DepthSource")
+    # Back to depth.Z: the knob says 'depth', which a Copy would read as cutout.depth.
+    g["depth_channel"].setValue("depth.Z")
+    nuke.thisNode, nuke.thisKnob = (lambda: g), (lambda: g["depth_channel"])
+    try:
+        exec(g["knobChanged"].value(), {"nuke": nuke})
+    finally:
+        nuke.thisNode, nuke.thisKnob = saved
+    if g.node("DepthSource")["from0"].value() != "depth.Z":
+        raise RuntimeError("depth.Z on the knob gave DepthSource " + g.node("DepthSource")["from0"].value())
+    g.setInput(0, sky)
+
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 
