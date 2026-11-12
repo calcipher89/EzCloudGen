@@ -840,6 +840,8 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "gap_size"].setExpression("parent.gap_size * 1000")
     for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
         n[k + name].setExpression(p + name)
+    # The preview drops the small lumps: they cost a second lobe lookup at every step.
+    n[k + "small_lumps"].setExpression("parent.preview ? 0 : %ssmall_lumps" % p)
     n[k + "volume"].setExpression(p + "volume")
     n[k + "vol_shape"].setExpression(p + "vol_shape")
     # A 3D node in the layer's box input sets the centre, axes and size; else the knobs do.

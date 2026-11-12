@@ -767,7 +767,8 @@ local:
     float lx = 0.0f;
     float ly = 0.0f;
     float lz = 0.0f;
-    float lreach = 0.3f * lumps * (1.0f + lumps2);
+    // The most the lobes can add (see below).
+    float lreach = lumps * (0.2f + 0.09f * lumps2);
     if (volume == 1) {
       c = volumeShape(p, hn, sd);
       if (c <= -0.15f - lreach)
@@ -783,7 +784,8 @@ local:
       alt = altitude(p);
       float b = base;
       c = weather(p, foot, sd);
-      if (c <= -0.12f - lreach)
+      // (A deck's lobes add nothing out in the clear.)
+      if (c <= -0.12f)
         return 0.0f;
       if (vary > 0.0f) {
         float sv = scaleKm * 2500.0f;
@@ -799,12 +801,17 @@ local:
       ly = alt - b - 0.5f * thickness;
       lz = p.z + camPosition.z * sceneScale + offset.y;
     }
-    if (lumps > 0.0f) {
+    float e = max(edge, 1e-3f);
+    // The light march sees no small lumps, and skips the lobes deep inside the cloud, where
+    // they can't open it up (they take at most 0.31 * lumps away).
+    bool core = cheap && (c - 0.31f * lumps + 0.03f) >= e + 0.12f;
+    if (lumps > 0.0f && !core) {
       // Lobes: rounded caps (inverted Worley, 1 - d^2) on a smooth swell, with a second, smaller
       // set riding on them ('small lumps'): cauliflower turrets. An anvil's top keeps few, so
       // it stays a smooth sheet. Cumulus (domes and decks) have flat bases: their lobes run
-      // straight down from a fifth of the way up, so the base has the body's scalloped outline
-      // rather than being a round plate under it, and the base itself is thinned and ragged.
+      // straight down from a fifth of the way up (a tenth on decks), so the base has the body's
+      // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
+      // is thinned, so the base is ragged.
       bool flatBase = volume == 0 || volShape == 1;
       float ls = max(lumpSize, 10.0f);
       float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : -0.4f) * height) : ly;
@@ -814,18 +821,22 @@ local:
       for (int lo = 0; lo < 2; lo++) {
         float ld = worley3(lx / ls * lf + sd * 3.1f + 13.7f * float(lo), lyl / ls * lf, lz / ls * lf);
         lob += lamp * (0.78f - ld * ld - (lo > 0 ? 0.48f : 0.0f));
-        lamp *= lumps2;
+        lamp *= cheap ? 0.0f : lumps2;
         lf *= 2.3f;
         if (lamp <= 0.0f)
           break;
       }
       float sw = fbm2(lx / ls + 5.3f, lz / ls, 2.0f, sd);
       float la = lumps * (volume == 1 && volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
-      c += la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
+      float add = la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
+      // On a deck the lobes only swell cloud that is already there: out in the clear air
+      // between the clouds they would make loose floating balls.
+      if (volume == 0 && add > 0.0f)
+        add *= clamp((c + 0.06f) / 0.12f, 0.0f, 1.0f);
+      c += add;
       if (flatBase)
-        c -= 0.1f * min(lumps, 1.0f) * (1.0f - sstep(0.0f, 0.14f, hn));
+        c -= 0.1f * min(lumps, 1.0f) * (1.0f - sstep(0.0f, min(0.14f, 250.0f / max(height, 1.0f)), hn));
     }
-    float e = max(edge, 1e-3f);
     if (cheap) {
       // The light march sees a softer shape (it has no detail to break the edges up): a hard
       // one makes its few coarse steps band the shading into flat patches.
