@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.12.0"
+VERSION = "0.14.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -62,6 +62,8 @@ SHAPE = [
     ("sky_occlusion", "sky occlusion", "How much the cloud above darkens the sky light below it: deeper "
                                        "undersides and folds. Lower it for tall storms and thick overcast, "
                                        "which go flat grey under their own mass.", 0, 2),
+    ("shadow_depth", "shadow depth", "How far light diffuses through the cloud. 0: it glows right through "
+                                     "(soft, luminous shadows). 1: folds and cores stay dark (storms).", 0, 1),
     ("octaves", "detail octaves", "Detail levels (more is finer and slower).", 0, 5),
     ("billow", "billows", "1: billowy cauliflower detail. 0: soft wisps.", 0, 1),
     ("streaks", "streaks", "1: fibrous streaks (cirrus).", 0, 1),
@@ -567,7 +569,8 @@ def build_knobs(g):
         "Distance (km) over which far clouds fade into the haze colour. 0: off.").setValue(60)
     g["haze_distance"].setRange(0, 200)
     c = add(g, nuke.Color_Knob("haze_color", "haze color"),
-            "Colour far clouds fade to. With the light from an atmos it multiplies the atmos's sky colour.")
+            "Colour far clouds fade to. With the light from an atmos it multiplies the atmos's sky colour; "
+            "with Manual light it's tinted half way towards the sky colour's hue.")
     c.setValue([1.4, 1.35, 1.3])
 
     add(g, nuke.Text_Knob("gap_divider", "sun gap"))
@@ -771,7 +774,11 @@ def build_knobs(g):
                                       "sun_direction.%s" % ("xyz"[i], "xyz"[i], "xyz"[i]), i)
         k.setExpression("(light_source ? atm_sun_color.%s : sun_color.%s) * sun_intensity" % (c, c), i)
         k2.setExpression("(light_source ? atm_sky_color.%s : sky_color.%s) * sky_intensity" % (c, c), i)
-        k3.setExpression("light_source ? atm_sky_color.%s * haze_color.%s : haze_color.%s * 0.43" % (c, c, c), i)
+        # Manual: tinted half way towards the sky colour's hue, so far clouds fade cool into the
+        # air rather than into flat grey.
+        k3.setExpression("light_source ? atm_sky_color.%s * haze_color.%s : haze_color.%s * 0.43 * "
+                         "(0.5 + 0.5 * sky_color.%s / max(sky_color.r, sky_color.g, sky_color.b, 1e-4))"
+                         % (c, c, c, c), i)
     k = hidden(g, nuke.Double_Knob("work_scale"))
     k.setExpression("(resolution==0 ? 1 : resolution==1 ? 0.5 : 0.25) * (preview ? 0.5 : 1)")
     k = hidden(g, nuke.Double_Knob("time_s"))

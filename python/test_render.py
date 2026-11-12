@@ -106,7 +106,8 @@ def main():
     # The erosion stack on a hero cumulus. Grain is finer than a pixel at the type's 12 km (the
     # kernel fades detail out by footprint), so grain is checked on a close hero at 4 km.
     set_type("l1_", "Hero Cumulus")
-    for knob, value in (("wisp_amount", 0.9), ("grain_amount", 0.8), ("swirl", 0.6), ("shear", 0.5)):
+    for knob, value in (("wisp_amount", 0.9), ("grain_amount", 0.8), ("swirl", 0.6), ("shear", 0.5),
+                        ("shadow_depth", 1.0)):
         if knob == "grain_amount":
             g["l1_place_km"].setValue(4)
             g["l1_place"].execute()
