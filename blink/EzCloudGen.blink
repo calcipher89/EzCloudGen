@@ -18,7 +18,8 @@
 //
 // volume 1: instead of a deck, the layer is one placed cloud volume: a shape (ellipsoid,
 // dome, anvil or box) centred on volCenter (scene units), turned by volRotate (degrees, Y then
-// X then Z) and sized volSize (metres, full size). Lumps (big noise) break the shape up first.
+// X then Z) and sized volSize (metres, full size). With volAxes on, volAxisX/Y/Z (the box's own axes
+// in the world, from a 3D node in the Group's box input) turn it instead of volRotate. Lumps (big noise) break the shape up first.
 // Its noise lives in the box's frame, so the cloud moves and turns with the box. The shape
 // fills 80% of the box across, and fades out before the walls.
 //
@@ -151,6 +152,11 @@ param:
   float otherHaperture;
   float2 otherOffset;
   float3 otherVolCenter;
+  // A box from a 3D node: its axes in the world (unit length).
+  int volAxes;
+  float3 volAxisX;
+  float3 volAxisY;
+  float3 volAxisZ;
   int depthMode;
   float skyDepth;
 
@@ -256,6 +262,10 @@ local:
     defineParam(otherHaperture, "other_haperture", 36.0f);
     defineParam(otherOffset, "other_offset", float2(0.0f, 0.0f));
     defineParam(otherVolCenter, "other_vol_center", float3(0.0f, 20000.0f, -60000.0f));
+    defineParam(volAxes, "vol_axes", 0);
+    defineParam(volAxisX, "vol_axis_x", float3(1.0f, 0.0f, 0.0f));
+    defineParam(volAxisY, "vol_axis_y", float3(0.0f, 1.0f, 0.0f));
+    defineParam(volAxisZ, "vol_axis_z", float3(0.0f, 0.0f, 1.0f));
   }
 
   void init()
@@ -293,6 +303,11 @@ local:
     vr0 = float3(cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy);
     vr1 = float3(-sz * cx, cz * cx, sx);
     vr2 = float3(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy);
+    if (volAxes == 1) {
+      vr0 = normalize(volAxisX);
+      vr1 = normalize(volAxisY);
+      vr2 = normalize(volAxisZ);
+    }
     vh = float3(max(volSize.x, 1.0f) * 0.5f, max(volSize.y, 1.0f) * 0.5f, max(volSize.z, 1.0f) * 0.5f);
     // The map camera in the kernel's frame.
     mc = float3((mapPosition.x - camPosition.x) * sceneScale, (mapPosition.y - groundHeight) * sceneScale,

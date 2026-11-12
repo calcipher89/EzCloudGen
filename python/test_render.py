@@ -171,27 +171,59 @@ def main():
     g["l1_map_amount"].setValue(1)
     g.setInput(4, None)
 
-    # The 3D box: a hero cumulus linked to a Cube, then the Cube moved, turned and scaled.
+    # The 3D box: a hero cumulus in a Cube plugged into box1, then the Cube moved, turned and scaled.
     g["l1_enable"].setValue(True)
     set_type("l1_", "Hero Cumulus")
     g["l1_vol_rotate"].setValue([0, 25, 0])
     render("box_before")
     g["l1_make_box"].execute()
-    box = nuke.toNode(g["l1_box"].value())
-    if box is None:
-        raise RuntimeError("make 3D box made no Cube")
+    box = g.input(5)
+    if box is None or box.Class() != "Cube":
+        raise RuntimeError("make 3D box didn't plug a Cube into box1")
+
+    def box_state():
+        return ("found %d centre %s size %s axis_x %s" % (
+            g["l1_box_found"].value(), ["%.1f" % v for v in g["l1_box_center"].value()],
+            ["%.1f" % v for v in g["l1_box_size"].value()], ["%.4f" % v for v in g["l1_box_axis_x"].value()]))
+    print("box: " + box_state())
     render("box_linked")  # must match box_before
-    pos0 = g["l1_vol_position"].value()
+    c0 = g["l1_box_center"].value()
     box["translate"].setValue([box["translate"].value(0) - 15000, box["translate"].value(1),
                                box["translate"].value(2) + 30000])
     box["rotate"].setValue([10, 60, 5])
     box["scaling"].setValue([box["scaling"].value(0) * 1.5, box["scaling"].value(1), box["scaling"].value(2)])
-    pos1 = g["l1_vol_position"].value()
-    print("box: position %s -> %s, rotate %s, size %s" % (pos0, pos1, g["l1_vol_rotate"].value(),
-                                                         g["l1_vol_size"].value()))
-    if abs(pos1[0] - pos0[0] + 15000) > 1 or abs(pos1[2] - pos0[2] - 30000) > 1:
+    c1 = g["l1_box_center"].value()
+    print("box moved: " + box_state())
+    if abs(c1[0] - c0[0] + 15000) > 1 or abs(c1[2] - c0[2] - 30000) > 1:
         raise RuntimeError("the volume doesn't follow the box")
+    # The box's axes must be the kernel's rotation for the same angles (Y, then X, then Z).
+    import math
+    ax, ay, az = [math.radians(v) for v in (10, 60, 5)]
+    cx, sx, cy, sy, cz, sz = math.cos(ax), math.sin(ax), math.cos(ay), math.sin(ay), math.cos(az), math.sin(az)
+    col0 = (cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy)
+    got = g["l1_box_axis_x"].value()
+    print("rotation check: kernel %s box %s" % (["%.4f" % v for v in col0], ["%.4f" % v for v in got]))
+    if max(abs(p - q) for p, q in zip(col0, got)) > 1e-3:
+        raise RuntimeError("the box's axes don't match the kernel's rotation")
+    # The same transform on an Axis3 (which has a world_matrix) must give the same box: checks the
+    # Cube matrix code against Nuke's own.
+    ax3 = nuke.nodes.Axis3() if hasattr(nuke.nodes, "Axis3") else nuke.nodes.Axis2()
+    for kn in ("translate", "rotate", "scaling", "uniform_scale", "rot_order", "xform_order", "pivot"):
+        ax3[kn].fromScript(box[kn].toScript())
+    m = ax3["world_matrix"]
+    sc = box["scaling"].value(0) * box["uniform_scale"].value()
+    want_axis = (m.getValue(0) / sc, m.getValue(4) / sc, m.getValue(8) / sc)
+    want_c = (m.getValue(3), m.getValue(7), m.getValue(11))
+    print("Axis3 check: axis %s centre %s" % (["%.4f" % v for v in want_axis], ["%.1f" % v for v in want_c]))
+    if max(abs(p - q) for p, q in zip(want_axis, got)) > 1e-3 or max(abs(p - q) for p, q in zip(want_c, c1)) > 1:
+        raise RuntimeError("box matrix doesn't match Nuke's Axis3")
     render("box_moved")
+    # Plugging the Axis3 in place of the Cube gives the same cloud (any 3D node works).
+    g.setInput(5, ax3)
+    print("Axis3 plugged: " + box_state())
+    render("box_axis")  # must match box_moved
+    g.setInput(5, box)
+    nuke.delete(ax3)
     # The cloud must travel with the box: moved back by the same amount, it renders as before
     # the move (its noise lives in the box's frame).
     t = box["translate"].value()
@@ -202,31 +234,34 @@ def main():
     box["translate"].setValue([t[0], t[1], t[2]])
     box["rotate"].setValue([10, 60, 5])
     box["scaling"].setValue([box["scaling"].value(0) * 1.5, box["scaling"].value(1), box["scaling"].value(2)])
-    # The Cube's rotation must be the kernel's (Y, then X, then Z): compare its matrix.
-    import math
-    ax, ay, az = [math.radians(v) for v in (10, 60, 5)]
-    cx, sx, cy, sy, cz, sz = math.cos(ax), math.sin(ax), math.cos(ay), math.sin(ay), math.cos(az), math.sin(az)
-    col0 = (cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy)
-    # A Cube has no world_matrix knob; an Axis with the same transform knobs gives its matrix.
-    ax3 = nuke.nodes.Axis3() if hasattr(nuke.nodes, "Axis3") else nuke.nodes.Axis2()
-    for kn in ("translate", "rotate", "scaling", "uniform_scale", "rot_order", "xform_order"):
-        ax3[kn].fromScript(box[kn].toScript())
-    m = ax3["world_matrix"]
-    sc = box["scaling"].value(0) * box["uniform_scale"].value()
-    got = (m.getValue(0) / sc, m.getValue(4) / sc, m.getValue(8) / sc)
-    print("rotation check: kernel %s cube %s" % (["%.4f" % v for v in col0], ["%.4f" % v for v in got]))
-    if max(abs(a - b) for a, b in zip(col0, got)) > 1e-3:
-        raise RuntimeError("Cube rot_order doesn't match the kernel")
-    nuke.delete(ax3)
+    # Renaming the Cube changes nothing (the old expression links broke on a rename).
+    box.setName("RenamedBox")
+    if g["l1_box_found"].value() < 0.5:
+        raise RuntimeError("renaming the box lost it")
+    # A parent Axis on the Cube's axis input moves it too.
+    parent_axis = nuke.nodes.Axis3() if hasattr(nuke.nodes, "Axis3") else nuke.nodes.Axis2()
+    parent_axis["translate"].setValue([1000, 0, 0])
+    c_before = g["l1_box_center"].value()
+    for i in range(1, box.inputs() if box.inputs() > 1 else box.maxInputs()):
+        box.setInput(i, parent_axis)
+        break
+    c_after = g["l1_box_center"].value()
+    print("parent axis: centre x %.1f -> %.1f (inputs %d)" % (c_before[0], c_after[0], box.maxInputs()))
+    if abs(c_after[0] - c_before[0] - 1000) > 1:
+        print("WARNING: a parent Axis on the Cube's axis input is not followed")
+    for i in range(box.maxInputs()):
+        if box.input(i) is parent_axis:
+            box.setInput(i, None)
+    nuke.delete(parent_axis)
     t0 = box["translate"].value()
     g["l1_place"].execute()
     print("place moves the box: %s -> %s" % (t0, box["translate"].value()))
     if abs(box["translate"].value(0) - t0[0]) + abs(box["translate"].value(2) - t0[2]) < 1:
         raise RuntimeError("place in front of camera didn't move the box")
-    # Picking a type with the box linked sizes the box and keeps the links.
+    # Picking a type with the box plugged in sizes the box.
     g["l1_type"].setValue("Storm Anvil")
     want = cloud_types.full("Storm Anvil")["vol_size"]
-    if max(abs(a - b) for a, b in zip(g["l1_vol_size"].value(), want)) > 1e-2 * max(want):
+    if max(abs(p - q) for p, q in zip(g["l1_box_size"].value(), want)) > 1e-2 * max(want):
         # Terminal Nuke doesn't run knobChanged: run the node's script as the GUI would.
         saved = nuke.thisNode, nuke.thisKnob
         nuke.thisNode, nuke.thisKnob = (lambda: g), (lambda: g["l1_type"])
@@ -235,17 +270,17 @@ def main():
         finally:
             nuke.thisNode, nuke.thisKnob = saved
         print("type change: knobChanged run by hand")
-    got_size = g["l1_vol_size"].value()
-    print("type change: size %s (type %s), linked %s" % (got_size, want, g["l1_vol_size"].isAnimated()))
-    if not (g["l1_vol_size"].hasExpression() and g["l1_vol_position"].hasExpression()
-            and g["l1_vol_rotate"].hasExpression()):
-        raise RuntimeError("picking a type broke the box links")
-    if max(abs(a - b) for a, b in zip(got_size, want)) > 1e-2 * max(want):
+    got_size = g["l1_box_size"].value()
+    print("type change: box size %s (type %s)" % (got_size, want))
+    if max(abs(p - q) for p, q in zip(got_size, want)) > 1e-2 * max(want):
         raise RuntimeError("picking a type didn't size the box")
+    render("box_placed")
     g["l1_release_box"].execute()
-    if g["l1_vol_position"].isAnimated() or g["l1_box"].value():
-        raise RuntimeError("release box left a link")
-    render("box_released")  # must match the last placed state
+    if g.input(5) is not None or g["l1_box_found"].value() > 0.5:
+        raise RuntimeError("release box left the box plugged in")
+    print("released: position %s rotate %s size %s" % (g["l1_vol_position"].value(), g["l1_vol_rotate"].value(),
+                                                      g["l1_vol_size"].value()))
+    render("box_released")  # must match box_placed
     nuke.delete(box)
 
     # Occlusion and ground shadows: a ridge 8 km away (depth.Z, Planar Z in decimetres) across

@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.6.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.7.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -22,6 +22,7 @@ EzCloudGen). Inputs:
 - **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
   measures in its HDRI light the clouds ('light from' Auto).
 - **sun** (optional): an Axis, overriding the sun direction.
+- **box1, box2, box3** (optional): a 3D node per layer that the layer's volume fills.
 - **map** (optional): a coverage map for the sky decks, painted over the shot (a Roto over the
   plate works): white covers the sky, mid grey keeps the layer's coverage, black clears it. It is
   seen through the camera on 'map frame', stays put in the world and drifts with the wind.
@@ -31,9 +32,11 @@ EzCloudGen). Inputs:
 Each of the three Layer tabs has a type menu that fills in its knobs. A layer is either a sky
 deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Storm Anvil, Fog Bank, Puff):
 picking a volume type drops it 'distance' ahead of the camera ('place in front of camera' does
-it again), then position, rotate and size move it. 'make 3D box' makes a wireframe Cube beside the node
-that the volume follows: view it with your camera and move, rotate and scale it in the 3D viewer
-('release box' unlinks it, keeping the volume where it is). Every layer has the erosion stack: billows,
+it again), then position, rotate and size move it. Or plug any 3D node (a Cube, an Axis, a
+TransformGeo, parented or tracked) into the layer's **box1/box2/box3** input: the volume fills
+that box and follows it. 'make 3D box' makes a wireframe Cube and plugs it in; view it with your
+camera and move, rotate and scale it in the 3D viewer ('release box' unplugs it, keeping the
+volume where it is). Every layer has the erosion stack: billows,
 wisps, grain, swirl and wind shear. Layers are put over each other nearest first, per pixel.
 
 'show me variations' (main tab) shows nine seeds of one layer side by side ('next nine' for
