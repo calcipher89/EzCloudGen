@@ -550,26 +550,26 @@ Group {
  }
  BackdropNode {
   inputs 0
-  name Backdrop_Layers
-  tile_color 0x6a4a4aff
-  label Layers
-  note_font_size 32
-  xpos -40
-  ypos 2697
-  bdwidth 520
-  bdheight 769
-  z_order 3
- }
- BackdropNode {
-  inputs 0
   name Backdrop_Back_to_full_size
   tile_color 0x444444ff
   label "Back to full size"
   note_font_size 32
   xpos -40
   ypos 1563
-  bdwidth 1060
-  bdheight 349
+  bdwidth 1240
+  bdheight 409
+  z_order 3
+ }
+ BackdropNode {
+  inputs 0
+  name Backdrop_Layers
+  tile_color 0x6a4a4aff
+  label Layers
+  note_font_size 32
+  xpos -40
+  ypos 2757
+  bdwidth 520
+  bdheight 769
   z_order 4
  }
  BackdropNode {
@@ -579,7 +579,7 @@ Group {
   label Views
   note_font_size 32
   xpos -40
-  ypos 3525
+  ypos 3585
   bdwidth 880
   bdheight 349
   z_order 5
@@ -591,22 +591,10 @@ Group {
   label Shadows
   note_font_size 32
   xpos 140
-  ypos 1971
+  ypos 2031
   bdwidth 520
   bdheight 349
   z_order 6
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_Other
-  tile_color 0x444444ff
-  label Other
-  note_font_size 32
-  xpos -40
-  ypos 4389
-  bdwidth 520
-  bdheight 259
-  z_order 7
  }
  BackdropNode {
   inputs 0
@@ -615,10 +603,10 @@ Group {
   label Bake
   note_font_size 32
   xpos -40
-  ypos 3933
+  ypos 3993
   bdwidth 520
   bdheight 229
-  z_order 8
+  z_order 7
  }
  BackdropNode {
   inputs 0
@@ -627,10 +615,10 @@ Group {
   label Comp
   note_font_size 32
   xpos -40
-  ypos 2379
+  ypos 2439
   bdwidth 340
   bdheight 259
-  z_order 9
+  z_order 8
  }
  BackdropNode {
   inputs 0
@@ -639,10 +627,10 @@ Group {
   label Output
   note_font_size 32
   xpos -40
-  ypos 4212
+  ypos 4272
   bdwidth 160
   bdheight 118
-  z_order 10
+  z_order 9
  }
  Input {
   inputs 0
@@ -685,7 +673,7 @@ Group {
   name bg
   xpos 180
  }
-set N503ee000 [stack 0]
+set N722be000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -713,7 +701,7 @@ set N503ee000 [stack 0]
   xpos 0
   ypos 180
  }
-set N50406800 [stack 0]
+set N722d6800 [stack 0]
  Dot {
   name LayoutDot1
   xpos 394
@@ -732,66 +720,66 @@ set N50406800 [stack 0]
   ypos 240
  }
  Dot {
-  name LayoutDot85
+  name LayoutDot86
   xpos 494
   ypos 243
  }
  Dot {
-  name LayoutDot86
+  name LayoutDot87
   xpos 494
   ypos 567
  }
-set N7edae000 [stack 0]
+set N7fd1e400 [stack 0]
  Dot {
-  name LayoutDot88
+  name LayoutDot89
   xpos 592
   ypos 567
  }
-set N7edae800 [stack 0]
+set N7fd1ec00 [stack 0]
  Dot {
-  name LayoutDot90
+  name LayoutDot91
   xpos 970
   ypos 567
  }
-set N7edaf000 [stack 0]
+set N7fd1f400 [stack 0]
  Dot {
-  name LayoutDot91
+  name LayoutDot92
   xpos 1150
   ypos 567
  }
-set N7edaf400 [stack 0]
+set N7fd1f800 [stack 0]
  Dot {
-  name LayoutDot92
+  name LayoutDot93
   xpos 1330
   ypos 567
  }
-set N7edaf800 [stack 0]
+set N7fd1fc00 [stack 0]
  Dot {
-  name LayoutDot93
+  name LayoutDot94
   xpos 1510
   ypos 567
  }
-set N7edafc00 [stack 0]
+set N7fd3a000 [stack 0]
  Dot {
-  name LayoutDot94
+  name LayoutDot95
   xpos 1690
   ypos 567
  }
-set N7edca000 [stack 0]
+set N7fd3a400 [stack 0]
  Dot {
-  name LayoutDot95
+  name LayoutDot96
   xpos 1870
   ypos 567
  }
-set N7edca400 [stack 0]
-push $N503ee000
+set N7fd3a800 [stack 0]
+push $N722be000
  AddChannels {
   channels depth
   name DepthEnsure
   xpos 180
   ypos 60
  }
-push $N50406800
+push $N722d6800
  Copy {
   inputs 2
   from0 depth.Z
@@ -810,76 +798,76 @@ push $N50406800
   ypos 300
  }
  Dot {
-  name LayoutDot60
+  name LayoutDot61
   xpos 314
   ypos 303
  }
  Dot {
-  name LayoutDot61
+  name LayoutDot62
   xpos 314
   ypos 507
  }
-set N7ed47c00 [stack 0]
+set N7fcd4000 [stack 0]
  Dot {
-  name LayoutDot62
+  name LayoutDot63
   xpos 338
   ypos 507
  }
-set N7ed64000 [stack 0]
+set N7fcd4400 [stack 0]
  Dot {
-  name LayoutDot64
+  name LayoutDot65
   xpos 854
   ypos 507
  }
-set N7ed64800 [stack 0]
+set N7fcd4c00 [stack 0]
  Dot {
-  name LayoutDot66
+  name LayoutDot67
   xpos 952
   ypos 507
  }
-set N7ed65000 [stack 0]
+set N7fcd5400 [stack 0]
  Dot {
-  name LayoutDot67
+  name LayoutDot68
   xpos 1132
   ypos 507
  }
-set N7ed65400 [stack 0]
+set N7fcd5800 [stack 0]
  Dot {
-  name LayoutDot68
+  name LayoutDot69
   xpos 1312
   ypos 507
  }
-set N7ed65800 [stack 0]
+set N7fcd5c00 [stack 0]
  Dot {
-  name LayoutDot69
+  name LayoutDot70
   xpos 1492
   ypos 507
  }
-set N7ed65c00 [stack 0]
+set N7fce8000 [stack 0]
  Dot {
-  name LayoutDot70
+  name LayoutDot71
   xpos 1574
   ypos 507
  }
-set N7ed78000 [stack 0]
+set N7fce8400 [stack 0]
  Dot {
-  name LayoutDot72
+  name LayoutDot73
   xpos 1672
   ypos 507
  }
-set N7ed78800 [stack 0]
+set N7fce8c00 [stack 0]
  Dot {
-  name LayoutDot73
+  name LayoutDot74
   xpos 1754
   ypos 507
  }
-set N7ed78c00 [stack 0]
+set N7fce9000 [stack 0]
  Dot {
-  name LayoutDot75
+  name LayoutDot76
   xpos 1852
   ypos 507
  }
-set N7ed79400 [stack 0]
+set N7fce9800 [stack 0]
  Input {
   inputs 0
   name map
@@ -899,83 +887,83 @@ set N7ed79400 [stack 0]
   ypos 60
  }
  Dot {
-  name LayoutDot32
+  name LayoutDot33
   xpos 446
   ypos 63
  }
  Dot {
-  name LayoutDot33
+  name LayoutDot34
   xpos 446
   ypos 537
  }
-set N7ecfac00 [stack 0]
+set N7fc6b000 [stack 0]
  Dot {
-  name LayoutDot34
+  name LayoutDot35
   xpos 470
   ypos 537
  }
-set N7ecfb000 [stack 0]
+set N7fc6b400 [stack 0]
  Dot {
-  name LayoutDot37
+  name LayoutDot38
   xpos 574
   ypos 537
  }
-set N7ecfbc00 [stack 0]
+set N7fc84000 [stack 0]
  Dot {
-  name LayoutDot39
+  name LayoutDot40
   xpos 830
   ypos 537
  }
-set N7ed14400 [stack 0]
+set N7fc84800 [stack 0]
  Dot {
-  name LayoutDot41
+  name LayoutDot42
   xpos 916
   ypos 537
  }
-set N7ed14c00 [stack 0]
+set N7fc85000 [stack 0]
  Dot {
-  name LayoutDot42
+  name LayoutDot43
   xpos 1096
   ypos 537
  }
-set N7ed15000 [stack 0]
+set N7fc85400 [stack 0]
  Dot {
-  name LayoutDot43
+  name LayoutDot44
   xpos 1276
   ypos 537
  }
-set N7ed15400 [stack 0]
+set N7fc85800 [stack 0]
  Dot {
-  name LayoutDot44
+  name LayoutDot45
   xpos 1456
   ypos 537
  }
-set N7ed15800 [stack 0]
+set N7fc85c00 [stack 0]
  Dot {
-  name LayoutDot45
+  name LayoutDot46
   xpos 1550
   ypos 537
  }
-set N7ed15c00 [stack 0]
+set N7fc9c000 [stack 0]
  Dot {
-  name LayoutDot47
+  name LayoutDot48
   xpos 1636
   ypos 537
  }
-set N7ed2c400 [stack 0]
+set N7fc9c800 [stack 0]
  Dot {
-  name LayoutDot48
+  name LayoutDot49
   xpos 1730
   ypos 537
  }
-set N7ed2c800 [stack 0]
+set N7fc9cc00 [stack 0]
  Dot {
-  name LayoutDot50
+  name LayoutDot51
   xpos 1816
   ypos 537
  }
-set N7ed2d000 [stack 0]
-push $N50406800
+set N7fc9d400 [stack 0]
+push $N722d6800
  Reformat {
   type scale
   scale {{parent.work_scale}}
@@ -985,77 +973,77 @@ push $N50406800
   xpos 0
   ypos 240
  }
-set N50406c00 [stack 0]
+set N722d6c00 [stack 0]
  Dot {
-  name LayoutDot9
+  name LayoutDot10
   xpos 86
   ypos 243
  }
  Dot {
-  name LayoutDot10
+  name LayoutDot11
   xpos 86
   ypos 477
  }
  Dot {
-  name LayoutDot11
+  name LayoutDot12
   xpos 290
   ypos 477
  }
-set N7ecad400 [stack 0]
+set N7fc1d800 [stack 0]
  Dot {
-  name LayoutDot13
+  name LayoutDot14
   xpos 806
   ypos 477
  }
-set N7ecadc00 [stack 0]
+set N7fc38000 [stack 0]
  Dot {
-  name LayoutDot15
+  name LayoutDot16
   xpos 934
   ypos 477
  }
-set N7ecc8400 [stack 0]
+set N7fc38800 [stack 0]
  Dot {
-  name LayoutDot16
+  name LayoutDot17
   xpos 1114
   ypos 477
  }
-set N7ecc8800 [stack 0]
+set N7fc38c00 [stack 0]
  Dot {
-  name LayoutDot17
+  name LayoutDot18
   xpos 1294
   ypos 477
  }
-set N7ecc8c00 [stack 0]
+set N7fc39000 [stack 0]
  Dot {
-  name LayoutDot18
+  name LayoutDot19
   xpos 1474
   ypos 477
  }
-set N7ecc9000 [stack 0]
+set N7fc39400 [stack 0]
  Dot {
-  name LayoutDot19
+  name LayoutDot20
   xpos 1526
   ypos 477
  }
-set N7ecc9400 [stack 0]
+set N7fc39800 [stack 0]
  Dot {
-  name LayoutDot21
+  name LayoutDot22
   xpos 1654
   ypos 477
  }
-set N7ecc9c00 [stack 0]
+set N7fc50000 [stack 0]
  Dot {
-  name LayoutDot22
+  name LayoutDot23
   xpos 1706
   ypos 477
  }
-set N7ece0000 [stack 0]
+set N7fc50400 [stack 0]
  Dot {
-  name LayoutDot24
+  name LayoutDot25
   xpos 1834
   ypos 477
  }
-set N7ece0800 [stack 0]
+set N7fc50c00 [stack 0]
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1173,29 +1161,29 @@ set N7ece0800 [stack 0]
   disable {{"(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)) || !(parent.occlude && parent.bg_found) || !(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"}}
  }
  Dot {
-  name LayoutDot163
+  name LayoutDot161
   xpos 1958
   ypos 621
  }
  Dot {
-  name LayoutDot164
+  name LayoutDot162
   xpos 1958
-  ypos 2151
+  ypos 2211
  }
  Dot {
-  name LayoutDot165
+  name LayoutDot163
   xpos 278
-  ypos 2151
+  ypos 2211
  }
  Dot {
-  name LayoutDot166
+  name LayoutDot164
   xpos 266
-  ypos 2253
+  ypos 2313
  }
-push $N7edca000
-push $N7ed78800
-push $N7ed2c400
-push $N7ecc9c00
+push $N7fd3a400
+push $N7fce8c00
+push $N7fc9c800
+push $N7fc50000
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1313,24 +1301,24 @@ push $N7ecc9c00
   disable {{"(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(parent.occlude && parent.bg_found) || !(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"}}
  }
  Dot {
-  name LayoutDot160
+  name LayoutDot158
   xpos 1934
   ypos 621
  }
  Dot {
-  name LayoutDot161
+  name LayoutDot159
   xpos 1934
-  ypos 2121
+  ypos 2181
  }
  Dot {
-  name LayoutDot162
+  name LayoutDot160
   xpos 232
-  ypos 2121
+  ypos 2181
  }
-push $N7edaf000
-push $N7ed65000
-push $N7ed14c00
-push $N7ecc8400
+push $N7fd1f400
+push $N7fcd5400
+push $N7fc85000
+push $N7fc38800
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1448,19 +1436,19 @@ push $N7ecc8400
   disable {{"(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(parent.occlude && parent.bg_found) || !(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"}}
  }
  Dot {
-  name LayoutDot157
+  name LayoutDot155
   xpos 1010
   ypos 621
  }
  Dot {
-  name LayoutDot158
+  name LayoutDot156
   xpos 1010
-  ypos 2091
+  ypos 2151
  }
  Dot {
-  name LayoutDot159
+  name LayoutDot157
   xpos 214
-  ypos 2091
+  ypos 2151
  }
  Merge2 {
   inputs 2
@@ -1468,7 +1456,7 @@ push $N7ecc8400
   output rgb
   name Shadow_Screen12
   xpos 180
-  ypos 2202
+  ypos 2262
  }
  Merge2 {
   inputs 2
@@ -1476,21 +1464,21 @@ push $N7ecc8400
   output rgb
   name Shadow_Screen3
   xpos 180
-  ypos 2262
+  ypos 2322
  }
  Dot {
-  name LayoutDot167
+  name LayoutDot165
   xpos 266
-  ypos 2265
+  ypos 2325
  }
  Dot {
-  name LayoutDot168
+  name LayoutDot166
   xpos 266
   ypos 1623
  }
  Dot {
-  name LayoutDot169
-  xpos 214
+  name LayoutDot167
+  xpos 394
   ypos 1623
  }
  Reformat {
@@ -1501,40 +1489,40 @@ push $N7ecc8400
   resize distort
   black_outside true
   name ShadowUp
-  xpos 180
+  xpos 360
   ypos 1794
  }
  Dot {
-  name LayoutDot170
-  xpos 290
+  name LayoutDot168
+  xpos 446
   ypos 1797
  }
  Dot {
+  name LayoutDot169
+  xpos 446
+  ypos 2121
+ }
+set N7fe20c00 [stack 0]
+ Dot {
   name LayoutDot171
-  xpos 290
-  ypos 2061
+  xpos 446
+  ypos 2847
  }
-set N7eeb1400 [stack 0]
+set N7fe21400 [stack 0]
  Dot {
-  name LayoutDot173
-  xpos 290
-  ypos 2817
- }
-set N7eeb1c00 [stack 0]
- Dot {
-  name LayoutDot176
-  xpos 290
-  ypos 3675
+  name LayoutDot174
+  xpos 446
+  ypos 3705
  }
  Dot {
-  name LayoutDot177
+  name LayoutDot175
   xpos 772
-  ypos 3675
+  ypos 3705
  }
-push $N7edafc00
-push $N7ed65c00
-push $N7ed15800
-push $N7ecc9000
+push $N7fd3a000
+push $N7fce8000
+push $N7fc85c00
+push $N7fc39400
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1651,28 +1639,28 @@ push $N7ecc9000
   ypos 618
   disable {{"!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)"}}
  }
-set N7eabec00 [stack 0]
+set N7fa2ec00 [stack 0]
  Dot {
-  name LayoutDot138
+  name LayoutDot139
   xpos 1910
   ypos 633
  }
  Dot {
-  name LayoutDot139
+  name LayoutDot140
   xpos 1910
   ypos 1035
  }
-set N7ee49400 [stack 0]
+set N7fdb9800 [stack 0]
  Dot {
-  name LayoutDot140
+  name LayoutDot141
   xpos 736
   ypos 1035
  }
-set N7ee49800 [stack 0]
-push $N7edaf800
-push $N7ed65800
-push $N7ed15400
-push $N7ecc8c00
+set N7fdb9c00 [stack 0]
+push $N7fd1fc00
+push $N7fcd5c00
+push $N7fc85800
+push $N7fc39000
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1789,28 +1777,28 @@ push $N7ecc8c00
   ypos 618
   disable {{"!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)"}}
  }
-set N7da44800 [stack 0]
+set N7f984800 [stack 0]
  Dot {
-  name LayoutDot130
+  name LayoutDot131
   xpos 1346
   ypos 621
  }
  Dot {
-  name LayoutDot131
+  name LayoutDot132
   xpos 1346
   ypos 975
  }
-set N7ee31400 [stack 0]
+set N7fda1800 [stack 0]
  Dot {
-  name LayoutDot132
+  name LayoutDot133
   xpos 772
   ypos 975
  }
-set N7ee31800 [stack 0]
-push $N7edaf400
-push $N7ed65400
-push $N7ed15000
-push $N7ecc8800
+set N7fda1c00 [stack 0]
+push $N7fd1f800
+push $N7fcd5800
+push $N7fc85400
+push $N7fc38c00
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -1927,183 +1915,183 @@ push $N7ecc8800
   ypos 618
   disable {{"!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)"}}
  }
-set N7d9a6400 [stack 0]
+set N7f8e6400 [stack 0]
  Dot {
-  name LayoutDot122
+  name LayoutDot123
   xpos 1166
   ypos 621
  }
  Dot {
-  name LayoutDot123
+  name LayoutDot124
   xpos 1166
   ypos 915
  }
-set N7ee17400 [stack 0]
+set N7fd87800 [stack 0]
  Dot {
-  name LayoutDot124
+  name LayoutDot125
   xpos 754
   ypos 915
  }
-set N7ee17800 [stack 0]
-push $N7edca400
+set N7fd87c00 [stack 0]
+push $N7fd3a800
  Dot {
-  name LayoutDot96
+  name LayoutDot97
   xpos 2230
   ypos 567
  }
-set N7edca800 [stack 0]
+set N7fd3ac00 [stack 0]
  Dot {
-  name LayoutDot97
+  name LayoutDot98
   xpos 2410
   ypos 567
  }
-set N7edcac00 [stack 0]
+set N7fd3b000 [stack 0]
  Dot {
-  name LayoutDot98
+  name LayoutDot99
   xpos 2590
   ypos 567
  }
-set N7edcb000 [stack 0]
+set N7fd3b400 [stack 0]
  Dot {
-  name LayoutDot99
+  name LayoutDot100
   xpos 2770
   ypos 567
  }
-set N7edcb400 [stack 0]
+set N7fd3b800 [stack 0]
  Dot {
-  name LayoutDot100
+  name LayoutDot101
   xpos 2950
   ypos 567
  }
-set N7edcb800 [stack 0]
+set N7fd3bc00 [stack 0]
  Dot {
-  name LayoutDot101
+  name LayoutDot102
   xpos 3130
   ypos 567
  }
-push $N7ed79400
+push $N7fce9800
  Dot {
-  name LayoutDot76
+  name LayoutDot77
   xpos 2032
   ypos 507
  }
-set N7ed79800 [stack 0]
+set N7fce9c00 [stack 0]
  Dot {
-  name LayoutDot77
+  name LayoutDot78
   xpos 2212
   ypos 507
  }
-set N7ed79c00 [stack 0]
+set N7fd06000 [stack 0]
  Dot {
-  name LayoutDot78
+  name LayoutDot79
   xpos 2392
   ypos 507
  }
-set N7ed96000 [stack 0]
+set N7fd06400 [stack 0]
  Dot {
-  name LayoutDot79
+  name LayoutDot80
   xpos 2572
   ypos 507
  }
-set N7ed96400 [stack 0]
+set N7fd06800 [stack 0]
  Dot {
-  name LayoutDot80
+  name LayoutDot81
   xpos 2752
   ypos 507
  }
-set N7ed96800 [stack 0]
+set N7fd06c00 [stack 0]
  Dot {
-  name LayoutDot81
+  name LayoutDot82
   xpos 2932
   ypos 507
  }
-set N7ed96c00 [stack 0]
+set N7fd07000 [stack 0]
  Dot {
-  name LayoutDot82
+  name LayoutDot83
   xpos 3112
   ypos 507
  }
-push $N7ed2d000
+push $N7fc9d400
  Dot {
-  name LayoutDot51
+  name LayoutDot52
   xpos 1996
   ypos 537
  }
-set N7ed2d400 [stack 0]
+set N7fc9d800 [stack 0]
  Dot {
-  name LayoutDot52
+  name LayoutDot53
   xpos 2176
   ypos 537
  }
-set N7ed2d800 [stack 0]
+set N7fc9dc00 [stack 0]
  Dot {
-  name LayoutDot53
+  name LayoutDot54
   xpos 2356
   ypos 537
  }
-set N7ed2dc00 [stack 0]
+set N7fcb6000 [stack 0]
  Dot {
-  name LayoutDot54
+  name LayoutDot55
   xpos 2536
   ypos 537
  }
-set N7ed46000 [stack 0]
+set N7fcb6400 [stack 0]
  Dot {
-  name LayoutDot55
+  name LayoutDot56
   xpos 2716
   ypos 537
  }
-set N7ed46400 [stack 0]
+set N7fcb6800 [stack 0]
  Dot {
-  name LayoutDot56
+  name LayoutDot57
   xpos 2896
   ypos 537
  }
-set N7ed46800 [stack 0]
+set N7fcb6c00 [stack 0]
  Dot {
-  name LayoutDot57
+  name LayoutDot58
   xpos 3076
   ypos 537
  }
-push $N7ece0800
+push $N7fc50c00
  Dot {
-  name LayoutDot25
+  name LayoutDot26
   xpos 2014
   ypos 477
  }
-set N7ece0c00 [stack 0]
+set N7fc51000 [stack 0]
  Dot {
-  name LayoutDot26
+  name LayoutDot27
   xpos 2194
   ypos 477
  }
-set N7ece1000 [stack 0]
+set N7fc51400 [stack 0]
  Dot {
-  name LayoutDot27
+  name LayoutDot28
   xpos 2374
   ypos 477
  }
-set N7ece1400 [stack 0]
+set N7fc51800 [stack 0]
  Dot {
-  name LayoutDot28
+  name LayoutDot29
   xpos 2554
   ypos 477
  }
-set N7ece1800 [stack 0]
+set N7fc51c00 [stack 0]
  Dot {
-  name LayoutDot29
+  name LayoutDot30
   xpos 2734
   ypos 477
  }
-set N7ece1c00 [stack 0]
+set N7fc6a000 [stack 0]
  Dot {
-  name LayoutDot30
+  name LayoutDot31
   xpos 2914
   ypos 477
  }
-set N7ecfa000 [stack 0]
+set N7fc6a400 [stack 0]
  Dot {
-  name LayoutDot31
+  name LayoutDot32
   xpos 3094
   ypos 477
  }
@@ -2229,24 +2217,24 @@ set N7ecfa000 [stack 0]
   ypos 678
  }
  Dot {
-  name LayoutDot242
+  name LayoutDot237
   xpos 3146
   ypos 681
  }
  Dot {
-  name LayoutDot243
+  name LayoutDot238
   xpos 3146
   ypos 1335
  }
  Dot {
-  name LayoutDot244
+  name LayoutDot239
   xpos 808
   ypos 1335
  }
-push $N7edcb800
-push $N7ed96c00
-push $N7ed46800
-push $N7ecfa000
+push $N7fd3bc00
+push $N7fd07000
+push $N7fcb6c00
+push $N7fc6a400
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -2369,24 +2357,24 @@ push $N7ecfa000
   ypos 678
  }
  Dot {
-  name LayoutDot239
+  name LayoutDot234
   xpos 2966
   ypos 681
  }
  Dot {
-  name LayoutDot240
+  name LayoutDot235
   xpos 2966
   ypos 1305
  }
  Dot {
-  name LayoutDot241
+  name LayoutDot236
   xpos 718
   ypos 1305
  }
-push $N7edcb400
-push $N7ed96800
-push $N7ed46400
-push $N7ece1c00
+push $N7fd3b800
+push $N7fd06c00
+push $N7fcb6800
+push $N7fc6a000
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -2509,17 +2497,17 @@ push $N7ece1c00
   ypos 678
  }
  Dot {
-  name LayoutDot236
+  name LayoutDot231
   xpos 2786
   ypos 681
  }
  Dot {
-  name LayoutDot237
+  name LayoutDot232
   xpos 2786
   ypos 1275
  }
  Dot {
-  name LayoutDot238
+  name LayoutDot233
   xpos 790
   ypos 1275
  }
@@ -2540,18 +2528,18 @@ push $N7ece1c00
   ypos 1446
  }
  Dot {
-  name LayoutDot245
+  name LayoutDot240
   xpos 806
   ypos 1449
  }
  Dot {
-  name LayoutDot246
+  name LayoutDot241
   xpos 806
   ypos 1743
  }
  Dot {
-  name LayoutDot247
-  xpos 934
+  name LayoutDot242
+  xpos 1114
   ypos 1743
  }
  Reformat {
@@ -2563,61 +2551,61 @@ push $N7ece1c00
   filter impulse
   black_outside true
   name BwdUp
-  xpos 900
+  xpos 1080
   ypos 1794
  }
  Multiply {
   channels rgb
   value {{"1 / max(parent.work_scale, 1e-6)"}}
   name BwdScale
-  xpos 900
+  xpos 1080
   ypos 1854
  }
  Dot {
-  name LayoutDot248
-  xpos 986
+  name LayoutDot243
+  xpos 1166
   ypos 1857
  }
  Dot {
-  name LayoutDot249
-  xpos 986
-  ypos 2877
+  name LayoutDot244
+  xpos 1166
+  ypos 2937
  }
  Dot {
-  name LayoutDot250
-  xpos 470
-  ypos 2877
+  name LayoutDot245
+  xpos 338
+  ypos 2937
  }
  Dot {
-  name LayoutDot251
-  xpos 470
-  ypos 3351
+  name LayoutDot246
+  xpos 338
+  ypos 3411
  }
-push $N7ee49800
+push $N7fdb9c00
  Dot {
-  name LayoutDot141
+  name LayoutDot142
   xpos 556
   ypos 1035
  }
-set N7ee49c00 [stack 0]
-push $N7ee31800
+set N7fdd4000 [stack 0]
+push $N7fda1c00
  Dot {
-  name LayoutDot133
+  name LayoutDot134
   xpos 592
   ypos 975
  }
-set N7ee31c00 [stack 0]
-push $N7ee17800
+set N7fdb8000 [stack 0]
+push $N7fd87c00
  Dot {
-  name LayoutDot125
+  name LayoutDot126
   xpos 574
   ypos 915
  }
-set N7ee17c00 [stack 0]
-push $N7edcb000
-push $N7ed96400
-push $N7ed46000
-push $N7ece1800
+set N7fda0000 [stack 0]
+push $N7fd3b400
+push $N7fd06800
+push $N7fcb6400
+push $N7fc51c00
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -2740,24 +2728,24 @@ push $N7ece1800
   ypos 678
  }
  Dot {
-  name LayoutDot226
+  name LayoutDot221
   xpos 2606
   ypos 681
  }
  Dot {
-  name LayoutDot227
+  name LayoutDot222
   xpos 2606
   ypos 1245
  }
  Dot {
-  name LayoutDot228
+  name LayoutDot223
   xpos 628
   ypos 1245
  }
-push $N7edcac00
-push $N7ed96000
-push $N7ed2dc00
-push $N7ece1400
+push $N7fd3b000
+push $N7fd06400
+push $N7fcb6000
+push $N7fc51800
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -2880,24 +2868,24 @@ push $N7ece1400
   ypos 678
  }
  Dot {
-  name LayoutDot223
+  name LayoutDot218
   xpos 2426
   ypos 681
  }
  Dot {
-  name LayoutDot224
+  name LayoutDot219
   xpos 2426
   ypos 1215
  }
  Dot {
-  name LayoutDot225
+  name LayoutDot220
   xpos 538
   ypos 1215
  }
-push $N7edca800
-push $N7ed79c00
-push $N7ed2d800
-push $N7ece1000
+push $N7fd3ac00
+push $N7fd06000
+push $N7fc9dc00
+push $N7fc51400
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -3020,17 +3008,17 @@ push $N7ece1000
   ypos 678
  }
  Dot {
-  name LayoutDot220
+  name LayoutDot215
   xpos 2246
   ypos 681
  }
  Dot {
-  name LayoutDot221
+  name LayoutDot216
   xpos 2246
   ypos 1185
  }
  Dot {
-  name LayoutDot222
+  name LayoutDot217
   xpos 610
   ypos 1185
  }
@@ -3051,18 +3039,18 @@ push $N7ece1000
   ypos 1446
  }
  Dot {
-  name LayoutDot229
+  name LayoutDot224
   xpos 626
   ypos 1449
  }
  Dot {
-  name LayoutDot230
+  name LayoutDot225
   xpos 626
   ypos 1713
  }
  Dot {
-  name LayoutDot231
-  xpos 754
+  name LayoutDot226
+  xpos 934
   ypos 1713
  }
  Reformat {
@@ -3074,107 +3062,107 @@ push $N7ece1000
   filter impulse
   black_outside true
   name FwdUp
-  xpos 720
+  xpos 900
   ypos 1794
  }
  Multiply {
   channels rgb
   value {{"1 / max(parent.work_scale, 1e-6)"}}
   name FwdScale
-  xpos 720
+  xpos 900
   ypos 1854
  }
  Dot {
-  name LayoutDot232
-  xpos 806
+  name LayoutDot227
+  xpos 986
   ypos 1857
  }
  Dot {
-  name LayoutDot233
-  xpos 806
+  name LayoutDot228
+  xpos 986
+  ypos 2907
+ }
+ Dot {
+  name LayoutDot229
+  xpos 314
+  ypos 2907
+ }
+ Dot {
+  name LayoutDot230
+  xpos 314
+  ypos 3351
+ }
+push $N7fe21400
+ Dot {
+  name LayoutDot172
+  xpos 266
   ypos 2847
  }
  Dot {
-  name LayoutDot234
-  xpos 338
-  ypos 2847
- }
- Dot {
-  name LayoutDot235
-  xpos 338
-  ypos 3291
- }
-push $N7eeb1c00
- Dot {
-  name LayoutDot174
+  name LayoutDot173
   xpos 266
-  ypos 2817
+  ypos 3231
  }
+push $N7fdb9800
  Dot {
-  name LayoutDot175
-  xpos 266
-  ypos 3171
- }
-push $N7ee49400
- Dot {
-  name LayoutDot144
+  name LayoutDot145
   xpos 1910
   ypos 1368
  }
  Dot {
-  name LayoutDot145
+  name LayoutDot146
   xpos 290
   ypos 1368
  }
-push $N7ee31400
+push $N7fda1800
  Dot {
-  name LayoutDot136
+  name LayoutDot137
   xpos 1346
   ypos 1368
  }
  Dot {
-  name LayoutDot137
+  name LayoutDot138
   xpos 158
   ypos 1368
  }
-push $N7ee17400
+push $N7fd87800
  Dot {
-  name LayoutDot128
+  name LayoutDot129
   xpos 1166
   ypos 1368
  }
  Dot {
-  name LayoutDot129
+  name LayoutDot130
   xpos 134
   ypos 1368
  }
-push $N7edae000
+push $N7fd1e400
  Dot {
-  name LayoutDot87
+  name LayoutDot88
   xpos 412
   ypos 567
  }
-set N7edae400 [stack 0]
+set N7fd1e800 [stack 0]
  Dot {
-  name LayoutDot89
+  name LayoutDot90
   xpos 232
   ypos 567
  }
-set N7edaec00 [stack 0]
-push $N7edaec00
-push $N7ecfac00
+set N7fd1f000 [stack 0]
+push $N7fd1f000
+push $N7fc6b000
  Dot {
-  name LayoutDot36
+  name LayoutDot37
   xpos 394
   ypos 537
  }
-set N7ecfb800 [stack 0]
+set N7fc6bc00 [stack 0]
  Dot {
-  name LayoutDot38
+  name LayoutDot39
   xpos 214
   ypos 537
  }
-push $N7edaec00
+push $N7fd1f000
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -3291,26 +3279,26 @@ push $N7edaec00
   ypos 618
   disable {{"(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !parent.layer_shadows"}}
  }
-set N50445400 [stack 0]
+set N72315400 [stack 0]
  Dot {
-  name LayoutDot102
+  name LayoutDot103
   xpos 494
   ypos 621
  }
  Dot {
-  name LayoutDot103
+  name LayoutDot104
   xpos 494
   ypos 660
  }
  Dot {
-  name LayoutDot104
+  name LayoutDot105
   xpos 626
   ypos 660
  }
-push $N7edae800
-push $N7edae800
-push $N7ecfbc00
-push $N7edae800
+push $N7fd1ec00
+push $N7fd1ec00
+push $N7fc84000
+push $N7fd1ec00
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -3427,7 +3415,7 @@ push $N7edae800
   ypos 618
   disable {{"(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !parent.layer_shadows"}}
  }
-set N50445000 [stack 0]
+set N72315000 [stack 0]
  Merge2 {
   inputs 2
   operation plus
@@ -3435,22 +3423,22 @@ set N50445000 [stack 0]
   xpos 720
   ypos 678
  }
-set N7d904400 [stack 0]
-push $N7ed64800
+set N7f844400 [stack 0]
+push $N7fcd4c00
  Dot {
-  name LayoutDot65
+  name LayoutDot66
   xpos 854
   ypos 729
  }
-push $N7ed14400
+push $N7fc84800
  Dot {
-  name LayoutDot40
+  name LayoutDot41
   xpos 830
   ypos 741
  }
-push $N7ecadc00
+push $N7fc38000
  Dot {
-  name LayoutDot14
+  name LayoutDot15
   xpos 806
   ypos 729
  }
@@ -3570,29 +3558,29 @@ push $N7ecadc00
   disable {{"!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)"}}
  }
  Dot {
-  name LayoutDot118
+  name LayoutDot119
   xpos 986
   ypos 741
  }
  Dot {
-  name LayoutDot119
-  xpos 986
-  ypos 1354
- }
- Dot {
   name LayoutDot120
-  xpos 110
+  xpos 986
   ypos 1354
  }
  Dot {
   name LayoutDot121
   xpos 110
+  ypos 1354
+ }
+ Dot {
+  name LayoutDot122
+  xpos 110
   ypos 1389
  }
-push $N7edae400
-push $N7edae400
-push $N7ecfb800
-push $N7edae400
+push $N7fd1e800
+push $N7fd1e800
+push $N7fc6bc00
+push $N7fd1e800
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -3709,8 +3697,8 @@ push $N7edae400
   ypos 618
   disable {{"(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)) || !parent.layer_shadows"}}
  }
-set N50445800 [stack 0]
-push $N50445000
+set N72315800 [stack 0]
+push $N72315000
  Merge2 {
   inputs 2
   operation plus
@@ -3718,22 +3706,22 @@ push $N50445000
   xpos 540
   ypos 678
  }
-set N7d904000 [stack 0]
-push $N7ed64000
+set N7f844000 [stack 0]
+push $N7fcd4400
  Dot {
-  name LayoutDot63
+  name LayoutDot64
   xpos 338
   ypos 729
  }
-push $N7ecfb000
+push $N7fc6b400
  Dot {
-  name LayoutDot35
+  name LayoutDot36
   xpos 470
   ypos 729
  }
-push $N7ecad400
+push $N7fc1d800
  Dot {
-  name LayoutDot12
+  name LayoutDot13
   xpos 290
   ypos 741
  }
@@ -3853,22 +3841,22 @@ push $N7ecad400
   disable {{"!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)"}}
  }
  Dot {
-  name LayoutDot112
+  name LayoutDot113
   xpos 494
   ypos 741
  }
  Dot {
-  name LayoutDot113
+  name LayoutDot114
   xpos 494
   ypos 1356
  }
  Dot {
-  name LayoutDot114
+  name LayoutDot115
   xpos 86
   ypos 1356
  }
-push $N50445800
-push $N50445400
+push $N72315800
+push $N72315400
  Merge2 {
   inputs 2
   operation plus
@@ -3876,35 +3864,35 @@ push $N50445400
   xpos 180
   ypos 678
  }
-set N50445c00 [stack 0]
+set N72315c00 [stack 0]
  Dot {
-  name LayoutDot261
+  name LayoutDot256
   xpos 46
   ypos 681
  }
-push $N7ed47c00
+push $N7fcd4000
  Dot {
-  name LayoutDot83
+  name LayoutDot84
   xpos 314
   ypos 706
  }
  Dot {
-  name LayoutDot84
+  name LayoutDot85
   xpos 124
   ypos 706
  }
-push $N7ecfac00
+push $N7fc6b000
  Dot {
-  name LayoutDot58
+  name LayoutDot59
   xpos 446
   ypos 713
  }
  Dot {
-  name LayoutDot59
+  name LayoutDot60
   xpos 86
   ypos 732
  }
-push $N50406c00
+push $N722d6c00
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -4042,22 +4030,7 @@ push $N50406c00
   xpos 0
   ypos 1794
  }
-set N7eb24400 [stack 0]
- Dot {
-  name LayoutDot146
-  xpos 98
-  ypos 1797
- }
- Dot {
-  name LayoutDot147
-  xpos 98
-  ypos 4449
- }
- Dot {
-  name LayoutDot148
-  xpos 214
-  ypos 4449
- }
+set N7fa94400 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -4072,49 +4045,54 @@ set N7eb24400 [stack 0]
   channel3 none
   name ToneScale
   xpos 180
-  ypos 4530
+  ypos 1854
  }
-set N7eb25400 [stack 0]
-push $N7ee49c00
+set N7fa95400 [stack 0]
  Dot {
-  name LayoutDot142
+  name LayoutDot2
+  xpos 766
+  ypos 1857
+ }
+push $N7fdd4000
+ Dot {
+  name LayoutDot143
   xpos 376
   ypos 1035
  }
-set N7ee64000 [stack 0]
-push $N7ee31c00
+set N7fdd4400 [stack 0]
+push $N7fdb8000
  Dot {
-  name LayoutDot134
+  name LayoutDot135
   xpos 412
   ypos 975
  }
-set N7ee48000 [stack 0]
-push $N7ee17c00
+set N7fdb8400 [stack 0]
+push $N7fda0000
  Dot {
-  name LayoutDot126
+  name LayoutDot127
   xpos 394
   ypos 915
  }
-set N7ee30000 [stack 0]
-push $N7d904400
+set N7fda0400 [stack 0]
+push $N7f844400
  Dot {
-  name LayoutDot115
+  name LayoutDot116
   xpos 878
   ypos 681
  }
  Dot {
-  name LayoutDot116
+  name LayoutDot117
   xpos 878
   ypos 708
  }
  Dot {
-  name LayoutDot117
+  name LayoutDot118
   xpos 1886
   ypos 720
  }
-push $N7ed79800
-push $N7ed2d400
-push $N7ece0c00
+push $N7fce9c00
+push $N7fc9d800
+push $N7fc51000
  BlinkScript {
   inputs 4
   recompileCount 2
@@ -4232,56 +4210,56 @@ push $N7ece0c00
   disable {{"(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
  Dot {
-  name LayoutDot204
+  name LayoutDot202
   xpos 2138
   ypos 741
  }
  Dot {
-  name LayoutDot205
+  name LayoutDot203
   xpos 2138
   ypos 1155
  }
  Dot {
-  name LayoutDot206
+  name LayoutDot204
   xpos 448
   ypos 1155
  }
-push $N7d904000
+push $N7f844000
  Dot {
-  name LayoutDot108
+  name LayoutDot109
   xpos 650
   ypos 681
  }
  Dot {
-  name LayoutDot109
-  xpos 650
-  ypos 706
- }
- Dot {
   name LayoutDot110
-  xpos 1778
+  xpos 650
   ypos 706
  }
  Dot {
   name LayoutDot111
   xpos 1778
+  ypos 706
+ }
+ Dot {
+  name LayoutDot112
+  xpos 1778
   ypos 729
  }
-push $N7ed78c00
+push $N7fce9000
  Dot {
-  name LayoutDot74
+  name LayoutDot75
   xpos 1754
   ypos 741
  }
-push $N7ed2c800
+push $N7fc9cc00
  Dot {
-  name LayoutDot49
+  name LayoutDot50
   xpos 1730
   ypos 729
  }
-push $N7ece0000
+push $N7fc50400
  Dot {
-  name LayoutDot23
+  name LayoutDot24
   xpos 1706
   ypos 729
  }
@@ -4402,51 +4380,51 @@ push $N7ece0000
   disable {{"(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
  Dot {
-  name LayoutDot201
+  name LayoutDot199
   xpos 2114
   ypos 741
  }
  Dot {
-  name LayoutDot202
+  name LayoutDot200
   xpos 2114
   ypos 1125
  }
  Dot {
-  name LayoutDot203
+  name LayoutDot201
   xpos 358
   ypos 1125
  }
-push $N50445c00
+push $N72315c00
  Dot {
-  name LayoutDot105
+  name LayoutDot106
   xpos 518
   ypos 681
  }
  Dot {
-  name LayoutDot106
+  name LayoutDot107
   xpos 518
   ypos 720
  }
  Dot {
-  name LayoutDot107
+  name LayoutDot108
   xpos 1598
   ypos 720
  }
-push $N7ed78000
+push $N7fce8400
  Dot {
-  name LayoutDot71
+  name LayoutDot72
   xpos 1574
   ypos 729
  }
-push $N7ed15c00
+push $N7fc9c000
  Dot {
-  name LayoutDot46
+  name LayoutDot47
   xpos 1550
   ypos 741
  }
-push $N7ecc9400
+push $N7fc39800
  Dot {
-  name LayoutDot20
+  name LayoutDot21
   xpos 1526
   ypos 729
  }
@@ -4567,17 +4545,17 @@ push $N7ecc9400
   disable {{"(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
  Dot {
-  name LayoutDot198
+  name LayoutDot196
   xpos 2090
   ypos 753
  }
  Dot {
-  name LayoutDot199
+  name LayoutDot197
   xpos 2090
   ypos 1095
  }
  Dot {
-  name LayoutDot200
+  name LayoutDot198
   xpos 430
   ypos 1095
  }
@@ -4593,18 +4571,18 @@ push $N7ecc9400
   ypos 1386
  }
  Dot {
-  name LayoutDot207
+  name LayoutDot205
   xpos 446
   ypos 1389
  }
  Dot {
-  name LayoutDot208
+  name LayoutDot206
   xpos 446
   ypos 1683
  }
  Dot {
-  name LayoutDot209
-  xpos 574
+  name LayoutDot207
+  xpos 754
   ypos 1683
  }
  Reformat {
@@ -4615,89 +4593,74 @@ push $N7ecc9400
   resize distort
   black_outside true
   name SunUp
-  xpos 540
+  xpos 720
   ypos 1794
- }
- Dot {
-  name LayoutDot210
-  xpos 650
-  ypos 1797
- }
- Dot {
-  name LayoutDot211
-  xpos 650
-  ypos 4479
- }
- Dot {
-  name LayoutDot212
-  xpos 394
-  ypos 4479
  }
  Merge2 {
   inputs 2
   operation multiply
   output rgb
   name ToneSun
-  xpos 360
-  ypos 4590
+  xpos 720
+  ypos 1914
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
  Dot {
-  name LayoutDot213
-  xpos 446
-  ypos 4593
+  name LayoutDot208
+  xpos 806
+  ypos 1917
  }
  Dot {
-  name LayoutDot214
-  xpos 446
-  ypos 2787
+  name LayoutDot209
+  xpos 806
+  ypos 2877
  }
-set N7ef4a000 [stack 0]
+set N7fea2c00 [stack 0]
  Dot {
-  name LayoutDot215
+  name LayoutDot210
   xpos 412
-  ypos 2787
+  ypos 2877
  }
-set N7ef4a400 [stack 0]
-push $N7eb25400
-push $N7eb24400
+set N7fea3000 [stack 0]
+push $N7fa95400
+push $N7fa94400
  Merge2 {
   inputs 2
   operation multiply
   output rgb
   name ToneColor
   xpos 0
-  ypos 4590
+  ypos 1914
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N7eb25800 [stack 0]
+set N7fa95800 [stack 0]
  Dot {
-  name LayoutDot149
+  name LayoutDot147
   xpos 86
-  ypos 4593
+  ypos 1917
  }
+ Dot {
+  name LayoutDot148
+  xpos 86
+  ypos 2499
+ }
+set N7fdd5800 [stack 0]
  Dot {
   name LayoutDot150
   xpos 86
-  ypos 2439
+  ypos 2817
  }
-set N7ee7e000 [stack 0]
+set N7fdee000 [stack 0]
+ Dot {
+  name LayoutDot151
+  xpos 214
+  ypos 2817
+ }
+set N7fdee400 [stack 0]
  Dot {
   name LayoutDot152
-  xpos 86
-  ypos 2757
- }
-set N7ee7e800 [stack 0]
- Dot {
-  name LayoutDot153
-  xpos 214
-  ypos 2757
- }
-set N7ee7ec00 [stack 0]
- Dot {
-  name LayoutDot154
   xpos 394
-  ypos 2757
+  ypos 2817
  }
  Merge2 {
   inputs 2
@@ -4705,103 +4668,103 @@ set N7ee7ec00 [stack 0]
   output rgb
   name SkyPart
   xpos 360
-  ypos 2928
+  ypos 2988
  }
  Dot {
-  name LayoutDot2
+  name LayoutDot3
   xpos 394
+  ypos 3171
+ }
+push $N7fea3000
+ Dot {
+  name LayoutDot211
+  xpos 290
+  ypos 2877
+ }
+ Dot {
+  name LayoutDot212
+  xpos 290
   ypos 3111
  }
-push $N7ef4a400
+push $N7fdee400
+push $N7fdd4400
  Dot {
-  name LayoutDot216
-  xpos 314
-  ypos 2787
- }
- Dot {
-  name LayoutDot217
-  xpos 314
-  ypos 3051
- }
-push $N7ee7ec00
-push $N7ee64000
- Dot {
-  name LayoutDot143
+  name LayoutDot144
   xpos 178
   ypos 1035
  }
-push $N7ee48000
+push $N7fdb8400
  Dot {
-  name LayoutDot135
+  name LayoutDot136
   xpos 196
   ypos 975
  }
-push $N7ee30000
+push $N7fda0400
  Dot {
-  name LayoutDot127
+  name LayoutDot128
   xpos 214
   ypos 915
  }
-push $N7eabec00
+push $N7fa2ec00
  Premult {
   name L3_DepthPremult
   xpos 1440
   ypos 678
  }
  Dot {
-  name LayoutDot187
+  name LayoutDot185
   xpos 2066
   ypos 681
  }
  Dot {
-  name LayoutDot188
+  name LayoutDot186
   xpos 2066
   ypos 1065
  }
  Dot {
-  name LayoutDot189
+  name LayoutDot187
   xpos 286
   ypos 1065
  }
-push $N7da44800
+push $N7f984800
  Premult {
   name L2_DepthPremult
   xpos 1260
   ypos 678
  }
  Dot {
-  name LayoutDot184
+  name LayoutDot182
   xpos 1370
   ypos 681
  }
  Dot {
-  name LayoutDot185
+  name LayoutDot183
   xpos 1370
   ypos 1005
  }
  Dot {
-  name LayoutDot186
+  name LayoutDot184
   xpos 250
   ypos 1005
  }
-push $N7d9a6400
+push $N7f8e6400
  Premult {
   name L1_DepthPremult
   xpos 1080
   ypos 678
  }
  Dot {
-  name LayoutDot181
+  name LayoutDot179
   xpos 1190
   ypos 681
  }
  Dot {
-  name LayoutDot182
+  name LayoutDot180
   xpos 1190
   ypos 945
  }
  Dot {
-  name LayoutDot183
+  name LayoutDot181
   xpos 232
   ypos 945
  }
@@ -4822,18 +4785,18 @@ push $N7d9a6400
   ypos 1446
  }
  Dot {
-  name LayoutDot190
+  name LayoutDot188
   xpos 290
   ypos 1449
  }
  Dot {
-  name LayoutDot191
+  name LayoutDot189
   xpos 290
   ypos 1653
  }
  Dot {
-  name LayoutDot192
-  xpos 394
+  name LayoutDot190
+  xpos 574
   ypos 1653
  }
  Reformat {
@@ -4845,36 +4808,36 @@ push $N7d9a6400
   filter impulse
   black_outside true
   name DepthUp
-  xpos 360
+  xpos 540
   ypos 1794
  }
  Dot {
-  name LayoutDot193
-  xpos 446
+  name LayoutDot191
+  xpos 650
   ypos 1797
  }
  Dot {
-  name LayoutDot194
-  xpos 458
-  ypos 2910
+  name LayoutDot192
+  xpos 650
+  ypos 2970
  }
-set N7eeff000 [stack 0]
+set N7fe6e800 [stack 0]
  Dot {
-  name LayoutDot195
+  name LayoutDot193
   xpos 110
-  ypos 2910
+  ypos 2970
  }
-push $N7ee7e000
+push $N7fdd5800
  Dot {
-  name LayoutDot151
+  name LayoutDot149
   xpos 214
-  ypos 2439
+  ypos 2499
  }
-push $N7eeb1400
+push $N7fe20c00
  Dot {
-  name LayoutDot172
+  name LayoutDot170
   xpos 394
-  ypos 2061
+  ypos 2121
  }
  Expression {
   channel0 rgb
@@ -4884,23 +4847,23 @@ push $N7eeb1400
   channel3 none
   name Shadow_Light
   xpos 360
-  ypos 2202
+  ypos 2262
  }
-push $N503ee000
+push $N722be000
  Dot {
-  name LayoutDot6
+  name LayoutDot7
   xpos 266
   ypos 3
  }
  Dot {
-  name LayoutDot7
+  name LayoutDot8
   xpos 278
-  ypos 2031
+  ypos 2091
  }
  Dot {
-  name LayoutDot8
+  name LayoutDot9
   xpos 574
-  ypos 2031
+  ypos 2091
  }
  Merge2 {
   inputs 2
@@ -4908,38 +4871,38 @@ push $N503ee000
   output rgb
   name Shadow_OnBg
   xpos 540
-  ypos 2262
+  ypos 2322
   disable {{"!(parent.occlude && parent.bg_found) || parent.shadow_amount==0"}}
  }
  Dot {
+  name LayoutDot176
+  xpos 626
+  ypos 2325
+ }
+ Dot {
+  name LayoutDot177
+  xpos 626
+  ypos 2529
+ }
+ Dot {
   name LayoutDot178
-  xpos 626
-  ypos 2265
- }
- Dot {
-  name LayoutDot179
-  xpos 626
-  ypos 2469
- }
- Dot {
-  name LayoutDot180
   xpos 232
-  ypos 2469
+  ypos 2529
  }
  Merge2 {
   inputs 2
   name CompOver
   xpos 180
-  ypos 2520
+  ypos 2580
  }
-push $N7eb25800
+push $N7fa95800
  Switch {
   inputs 2
   which {{parent.bg_found}}
   name CompOrClouds
   label "bg plugged in"
   xpos 0
-  ypos 2580
+  ypos 2640
  }
  Copy {
   inputs 2
@@ -4947,9 +4910,9 @@ push $N7eb25800
   to0 depth.Z
   name Layer_DepthZ
   xpos 0
-  ypos 2928
+  ypos 2988
  }
-set N7ebb8c00 [stack 0]
+set N7fb28c00 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -4963,7 +4926,7 @@ add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
   to3 cloud.alpha
   name Layer_Cloud
   xpos 180
-  ypos 2988
+  ypos 3048
  }
 add_layer {cloud_sun cloud_sun.red cloud_sun.green cloud_sun.blue}
  Copy {
@@ -4976,7 +4939,7 @@ add_layer {cloud_sun cloud_sun.red cloud_sun.green cloud_sun.blue}
   to2 cloud_sun.blue
   name Layer_CloudSun
   xpos 180
-  ypos 3048
+  ypos 3108
  }
 add_layer {cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue}
  Copy {
@@ -4989,7 +4952,7 @@ add_layer {cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue}
   to2 cloud_sky.blue
   name Layer_CloudSky
   xpos 180
-  ypos 3108
+  ypos 3168
  }
 add_layer {cloud_shadow cloud_shadow.red cloud_shadow.green cloud_shadow.blue}
  Copy {
@@ -5002,18 +4965,18 @@ add_layer {cloud_shadow cloud_shadow.red cloud_shadow.green cloud_shadow.blue}
   to2 cloud_shadow.blue
   name Layer_CloudShadow
   xpos 180
-  ypos 3168
+  ypos 3228
  }
-push $N7ebb8c00
+push $N7fb28c00
  Switch {
   inputs 2
   which {{parent.breakout}}
   name BreakoutOrNot
   label breakout
   xpos 0
-  ypos 3228
+  ypos 3288
  }
-set N50427e00 [stack 0]
+set N722f7e00 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -5022,7 +4985,7 @@ set N50427e00 [stack 0]
   to1 forward.v
   name Layer_Forward
   xpos 180
-  ypos 3288
+  ypos 3348
  }
  Copy {
   inputs 2
@@ -5032,155 +4995,155 @@ set N50427e00 [stack 0]
   to1 backward.v
   name Layer_Backward
   xpos 180
-  ypos 3348
+  ypos 3408
  }
-push $N50427e00
+push $N722f7e00
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
   name MotionOrNot
   label "motion vectors"
   xpos 0
-  ypos 3408
+  ypos 3468
  }
-set N50428300 [stack 0]
+set N722f8300 [stack 0]
+ Dot {
+  name LayoutDot247
+  xpos 110
+  ypos 3471
+ }
+ Dot {
+  name LayoutDot248
+  xpos 110
+  ypos 3675
+ }
+ Dot {
+  name LayoutDot249
+  xpos 232
+  ypos 3675
+ }
+set N20f72c00 [stack 0]
+ Dot {
+  name LayoutDot250
+  xpos 394
+  ypos 3675
+ }
+set N20f73000 [stack 0]
+ Dot {
+  name LayoutDot251
+  xpos 574
+  ypos 3675
+ }
+set N20f73400 [stack 0]
  Dot {
   name LayoutDot252
-  xpos 110
-  ypos 3411
- }
- Dot {
-  name LayoutDot253
-  xpos 110
-  ypos 3645
- }
- Dot {
-  name LayoutDot254
-  xpos 232
-  ypos 3645
- }
-set N7efcc000 [stack 0]
- Dot {
-  name LayoutDot255
-  xpos 412
-  ypos 3645
- }
-set N7efcc400 [stack 0]
- Dot {
-  name LayoutDot256
-  xpos 574
-  ypos 3645
- }
-set N7efcc800 [stack 0]
- Dot {
-  name LayoutDot257
   xpos 754
-  ypos 3645
+  ypos 3675
  }
  Copy {
   inputs 2
   channels rgba
   name View_Shadow
   xpos 720
-  ypos 3756
+  ypos 3816
  }
  Dot {
-  name LayoutDot5
+  name LayoutDot6
   xpos 754
-  ypos 3819
+  ypos 3879
  }
-push $N50428300
-push $N7eeff000
+push $N722f8300
+push $N7fe6e800
  Dot {
-  name LayoutDot196
-  xpos 458
-  ypos 3705
+  name LayoutDot194
+  xpos 650
+  ypos 3735
  }
  Dot {
-  name LayoutDot197
+  name LayoutDot195
   xpos 592
-  ypos 3705
+  ypos 3735
  }
-push $N7efcc800
+push $N20f73400
  Copy {
   inputs 2
   channels rgba
   name View_Depth
   xpos 540
-  ypos 3756
+  ypos 3816
  }
  Dot {
-  name LayoutDot4
+  name LayoutDot5
   xpos 574
-  ypos 3819
+  ypos 3879
  }
-push $N7ef4a000
+push $N7fea2c00
  Dot {
-  name LayoutDot218
-  xpos 434
-  ypos 3615
+  name LayoutDot213
+  xpos 806
+  ypos 3765
  }
  Dot {
-  name LayoutDot219
-  xpos 394
-  ypos 3615
+  name LayoutDot214
+  xpos 412
+  ypos 3765
  }
-push $N7efcc400
+push $N20f73000
  Copy {
   inputs 2
   channels rgba
   name View_Sun
   xpos 360
-  ypos 3756
+  ypos 3816
  }
  Dot {
-  name LayoutDot3
+  name LayoutDot4
   xpos 394
-  ypos 3807
+  ypos 3867
  }
-push $N7ee7e800
+push $N7fdee000
  Dot {
-  name LayoutDot155
+  name LayoutDot153
   xpos 86
-  ypos 3585
+  ypos 3645
  }
  Dot {
-  name LayoutDot156
+  name LayoutDot154
   xpos 214
-  ypos 3585
+  ypos 3645
  }
-push $N7efcc000
+push $N20f72c00
  Copy {
   inputs 2
   channels rgba
   name View_Clouds
   xpos 180
-  ypos 3756
+  ypos 3816
  }
-push $N50428300
+push $N722f8300
  Switch {
   inputs 6
   which {{parent.view}}
   name ViewOutput
   label view
   xpos 0
-  ypos 3816
+  ypos 3876
  }
-set N50428800 [stack 0]
+set N722f8800 [stack 0]
  Dot {
-  name LayoutDot258
-  xpos 110
-  ypos 3831
- }
- Dot {
-  name LayoutDot259
-  xpos 110
-  ypos 3993
+  name LayoutDot253
+  xpos 86
+  ypos 3891
  }
  Dot {
-  name LayoutDot260
+  name LayoutDot254
+  xpos 86
+  ypos 4053
+ }
+ Dot {
+  name LayoutDot255
   xpos 394
-  ypos 3993
+  ypos 4053
  }
  Write {
   channels all
@@ -5196,7 +5159,7 @@ set N50428800 [stack 0]
   view sRGB
   name BakeWrite
   xpos 360
-  ypos 4044
+  ypos 4104
  }
  Read {
   inputs 0
@@ -5211,20 +5174,20 @@ set N50428800 [stack 0]
   out_colorspace scene_linear
   name BakeRead
   xpos 180
-  ypos 4044
+  ypos 4104
  }
-push $N50428800
+push $N722f8800
  Switch {
   inputs 2
   which {{"parent.use_bake && parent.view==0"}}
   name BakeOrLive
   label "use bake"
   xpos 0
-  ypos 4104
+  ypos 4164
  }
  Output {
   name Output1
   xpos 0
-  ypos 4272
+  ypos 4332
  }
 end_group
