@@ -809,12 +809,12 @@ local:
       // Lobes: rounded caps (inverted Worley, 1 - d^2) on a smooth swell, with a second, smaller
       // set riding on them ('small lumps'): cauliflower turrets. An anvil's top keeps few, so
       // it stays a smooth sheet. Cumulus (domes and decks) have flat bases: their lobes run
-      // straight down from a fifth of the way up (a tenth on decks), so the base has the body's
+      // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
       bool flatBase = volume == 0 || volShape == 1;
       float ls = max(lumpSize, 10.0f);
-      float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : -0.4f) * height) : ly;
+      float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
       float lamp = 1.0f;
       float lf = 1.0f;
