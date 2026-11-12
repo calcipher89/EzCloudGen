@@ -77,22 +77,22 @@ TYPES = {
                      g=0.7, ambient=1.2),
     # Fog that sits on the ground and tears away above it, drifting and rolling: low cloud in a
     # valley. Lit softly from all round, with a strong forward glow when backlit.
-    "Ground Fog": dict(volume=1, vol_shape=3, vol_size=(3000, 250, 3000), base=0, lumps=0.5, lump_size=300,
-                       place_km=2, coverage=0.55, edge=0.25, bottom=0.4, detail=60, erosion=0.35, sigma=0.012,
+    "Ground Fog": dict(volume=1, vol_shape=3, vol_size=(3000, 400, 3000), base=0, lumps=1.3, lump_size=550,
+                       place_km=2, coverage=0.43, edge=1.0, bottom=0.4, detail=60, erosion=0.35, sigma=0.02,
                        billow=0.2, octaves=2.5, wisp_size=25, wisp_amount=0.6, swirl=0.5, swirl_size=150,
-                       turbulence=0.5, crumble=0.5, crumble_size=60, g=0.75, ambient=1.3, fade_top=0.75,
-                       fade_left=0.25, fade_right=0.25, fade_front=0.3, fade_back=0.2),
+                       turbulence=0.5, crumble=1.0, crumble_size=90, g=0.75, ambient=0.9, fade_top=0.7,
+                       fade_bottom=0.2, fade_left=0.25, fade_right=0.25, fade_front=0.3, fade_back=0.2),
     # Thin, curling veils of fog: little body, all edge.
-    "Wispy Fog": dict(volume=1, vol_shape=0, vol_size=(1500, 300, 1200), base=50, lumps=0.7, lump_size=250,
-                      place_km=1.5, coverage=0.45, edge=0.3, detail=50, erosion=0.4, sigma=0.008, billow=0.0,
+    "Wispy Fog": dict(volume=1, vol_shape=0, vol_size=(1500, 300, 1200), base=50, lumps=1.0, lump_size=250,
+                      place_km=1.5, coverage=0.45, edge=1.0, detail=50, erosion=0.4, sigma=0.015, billow=0.0,
                       octaves=2.5, wisp_size=20, wisp_amount=0.9, swirl=0.8, swirl_size=120, turbulence=0.7,
-                      crumble=0.6, crumble_size=40, g=0.8, ambient=1.3, fade_top=0.4, fade_bottom=0.3),
-    # Ragged low cloud (scud): a dense lumpy core torn to shreds at its edges.
-    "Torn Low Cloud": dict(volume=1, vol_shape=0, vol_size=(1200, 500, 900), base=200, lumps=0.9,
-                           lump_size=250, place_km=2, coverage=0.55, edge=0.12, bottom=0.2, detail=70,
-                           erosion=0.5, sigma=0.03, billow=0.6, octaves=3, wisp_size=25, wisp_amount=0.6,
+                      crumble=0.9, crumble_size=40, g=0.8, ambient=0.9, fade_top=0.4, fade_bottom=0.3),
+    # Ragged low cloud (scud): a dense, lumpy grey core torn to shreds at its edges.
+    "Torn Low Cloud": dict(volume=1, vol_shape=0, vol_size=(1200, 500, 900), base=200, lumps=1.1,
+                           lump_size=250, place_km=2, coverage=0.52, edge=0.25, bottom=0.2, detail=70,
+                           erosion=0.5, sigma=0.04, billow=0.6, octaves=3, wisp_size=25, wisp_amount=0.7,
                            grain_size=8, grain_amount=0.3, swirl=0.5, swirl_size=150, turbulence=0.5,
-                           crumble=0.8, crumble_size=70, g=0.7, ambient=1.1, fade_bottom=0.25),
+                           crumble=1.0, crumble_size=70, g=0.7, ambient=0.85, fade_bottom=0.25),
     # A single small puff.
     "Puff": dict(volume=1, vol_shape=0, vol_size=(600, 450, 600), base=800, lumps=0.4, lump_size=150,
                  place_km=2, coverage=0.5, edge=0.08, detail=60, erosion=0.5, sigma=0.05, octaves=3,
