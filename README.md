@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.7.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.8.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -38,6 +38,12 @@ that box and follows it. 'make 3D box' makes a wireframe Cube and plugs it in; v
 camera and move, rotate and scale it in the 3D viewer ('release box' unplugs it, keeping the
 volume where it is). Every layer has the erosion stack: billows,
 wisps, grain, swirl and wind shear. Layers are put over each other nearest first, per pixel.
+
+For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
+the passes the view needs (the node's label says PREVIEW). For fast playback, **bake now** renders
+the Comp with all its layers to 'bake folder' (EXR, one folder per script and node) and plays it
+back from disk ('use bake'); 'status' says when the settings changed since the bake (camera and
+bg changes aren't tracked).
 
 'show me variations' (main tab) shows nine seeds of one layer side by side ('next nine' for
 more); type the number of the one you like (1 top left, 9 bottom right) into 'use number' and

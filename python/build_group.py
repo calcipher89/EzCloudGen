@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -245,6 +245,54 @@ def box_expr(layer, what, step=0):
               % (BOX_INPUT + layer, BOX_INPUT + layer, step, what))
 
 
+# ---- Bake ---------------------------------------------------------------------------------
+
+# A fingerprint of the settings that change the picture (every knob but the bake's own, the view
+# and the panel's), to tell when a bake is out of date. Inputs (camera moves, bg) aren't in it.
+BAKE_SKIP = ("bake_", "view", "preview", "use_bake", "variation", "show_variations", "next_variations",
+             "selected", "xpos", "ypos", "label", "note_font", "tile_color", "gl_color", "hide_input",
+             "postage_stamp", "cached", "dope_sheet", "help", "onCreate", "knobChanged", "updateUI",
+             "icon", "indicators", "panel", "box_lib", "version")
+BAKE_HASH = ("import hashlib\n"
+             "n = nuke.thisNode()\n"
+             "parts = []\n"
+             "for name in sorted(n.knobs()):\n"
+             "    if name.startswith(%r):\n"
+             "        continue\n"
+             "    k = n[name]\n"
+             "    if k.Class() in ('Tab_Knob', 'Text_Knob', 'PyScript_Knob'):\n"
+             "        continue\n"
+             "    parts.append(name + '=' + k.toScript())\n"
+             "h = hashlib.md5('\\n'.join(parts).encode()).hexdigest()\n" % (BAKE_SKIP,))
+BAKE_NOW = (BAKE_HASH +
+            "import os\n"
+            "w = n.node('BakeWrite')\n"
+            "path = w['file'].evaluate()\n"
+            "if path:\n"
+            "    d = os.path.dirname(path)\n"
+            "    if not os.path.isdir(d):\n"
+            "        os.makedirs(d)\n"
+            "view = n['view'].value()\n"
+            "n['view'].setValue('Comp')\n"
+            "n['use_bake'].setValue(False)\n"
+            "try:\n"
+            "    nuke.execute(w, int(n['bake_first'].value()), int(n['bake_last'].value()))\n"
+            "finally:\n"
+            "    n['view'].setValue(view)\n"
+            "n['bake_hash'].setValue(h)\n"
+            "n.node('BakeRead')['reload'].execute()\n"
+            "n['use_bake'].setValue(True)\n")
+# A String_Knob can't hold an expression (and would show TCL as text), so knobChanged writes the
+# status after every change (setting bake_hash after a bake counts too).
+# Its own namespace: knob scripts share one, and its n, k, s... would clobber a running button's.
+BAKE_STATUS_UPDATE = ("if k.name() != 'bake_status':\n    exec(%r, {'nuke': nuke})\n" % (
+    BAKE_HASH + "s = 'no bake yet' if not n['bake_hash'].value() else "
+                "('up to date' if h == n['bake_hash'].value() else "
+                "'OUT OF DATE: settings changed since the bake, bake again')\n"
+                "if n['bake_status'].value() != s:\n"
+                "    n['bake_status'].setValue(s)\n"))
+
+
 # ---- The type menu ------------------------------------------------------------------------
 
 def knob_changed():
@@ -285,7 +333,7 @@ def knob_changed():
             "    for name in %r:\n"
             "        n[p + name].setVisible(not vol)\n"
             "    for name in %r:\n"
-            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY))
+            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY)) + BAKE_STATUS_UPDATE
 
 
 def place_script(p):
@@ -397,6 +445,10 @@ def build_knobs(g):
             "Variations: nine seeds of one layer side by side (see 'variations'). "
             "Shadow: the clouds' shadows on the bg (needs its depth), white is shaded.")
     v.setValue("Comp")
+    add(g, nuke.Boolean_Knob("preview", "preview"),
+        "Fast look-dev: half the resolution and the ray march steps, one sample, and only the passes the "
+        "view needs (no sun share, shadows or motion vectors, so those layers are black). Turn it off for "
+        "the real thing; the node's label says PREVIEW while it is on.")
     add(g, nuke.Boolean_Knob("breakout", "breakout layers"),
         "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the "
         "plate, and cloud_shadow (rgb, the shadows on the bg; needs its depth). Takes extra passes per "
@@ -417,6 +469,33 @@ def build_knobs(g):
     add(g, nuke.Double_Knob("max_distance", "max distance"),
         "Clouds further than this (km) are not drawn.").setValue(80)
     g["max_distance"].setRange(5, 200)
+
+    add(g, nuke.Text_Knob("bake_divider", "bake"))
+    k = add(g, nuke.File_Knob("bake_folder", "bake folder"),
+            "Where 'bake now' writes the frames: <folder>/<script>/<node>/<script>_<node>.####.exr. TCL works, "
+            "e.g. [getenv JOB].")
+    k.setValue("/data/jobs/[getenv JOB]/sequences/[getenv SEQ]/shots/[getenv SHOT]/nuke/comp/ezCloudGen/cache")
+    k = add(g, nuke.Int_Knob("bake_first", "frames"), "First frame to bake.")
+    k.setValue(int(nuke.root()["first_frame"].value()))
+    k = add(g, nuke.Int_Knob("bake_last", ""), "Last frame to bake.")
+    k.setValue(int(nuke.root()["last_frame"].value()))
+    k.clearFlag(nuke.STARTLINE)
+    add(g, nuke.PyScript_Knob("bake_range_here", "script range",
+                              "n = nuke.thisNode()\n"
+                              "n['bake_first'].setValue(int(nuke.root()['first_frame'].value()))\n"
+                              "n['bake_last'].setValue(int(nuke.root()['last_frame'].value()))\n"),
+        "Sets the frames to the script's frame range.")
+    g["bake_range_here"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.PyScript_Knob("bake_now", "bake now", BAKE_NOW),
+        "Renders the Comp (with every layer the node outputs) to the bake folder, then plays it back from "
+        "disk ('use bake' on): fast playback, and no Blink on the farm.")
+    k = add(g, nuke.Boolean_Knob("use_bake", "use bake"),
+            "Plays the Comp view back from the baked frames instead of rendering. The other views still render.")
+    k.clearFlag(nuke.STARTLINE)
+    k = add(g, nuke.String_Knob("bake_status", "status"), "Whether the settings changed since the bake.")
+    k.setValue("no bake yet")  # kept current by knobChanged (BAKE_STATUS_UPDATE)
+    k.setEnabled(False)
+    hidden(g, nuke.String_Knob("bake_hash"))
 
     add(g, nuke.Text_Knob("scene_divider", "scene"))
     add(g, nuke.Double_Knob("scene_scale", "units to metres"),
@@ -675,7 +754,7 @@ def build_knobs(g):
         k2.setExpression("(light_source ? atm_sky_color.%s : sky_color.%s) * sky_intensity" % (c, c), i)
         k3.setExpression("light_source ? atm_sky_color.%s * haze_color.%s : haze_color.%s * 0.43" % (c, c, c), i)
     k = hidden(g, nuke.Double_Knob("work_scale"))
-    k.setExpression("resolution==0 ? 1 : resolution==1 ? 0.5 : 0.25")
+    k.setExpression("(resolution==0 ? 1 : resolution==1 ? 0.5 : 0.25) * (preview ? 0.5 : 1)")
     k = hidden(g, nuke.Double_Knob("time_s"))
     k.setExpression("frame / max(root.fps, 1)")
 
@@ -715,8 +794,8 @@ def blink(name, output, src, cmap, zin, layer, source_file, step=1):
         n[k + "haze_color"].setExpression("parent.haze_color_in_use.%s" % c, j)
     n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
     n[k + "max_distance"].setExpression("parent.max_distance * 1000")
-    n[k + "quality"].setExpression("parent.quality")
-    n[k + "samples"].setExpression("parent.samples")
+    n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
+    n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
     n[k + "seed"].setExpression("parent.seed + %sseed" % p)
     n[k + "evolve"].setExpression("parent.evolve_speed * parent.time_s")
     # Drift with the wind: the field is sampled upwind.
@@ -818,6 +897,8 @@ def build():
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)
     g["tile_color"].setValue(0x8fb3d9ff)
+    # The node says when it is a quick preview or played back from a bake.
+    g["label"].setValue('[expr {[value preview] ? "PREVIEW" : ""}] [expr {[value use_bake] ? "(baked)" : ""}]')
     with g:
         bg = nuke.nodes.Input(name="bg")
         cam = nuke.nodes.Input(name="camera")
@@ -865,16 +946,17 @@ def build():
         for i in range(1, 4):
             colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, i, source))
             sp = blink("L%d_Sun" % i, 1, work, mp, zwork, i, source)
-            sp["disable"].setExpression("(%s) || !(parent.breakout || parent.view==2)" % (DISABLE % (i, i - 1)))
+            sp["disable"].setExpression("(%s) || !((parent.breakout && !parent.preview) || parent.view==2)"
+                                        % (DISABLE % (i, i - 1)))
             sunpart.append(sp)
             sh = blink("L%d_Shadow" % i, 3, work, mp, zwork, i, source)
             sh["disable"].setExpression("(%s) || !(parent.occlude && parent.bg_found) || "
-                                        "!(parent.breakout || parent.view==0 || parent.view==5)"
+                                        "!(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"
                                         % (DISABLE % (i, i - 1)))
             shadows.append(sh)
             for step, nm in ((1, "Fwd"), (-1, "Bwd")):
                 mvn = blink("L%d_%s" % (i, nm), 4, work, mp, zwork, i, source, step)
-                mvn["disable"].setExpression("(%s) || !parent.motion_vectors" % (DISABLE % (i, i - 1)))
+                mvn["disable"].setExpression("(%s) || !parent.motion_vectors || parent.preview" % (DISABLE % (i, i - 1)))
                 mpm = nuke.nodes.Premult(name="L%d_%sPremult" % (i, nm), channels="rgb")
                 mpm.setInput(0, mvn)
                 motion[step].append(mpm)
@@ -1025,8 +1107,29 @@ def build():
         for j, n in enumerate((layers, clouds_view, sun_view, depth_view, layers, shadow_view)):
             view.setInput(j, n)
         view["which"].setExpression("parent.view")
+
+        # Bake: the Comp to disk ('bake now' runs the Write), and played back from there.
+        bake_file = ("[value parent.bake_folder]/[file rootname [file tail [value root.name]]]/[value parent.name]/"
+                     "[file rootname [file tail [value root.name]]]_[value parent.name].####.exr")
+        bw = nuke.nodes.Write(name="BakeWrite", file_type="exr", channels="all")
+        bw["file"].setValue(bake_file)
+        bw["datatype"].setValue("32 bit float")
+        if bw.knob("create_directories"):
+            bw["create_directories"].setValue(True)
+        bw.setInput(0, view)
+        br = nuke.nodes.Read(name="BakeRead")
+        br["file"].setValue(bake_file)
+        br["first"].setExpression("parent.bake_first")
+        br["last"].setExpression("parent.bake_last")
+        br["origfirst"].setExpression("parent.bake_first")
+        br["origlast"].setExpression("parent.bake_last")
+        br["on_error"].setValue("black")
+        bs = nuke.nodes.Switch(name="BakeOrLive")
+        bs.setInput(0, view)
+        bs.setInput(1, br)
+        bs["which"].setExpression("parent.use_bake && parent.view==0")
         out = nuke.nodes.Output(name="Output1")
-        out.setInput(0, view)
+        out.setInput(0, bs)
 
     # Inputs in the order nuke numbers them: by creation, bg 0, camera 1, atmos 2, sun 3, map 4.
     problems = node_layout.apply_nuke(g, modules=MODULES, labels=LABELS)
@@ -1044,10 +1147,11 @@ MODULES = [
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot|MotionOrNot)"),
     ("Views", 0x5a4a6aff, r"(View_.*|ViewOutput)"),
+    ("Bake", 0x5a5a3aff, r"(BakeWrite|BakeRead|BakeOrLive)"),
     ("Output", 0x6a4a4aff, r"(Output\d*)"),
 ]
 LABELS = {"FormatSource": "bg plugged in", "CompOrClouds": "bg plugged in", "BreakoutOrNot": "breakout", "MotionOrNot": "motion vectors",
-          "ViewOutput": "view"}
+          "ViewOutput": "view", "BakeOrLive": "use bake"}
 
 
 def save(g):

@@ -409,6 +409,59 @@ def main():
     if "forward" in set(c.split(".")[0] for c in g.channels()):
         raise RuntimeError("motion vectors off still outputs forward")
 
+    # Preview: faster, and close to the full render.
+    g["l1_enable"].setValue(True)
+    g["l2_enable"].setValue(True)
+    g["l3_enable"].setValue(True)
+    set_type("l1_", "Cumulus")
+    set_type("l2_", "Hero Cumulus")
+    g["l2_place_km"].setValue(5)
+    g["l2_place"].execute()
+    times = {}
+    for preview in (False, True):
+        g["preview"].setValue(preview)
+        g["seed"].setValue(g["seed"].value() + 1)  # fresh frames, not Nuke's cache
+        render("preview_on" if preview else "preview_off")
+        t = time.time()
+        for f in range(3):
+            g["seed"].setValue(g["seed"].value() + 1)
+            nuke.execute(w, 1001, 1001)
+        times[preview] = (time.time() - t) / 3
+    print("preview: %.3f s/frame off, %.3f s/frame on (%.1fx faster), label '%s'"
+          % (times[False], times[True], times[False] / max(times[True], 1e-6), g["label"].evaluate()))
+    if not times[True] < times[False]:
+        raise RuntimeError("preview isn't faster")
+    g["preview"].setValue(False)
+
+    # Bake: three frames to tests/out/bake, played back from disk, and out of date after a change.
+    g["bake_folder"].setValue(OUT + "/bake")
+    g["bake_first"].setValue(1001)
+    g["bake_last"].setValue(1003)
+    print("bake status before: " + g["bake_status"].evaluate())
+    render("bake_live")
+    live = [g.sample(c, W / 2 + 0.5, H / 2 + 0.5, frame=1001) for c in ("rgba.red", "cloud.alpha", "depth.Z")]
+    t = time.time()
+    g["bake_now"].execute()
+    print("bake: 3 frames in %.2fs to %s" % (time.time() - t, g.node("BakeWrite")["file"].evaluate()))
+    if not g["use_bake"].value():
+        raise RuntimeError("bake now didn't switch to the bake")
+    print("bake status after: " + g["bake_status"].evaluate())
+    if g["bake_status"].evaluate() != "up to date":
+        raise RuntimeError("fresh bake isn't up to date")
+    render("bake_played")  # must match bake_live
+    baked = [g.sample(c, W / 2 + 0.5, H / 2 + 0.5, frame=1001) for c in ("rgba.red", "cloud.alpha", "depth.Z")]
+    print("bake: live %s, baked %s, label '%s'" % (live, baked, g["label"].evaluate()))
+    if max(abs(a - b) / max(abs(a), 1e-3) for a, b in zip(live, baked)) > 1e-3:
+        raise RuntimeError("baked frames don't match the live render")
+    g["l1_coverage"].setValue(g["l1_coverage"].value() + 0.05)
+    print("bake status after a change: " + g["bake_status"].evaluate())
+    if not g["bake_status"].evaluate().startswith("OUT OF DATE"):
+        raise RuntimeError("bake isn't flagged out of date after a change")
+    g["l1_coverage"].setValue(g["l1_coverage"].value() - 0.05)
+    g["use_bake"].setValue(False)
+    g["l2_enable"].setValue(False)
+    g["l3_enable"].setValue(False)
+
     # The layers the node adds.
     print("channels: " + " ".join(sorted(set(c.split(".")[0] for c in g.channels()))))
 
