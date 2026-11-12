@@ -1097,9 +1097,10 @@ local:
               float th = min(layerH, 1500.0f) * 0.12f;
               // Sky occlusion (the two probes above, from sunDepth): folds and undersides
               // darken by the cloud overhead instead of all taking one flat sky tint.
-              // Soft-capped at 1 (the sky light keeps at least ~37%), so tall and thick clouds
-              // don't flatten into an even grey under their own mass.
-              occU = 1.0f - exp(-occU * sig0 * 1.25f);
+              // Soft-capped at 2 (the sky light keeps at least ~14%): folds keep most of their
+              // darkening, but tall and thick clouds don't flatten into an even grey under
+              // their own mass.
+              occU = 2.0f * (1.0f - exp(-occU * sig0 * 1.25f * 0.5f));
               float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
