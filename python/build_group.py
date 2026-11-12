@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -123,6 +123,128 @@ def atmos_light(pixel, channel, fallback):
               "ret = l.sample('%s', %g, 0.5) if l is not None else %s\n" % (channel, pixel + 0.5, fallback))
 
 
+# ---- 3D box inputs ------------------------------------------------------------------------
+
+# Inputs box1..box3 (5, 6, 7): any 3D node (a Cube, an Axis, a TransformGeo...) that a volume
+# layer then fills. The code lives in a hidden knob of the node (no init.py), run by the
+# expressions below. Plain Python with its own globals, so functions work.
+BOX_INPUT = 4  # box N is input BOX_INPUT + N
+BOX_LIB = r"""
+import math
+
+
+def find_box(n, idx):
+    # The 3D transforms in the box input, outermost first: TransformGeos down to the geometry
+    # (a Cube), or one Axis (its world_matrix already holds its parents). Dots pass through.
+    chain = []
+    b = n.input(idx)
+    while b is not None:
+        if b.knob('world_matrix') or b.knob('rot_order'):
+            chain.append(b)
+            if b.knob('world_matrix') or b.knob('cube'):
+                break
+        b = b.input(0) if b.maxInputs() else None
+    return chain
+
+
+def mul(a, c):
+    r = [0.0] * 16
+    for i in range(4):
+        for j in range(4):
+            r[i * 4 + j] = sum(a[i * 4 + k] * c[k * 4 + j] for k in range(4))
+    return r
+
+
+def rot(axis, deg):
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    if axis == 'X':
+        return [1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]
+    if axis == 'Y':
+        return [c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]
+    return [c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+
+
+def local_matrix(b, f):
+    # Translate, rotate (rot_order, first letter applied first), scale, in xform_order, about
+    # the pivot: what Nuke's 3D transform knobs do.
+    t = [b['translate'].getValueAt(f, i) for i in range(3)]
+    r = [b['rotate'].getValueAt(f, i) for i in range(3)] if b.knob('rotate') else [0, 0, 0]
+    u = b['uniform_scale'].getValueAt(f) if b.knob('uniform_scale') else 1.0
+    sc = [b['scaling'].getValueAt(f, i) * u for i in range(3)] if b.knob('scaling') else [u, u, u]
+    pv = [b['pivot'].getValueAt(f, i) for i in range(3)] if b.knob('pivot') else [0, 0, 0]
+    T = [1, 0, 0, t[0], 0, 1, 0, t[1], 0, 0, 1, t[2], 0, 0, 0, 1]
+    S = [sc[0], 0, 0, 0, 0, sc[1], 0, 0, 0, 0, sc[2], 0, 0, 0, 0, 1]
+    R = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    for ax in (b['rot_order'].value() if b.knob('rot_order') else 'ZXY'):
+        R = mul(rot(ax, r['XYZ'.index(ax)]), R)
+    parts = {'S': S, 'R': R, 'T': T}
+    P = [1, 0, 0, pv[0], 0, 1, 0, pv[1], 0, 0, 1, pv[2], 0, 0, 0, 1]
+    Pi = [1, 0, 0, -pv[0], 0, 1, 0, -pv[1], 0, 0, 1, -pv[2], 0, 0, 0, 1]
+    M = Pi
+    for c in (b['xform_order'].value() if b.knob('xform_order') else 'SRT'):
+        if c == 'T':
+            M = mul(P, M)
+        M = mul(parts[c], M)
+    return M
+
+
+def box_matrix(b, f):
+    if b.knob('world_matrix'):
+        return [b['world_matrix'].getValueAt(f, i) for i in range(16)]
+    M = local_matrix(b, f)
+    # A parent Axis on the node's axis input (a TransformGeo's input 1; a Cube has none).
+    for i in range(1, b.maxInputs()):
+        p = b.input(i)
+        if p is not None and p.knob('world_matrix'):
+            M = mul([p['world_matrix'].getValueAt(f, j) for j in range(16)], M)
+            break
+    return M
+
+
+def box_value(n, idx, step, what):
+    # what: found, center (3), axis_x/y/z (3, unit), size (3, metres). One float, index in what.
+    chain = find_box(n, idx)
+    if not chain:
+        return 0.0
+    if what == 'found':
+        return 1.0
+    name, i = what.rsplit(':', 1)
+    i = int(i)
+    M = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    for t in chain:
+        M = mul(M, box_matrix(t, nuke.frame() + step))
+    b = chain[-1]
+    # The geometry's own extent: a Cube's 'cube' knob, else a unit cube about the origin.
+    e = [b['cube'].value(j) for j in range(6)] if b.knob('cube') else [-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]
+    c = [(e[0] + e[3]) / 2.0, (e[1] + e[4]) / 2.0, (e[2] + e[5]) / 2.0]
+    if name == 'center':
+        return M[i * 4] * c[0] + M[i * 4 + 1] * c[1] + M[i * 4 + 2] * c[2] + M[i * 4 + 3]
+    if name.startswith('axis'):
+        j = 'xyz'.index(name[-1])
+        col = [M[j], M[4 + j], M[8 + j]]
+        l = math.sqrt(col[0] ** 2 + col[1] ** 2 + col[2] ** 2) or 1.0
+        return col[i] / l
+    if name == 'size':
+        col = [M[i], M[4 + i], M[8 + i]]
+        l = math.sqrt(col[0] ** 2 + col[1] ** 2 + col[2] ** 2)
+        return l * abs(e[3 + i] - e[i]) * (n['scene_scale'].value() or 1.0)
+    return 0.0
+"""
+
+
+def box_expr(layer, what, step=0):
+    """Expression: one value of the 3D node in layer's box input (see BOX_LIB)."""
+    # getText, not value: an eval string knob's value() runs the text through TCL first.
+    # Nothing plugged in: 0 at once, without running the library (these are read every frame).
+    return py("ret = 0\n"
+              "if nuke.thisNode().input(%d) is not None:\n"
+              "    g = {'nuke': nuke}\n"
+              "    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+              "    ret = g['box_value'](nuke.thisNode(), %d, %d, '%s')"
+              % (BOX_INPUT + layer, BOX_INPUT + layer, step, what))
+
+
 # ---- The type menu ------------------------------------------------------------------------
 
 def knob_changed():
@@ -135,10 +257,11 @@ def knob_changed():
             "if k.name() in ('l1_type', 'l2_type', 'l3_type'):\n"
             "    p = k.name()[:3]\n"
             "    t = %r\n"
-            "    box = nuke.toNode(n[p + 'box'].value()) if n[p + 'box'].value() else None\n"
+            "    box = n.input(%d + int(p[1]))\n"
+            "    box = box if box is not None and box.knob('scaling') else None\n"
             "    for key, v in t[k.value()].items():\n"
             "        if key == 'vol_size' and box is not None:\n"
-            "            # Linked to a 3D box: size the box instead.\n"
+            "            # A box plugged in: size the box instead.\n"
             "            s = n['scene_scale'].value() or 1.0\n"
             "            box['uniform_scale'].setValue(1)\n"
             "            box['scaling'].setValue([v[0] / s, v[1] / s, v[2] / s])\n"
@@ -162,7 +285,7 @@ def knob_changed():
             "    for name in %r:\n"
             "        n[p + name].setVisible(not vol)\n"
             "    for name in %r:\n"
-            "        n[p + name].setVisible(vol)\n" % (table, DECK_ONLY, VOL_ONLY))
+            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY))
 
 
 def place_script(p):
@@ -178,62 +301,64 @@ def place_script(p):
             "d = n['%splace_km'].value() * 1000.0 / s\n"
             "pos = [m.getValue(3) + fx / l * d, n['ground_height'].value() + n['%sbase'].value() / s, "
             "m.getValue(11) + fz / l * d]\n"
-            "box = nuke.toNode(n['%sbox'].value()) if n['%sbox'].value() else None\n"
-            "if box is not None:\n"
-            "    # Linked to a 3D box: move the box (its centre is half its height above the base).\n"
+            "box = n.input(%d)\n"
+            "if box is not None and box.knob('translate') and box.knob('scaling'):\n"
+            "    # A box plugged in: move the box (its centre is half its height above the base).\n"
             "    h = box['scaling'].value(1) * box['uniform_scale'].value()\n"
             "    box['translate'].setValue([pos[0], pos[1] + h / 2.0, pos[2]])\n"
             "else:\n"
-            "    n['%svol_position'].setValue(pos)\n" % (p, p, p, p, p))
+            "    n['%svol_position'].setValue(pos)\n" % (p, p, BOX_INPUT + int(p[1]), p))
 
 
 def make_box_script(p, layer):
-    """'make 3D box': a Cube beside the node, placed and sized like the volume, that the volume
-    then follows (move, rotate and scale it in the 3D viewer). Pressed again, it re-links the box."""
+    """'make 3D box': a Cube beside the node, placed and sized like the volume, plugged into the
+    layer's box input. Move, rotate and scale it in the 3D viewer and the cloud follows."""
     return ("n = nuke.thisNode()\n"
             "p = '%s'\n"
+            "idx = %d\n"
             "s = n['scene_scale'].value() or 1.0\n"
-            "path = n.fullName().split('.')\n"
-            "ctx = nuke.toNode('.'.join(path[:-1])) if len(path) > 1 else nuke.root()\n"
-            "name = n.name() + '_L%d_Box'\n"
-            "old = nuke.toNode(n[p + 'box'].value()) if n[p + 'box'].value() else None\n"
-            "ctx.begin()\n"
-            "c = old or nuke.toNode(name)\n"
-            "if c is None:\n"
-            "    c = nuke.nodes.Cube(name=name)\n"
-            "    c.setXYpos(n.xpos() + 150, n.ypos() + 60 * %d)\n"
+            "if n.input(idx) is None:\n"
+            "    path = n.fullName().split('.')\n"
+            "    ctx = nuke.toNode('.'.join(path[:-1])) if len(path) > 1 else nuke.root()\n"
+            "    ctx.begin()\n"
+            "    c = nuke.nodes.Cube(name=n.name() + '_L%d_Box')\n"
+            "    ctx.end()\n"
+            "    c.setXYpos(n.xpos() - 150, n.ypos() - 60 * %d)\n"
             "    pos = n[p + 'vol_position'].value()\n"
             "    size = n[p + 'vol_size'].value()\n"
+            "    # The kernel turns the volume Y, then X, then Z.\n"
+            "    c['rot_order'].setValue('YXZ')\n"
             "    c['translate'].setValue([pos[0], pos[1] + size[1] / s / 2.0, pos[2]])\n"
             "    c['rotate'].setValue(n[p + 'vol_rotate'].value())\n"
             "    c['scaling'].setValue([size[0] / s, size[1] / s, size[2] / s])\n"
-            "ctx.end()\n"
-            "# The kernel turns the volume Y, then X, then Z.\n"
-            "c['rot_order'].setValue('YXZ')\n"
-            "c['display'].setValue('wireframe')\n"
-            "c['render_mode'].setValue('off')\n"
-            "c['label'].setValue('cloud volume: ' + n.name() + ' layer %d')\n"
-            "c['tile_color'].setValue(0x8fb3d9ff)\n"
-            "b = c.name()\n"
-            "n[p + 'box'].setValue(c.fullName())\n"
-            "for i, a in enumerate('xyz'):\n"
-            "    n[p + 'vol_rotate'].setExpression('%%s.rotate.%%s' %% (b, a), i)\n"
-            "    n[p + 'vol_size'].setExpression('%%s.scaling.%%s * %%s.uniform_scale * scene_scale' %% (b, a, b), i)\n"
-            "n[p + 'vol_position'].setExpression(b + '.translate.x', 0)\n"
-            "n[p + 'vol_position'].setExpression('%%s.translate.y - %%s.scaling.y * %%s.uniform_scale / 2' %% (b, b, b), 1)\n"
-            "n[p + 'vol_position'].setExpression(b + '.translate.z', 2)\n"
-            % (p, layer, layer - 1, layer))
+            "    c['display'].setValue('wireframe')\n"
+            "    c['render_mode'].setValue('off')\n"
+            "    c['label'].setValue('cloud volume: ' + n.name() + ' layer %d')\n"
+            "    c['tile_color'].setValue(0x8fb3d9ff)\n"
+            "    n.setInput(idx, c)\n"
+            % (p, BOX_INPUT + layer, layer, layer - 1, layer))
 
 
-def release_box_script(p):
-    """'release box': the volume keeps where the box put it and stops following it."""
+def release_box_script(p, layer):
+    """'release box': unplugs the box; the volume keeps where the box put it."""
     return ("n = nuke.thisNode()\n"
-            "for name in ('vol_position', 'vol_rotate', 'vol_size'):\n"
-            "    k = n['%s' + name]\n"
-            "    v = k.value()\n"
-            "    k.clearAnimated()\n"
-            "    k.setValue(v)\n"
-            "n['%sbox'].setValue('')\n" % (p, p))
+            "p = '%s'\n"
+            "import math\n"
+            "if n[p + 'box_found'].value() > 0.5:\n"
+            "    s = n['scene_scale'].value() or 1.0\n"
+            "    c = n[p + 'box_center'].value()\n"
+            "    size = n[p + 'box_size'].value()\n"
+            "    ax = n[p + 'box_axis_x'].value()\n"
+            "    ay = n[p + 'box_axis_y'].value()\n"
+            "    az = n[p + 'box_axis_z'].value()\n"
+            "    # The kernel's R = Rz Rx Ry: axis_y = (-sin z cos x, cos z cos x, sin x), and so on.\n"
+            "    rx = math.degrees(math.asin(max(-1.0, min(1.0, ay[2]))))\n"
+            "    rz = math.degrees(math.atan2(-ay[0], ay[1]))\n"
+            "    ry = math.degrees(math.atan2(-ax[2], az[2]))\n"
+            "    n[p + 'vol_rotate'].setValue([rx, ry, rz])\n"
+            "    n[p + 'vol_size'].setValue(list(size))\n"
+            "    n[p + 'vol_position'].setValue([c[0], c[1] - size[1] / s / 2.0, c[2]])\n"
+            "n.setInput(%d, None)\n" % (p, BOX_INPUT + layer))
 
 
 # The variations buttons: the layer is 'variations of'.
@@ -413,8 +538,8 @@ def build_knobs(g):
                 "The volume's overall shape, before lumps and erosion break it up.")
         k.setValue(int(vals["vol_shape"]))
         add(g, nuke.XYZ_Knob(p + "vol_position", "position"),
-            "Centre of the volume's base, in scene units. 'make 3D box' links it to a Cube you can "
-            "drag in the 3D viewer.")
+            "Centre of the volume's base, in scene units. Not used while a 3D node is plugged into the "
+            "layer's box input ('make 3D box').")
         add(g, nuke.XYZ_Knob(p + "vol_rotate", "rotate"), "Turns the volume, in degrees (Y, then X, then Z).")
         k = g[p + "vol_position"]
         if vals["volume"]:
@@ -428,13 +553,23 @@ def build_knobs(g):
         k.setValue(vals["place_km"])
         k.clearFlag(nuke.STARTLINE)
         add(g, nuke.PyScript_Knob(p + "make_box", "make 3D box", make_box_script(p, i + 1)),
-            "Makes a Cube beside this node, placed and sized like the volume, and links the volume to it: "
-            "move, rotate and scale the Cube in the 3D viewer (view it with your camera) and the cloud "
-            "follows. Its translate is the volume's centre.")
-        add(g, nuke.PyScript_Knob(p + "release_box", "release box", release_box_script(p)),
-            "Stops following the Cube; the volume stays where it is.")
+            "Makes a Cube beside this node, placed and sized like the volume, and plugs it into this "
+            "layer's box input (box%d): move, rotate and scale the Cube in the 3D viewer (view it with "
+            "your camera) and the cloud follows. Any 3D node works in that input (a Cube, an Axis, a "
+            "TransformGeo, parented or tracked), and the volume fills its box." % (i + 1))
+        add(g, nuke.PyScript_Knob(p + "release_box", "release box", release_box_script(p, i + 1)),
+            "Unplugs the box; the volume stays where it is.")
         g[p + "release_box"].clearFlag(nuke.STARTLINE)
-        hidden(g, nuke.String_Knob(p + "box", "box"))
+        # The 3D node in the box input, read through BOX_LIB.
+        k = hidden(g, nuke.Int_Knob(p + "box_found"))
+        k.setExpression(box_expr(i + 1, "found"))
+        for name, what, step in (("box_center", "center", 0), ("box_center_next", "center", 1),
+                                 ("box_center_prev", "center", -1), ("box_axis_x", "axis_x", 0),
+                                 ("box_axis_y", "axis_y", 0), ("box_axis_z", "axis_z", 0),
+                                 ("box_size", "size", 0)):
+            k = hidden(g, nuke.XYZ_Knob(p + name))
+            for j in range(3):
+                k.setExpression("%sbox_found ? %s : 0" % (p, box_expr(i + 1, "%s:%d" % (what, j), step)), j)
         for name, label, tip, lo, hi in VOLUME:
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
@@ -459,6 +594,8 @@ def build_knobs(g):
         for name in (DECK_ONLY if vals["volume"] else VOL_ONLY):
             g[p + name].setVisible(False)
 
+    k = hidden(g, nuke.Multiline_Eval_String_Knob("box_lib", "box lib"))
+    k.setValue(BOX_LIB)
     add(g, nuke.Tab_Knob("about", "About"))
     add(g, nuke.Text_Knob("version", "", "EzCloudGen v%s" % VERSION))
 
@@ -591,12 +728,18 @@ def blink(name, output, src, cmap, zin, layer, source_file, step=1):
         n[k + name].setExpression(p + name)
     n[k + "volume"].setExpression(p + "volume")
     n[k + "vol_shape"].setExpression(p + "vol_shape")
-    n[k + "vol_center"].setExpression(p + "vol_position.x", 0)
-    n[k + "vol_center"].setExpression("%svol_position.y + %svol_size.y / 2 / max(parent.scene_scale, 1e-6)" % (p, p), 1)
-    n[k + "vol_center"].setExpression(p + "vol_position.z", 2)
+    # A 3D node in the layer's box input sets the centre, axes and size; else the knobs do.
+    bf = p + "box_found"
+    n[k + "vol_center"].setExpression("%s ? %sbox_center.x : %svol_position.x" % (bf, p, p), 0)
+    n[k + "vol_center"].setExpression("%s ? %sbox_center.y : %svol_position.y + %svol_size.y / 2 / "
+                                      "max(parent.scene_scale, 1e-6)" % (bf, p, p, p), 1)
+    n[k + "vol_center"].setExpression("%s ? %sbox_center.z : %svol_position.z" % (bf, p, p), 2)
+    n[k + "vol_axes"].setExpression(bf)
     for j, c in enumerate("xyz"):
         n[k + "vol_rotate"].setExpression("%svol_rotate.%s" % (p, c), j)
-        n[k + "vol_size"].setExpression("%svol_size.%s" % (p, c), j)
+        n[k + "vol_size"].setExpression("%s ? %sbox_size.%s : %svol_size.%s" % (bf, p, c, p, c), j)
+        for a in "xyz":
+            n[k + "vol_axis_" + a].setExpression("%sbox_axis_%s.%s" % (p, a, c), j)
     n[k + "density"].setExpression(p + "density")
     # The coverage map, through the camera on the map frame, drifting with the wind since then.
     n[k + "use_map"].setExpression("parent.map_found")
@@ -627,10 +770,11 @@ def blink(name, output, src, cmap, zin, layer, source_file, step=1):
     n[k + "other_offset"].setExpression("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, t_other, p), 0)
     n[k + "other_offset"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, t_other, p), 1)
     f_other = "(frame + (%d))" % step
-    n[k + "other_vol_center"].setExpression("%svol_position.x%s" % (p, f_other), 0)
-    n[k + "other_vol_center"].setExpression("%svol_position.y%s + %svol_size.y / 2 / max(parent.scene_scale, 1e-6)"
-                                            % (p, f_other, p), 1)
-    n[k + "other_vol_center"].setExpression("%svol_position.z%s" % (p, f_other), 2)
+    bc = "%sbox_center_%s" % (p, which)
+    n[k + "other_vol_center"].setExpression("%s ? %s.x : %svol_position.x%s" % (bf, bc, p, f_other), 0)
+    n[k + "other_vol_center"].setExpression("%s ? %s.y : %svol_position.y%s + %svol_size.y / 2 / "
+                                            "max(parent.scene_scale, 1e-6)" % (bf, bc, p, f_other, p), 1)
+    n[k + "other_vol_center"].setExpression("%s ? %s.z : %svol_position.z%s" % (bf, bc, p, f_other), 2)
     n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
     n[k + "depth_mode"].setExpression("parent.depth_mode")
     n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
@@ -680,7 +824,8 @@ def build():
         atm = nuke.nodes.Input(name="atmos")
         sun = nuke.nodes.Input(name="sun")
         mp = nuke.nodes.Input(name="map")
-        for n in (cam, atm, sun, mp):
+        boxes = [nuke.nodes.Input(name="box%d" % i) for i in (1, 2, 3)]
+        for n in [cam, atm, sun, mp] + boxes:
             n.setXYpos(-1000, -1000)  # placed by the layout
         # The format: the bg's, or the script's without one.
         rootfmt = nuke.nodes.Constant(name="RootFormat", channels="rgba", color=0)
@@ -891,7 +1036,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale)"),
