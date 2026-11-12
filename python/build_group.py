@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.9.0"
+VERSION = "0.10.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -59,6 +59,9 @@ SHAPE = [
     ("warp", "warp", "How much the shapes swirl.", 0, 4),
     ("forward", "forward scatter", "How much light the clouds throw forward: the silver lining when backlit.", 0, 0.95),
     ("ambient", "sky light", "How much sky light the layer takes.", 0, 3),
+    ("sky_occlusion", "sky occlusion", "How much the cloud above darkens the sky light below it: deeper "
+                                       "undersides and folds. Lower it for tall storms and thick overcast, "
+                                       "which go flat grey under their own mass.", 0, 2),
     ("octaves", "detail octaves", "Detail levels (more is finer and slower).", 0, 5),
     ("billow", "billows", "1: billowy cauliflower detail. 0: soft wisps.", 0, 1),
     ("streaks", "streaks", "1: fibrous streaks (cirrus).", 0, 1),

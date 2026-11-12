@@ -13,7 +13,7 @@
 //
 // Light: a short march towards the sun, four multiple-scattering octaves with a dual
 // Henyey-Greenstein phase (silver linings when backlit), a powder term (dark edges), sky light
-// from above and ground bounce from below, energy-conserving integration, and aerial
+// from above (occluded by the cloud just above, probed twice) and ground bounce from below, energy-conserving integration, and aerial
 // perspective towards hazeColor over hazeDistance.
 //
 // volume 1: instead of a deck, the layer is one placed cloud volume: a shape (ellipsoid,
@@ -107,6 +107,7 @@ param:
   float warp;
   float forward;
   float ambient;
+  float skyOcclusion;
   float octaves;
   float billow;
   float streaks;
@@ -221,6 +222,7 @@ local:
     defineParam(warp, "warp", 1.2f);
     defineParam(forward, "forward", 0.8f);
     defineParam(ambient, "ambient", 1.0f);
+    defineParam(skyOcclusion, "sky_occlusion", 1.0f);
     defineParam(octaves, "octaves", 3.5f);
     defineParam(billow, "billow", 1.0f);
     defineParam(streaks, "streaks", 0.0f);
@@ -838,8 +840,11 @@ local:
     return (1.0f - gg) / (4.0f * pi * pow(1.0f + gg - 2.0f * g * c, 1.5f));
   }
 
-  // Optical depth towards the sun from p, inside the layer.
-  float sunDepth(float3 p, float foot, float sd)
+  // Optical depth towards the sun from p, inside the layer. Its loop also takes two cheap
+  // probes straight up, h1 and h2 above p, and returns their density times length in occ (sky
+  // occlusion). They share the loop's one cloud() call: Blink inlines cloud() at every call
+  // site, and a separate call made the kernel take minutes to compile on the CPU.
+  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -856,12 +861,29 @@ local:
     int steps = max(int(6.0f * quality), 2);
     float od = 0.0f;
     float prev = 0.0f;
-    for (int i = 0; i < steps; i++) {
-      float f = (float(i) + 0.5f) / float(steps);
-      float t = far * f * f;
-      float dt = t - prev;
-      prev = t;
-      od += cloud(p + sun * t, foot + t * 0.02f, i > 1, sd) * dt;
+    occ = 0.0f;
+    for (int i = 0; i < steps + 2; i++) {
+      float3 q;
+      float fq;
+      float len;
+      if (i < steps) {
+        float f = (float(i) + 0.5f) / float(steps);
+        float t = far * f * f;
+        len = t - prev;
+        prev = t;
+        q = p + sun * t;
+        fq = foot + t * 0.02f;
+      } else {
+        float h = i == steps ? h1 : h2;
+        len = i == steps ? h1 : h2 - h1;
+        q = p + float3(0.0f, h, 0.0f);
+        fq = foot + h * 0.05f;
+      }
+      float dn = cloud(q, fq, i > 1, sd) * len;
+      if (i < steps)
+        od += dn;
+      else
+        occ += dn;
     }
     return od;
   }
@@ -1049,7 +1071,10 @@ local:
             float w = T * (1.0f - ext);
             dep += w * tm;
             if (output != 2 && output != 4) {
-              float od = sunDepth(p, foot, sd) * sig0;
+              float h1 = min(layerH, 3000.0f) * 0.05f;
+              float h2 = min(layerH, 3000.0f) * 0.2f;
+              float occU = 0.0f;
+              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0;
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
               float oa = 1.0f;
@@ -1072,7 +1097,15 @@ local:
               else
                 hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
               float th = min(layerH, 1500.0f) * 0.12f;
-              float up = exp(-sig * (1.0f - hn) * th);
+              // Sky occlusion (the two probes above, from sunDepth): folds and undersides
+              // darken by the cloud overhead instead of all taking one flat sky tint.
+              // The layer's 'sky occlusion' scales both the strength and the soft cap's ceiling
+              // (3x it): cumulus folds want it strong (1: at least ~5% sky light), while tall
+              // storms and thick overcast decks go flat grey under their own mass, so their
+              // presets lower it.
+              float occK = 3.0f * skyOcclusion;
+              occU = occK > 1e-4f ? occK * (1.0f - exp(-occU * sig0 * 1.25f * skyOcclusion / occK)) : 0.0f;
+              float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
               float dnl = exp(-sig * hn * th) * 0.35f;
               float3 amb = (skyColor * up + groundColor * dnl) * ambient;
               float hz = hazeDistance > 0.0f ? exp(-tm / hazeDistance) : 1.0f;
