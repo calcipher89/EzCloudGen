@@ -11,7 +11,7 @@
 // surface is displaced by 3D detail noise (inverted Worley billows or value-noise wisps). Detail
 // octaves drop with distance, so far clouds don't sparkle.
 //
-// Light: a short march towards the sun, six multiple-scattering octaves with a dual
+// Light: a short march towards the sun, four multiple-scattering octaves with a dual
 // Henyey-Greenstein phase (silver linings when backlit), a powder term (dark edges), sky light
 // from above (occluded by the cloud just above, probed twice) and ground bounce from below, energy-conserving integration, and aerial
 // perspective towards hazeColor over hazeDistance.
@@ -244,7 +244,7 @@ local:
     defineParam(forward, "forward", 0.8f);
     defineParam(ambient, "ambient", 1.0f);
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
-    defineParam(shadowDepth, "shadow_depth", 0.3f);
+    defineParam(shadowDepth, "shadow_depth", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
