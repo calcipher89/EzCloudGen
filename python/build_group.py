@@ -527,8 +527,8 @@ def build_knobs(g):
         "How much the shadows darken the bg in the Comp view. The cloud_shadow layer is always the "
         "full shadow, for grading the plate yourself.").setValue(0.6)
     add(g, nuke.Boolean_Knob("layer_shadows", "layers shadow each other"),
-        "A higher layer shades the sunlit side of the layers below it (a map of its shadow seen from "
-        "the sun, one small pass per layer). Layers are ranked by their middle height.").setValue(True)
+        "A layer shades the sunlit side of the clouds below it in the other layers (a map of its "
+        "shadow seen from the sun, one small pass per layer).").setValue(True)
 
     add(g, nuke.Text_Knob("sun_divider", "sun"))
     sf = add(g, nuke.Enumeration_Knob("sun_from", "sun from", ["Auto", "Axis", "EzAtmosScatter", "Manual"]),
@@ -650,12 +650,6 @@ def build_knobs(g):
         # The 3D node in the box input, read through BOX_LIB.
         k = hidden(g, nuke.Int_Knob(p + "box_found"))
         k.setExpression(box_expr(i + 1, "found"))
-        # The layer's middle height above the ground in metres, which ranks the layers for
-        # shadowing each other.
-        k = hidden(g, nuke.Double_Knob(p + "mid_m"))
-        k.setExpression("%svolume ? ((%sbox_found ? %sbox_center.y : %svol_position.y + %svol_size.y / 2 / "
-                        "max(scene_scale, 1e-6)) - ground_height) * scene_scale : %sbase + %sthickness / 2"
-                        % ((p,) * 7))
         for name, what, step in (("box_center", "center", 0), ("box_center_next", "center", 1),
                                  ("box_center_prev", "center", -1), ("box_axis_x", "axis_x", 0),
                                  ("box_axis_y", "axis_y", 0), ("box_axis_z", "axis_z", 0),
@@ -964,16 +958,15 @@ def build():
         zwork["scale"].setExpression("parent.work_scale")
         zwork.setInput(0, zsrc)
 
-        # Inter-layer shadows: each layer renders its sun transmittance from the ground up (a
-        # small square map); a layer multiplies the maps of the layers above it into its smap.
+        # Inter-layer shadows: each layer renders its optical depth towards the sun from the
+        # ground up, with its altitude moments (a small square map); a layer adds up the other
+        # layers' maps into its smap (the kernel keeps only the part above each point). A
+        # disabled layer's map is black: no shadow.
         smfmt = nuke.nodes.Reformat(name="SunMapFormat", type="to box", box_fixed=True, resize="distort",
                                     filter="Impulse", black_outside=True)
         smfmt["box_width"].setValue(SUN_MAP_RES)
         smfmt["box_height"].setValue(SUN_MAP_RES)
         smfmt.setInput(0, nuke.toNode("WorkBlack"))
-        smwhite = nuke.nodes.Expression(name="SunMapWhite", channel0="rgba", expr0="1",
-                                        channel1="none", channel2="none", channel3="none")
-        smwhite.setInput(0, smfmt)
         sunmaps = []
         for i in range(1, 4):
             sm = blink("L%d_SunMap" % i, 5, smfmt, mp, smfmt, smfmt, i, source)
@@ -984,18 +977,11 @@ def build():
             sunmaps.append(sm)
         above = []
         for i in range(1, 4):
-            prev = smwhite
-            for j in range(1, 4):
-                if j == i:
-                    continue
-                m = nuke.nodes.Merge2(name="L%d_SunAbove%d" % (i, j), operation="multiply")
-                m.setInput(0, prev)
-                m.setInput(1, sunmaps[j - 1])
-                # Only a layer that is on and higher up (a disabled sun map is black).
-                m["disable"].setExpression("!(parent.layer_shadows && !(%s) && parent.l%d_mid_m > parent.l%d_mid_m)"
-                                           % (DISABLE % (j, j - 1), j, i))
-                prev = m
-            above.append(prev)
+            others = [sunmaps[j - 1] for j in range(1, 4) if j != i]
+            m = nuke.nodes.Merge2(name="L%d_SunOthers" % i, operation="plus")
+            m.setInput(0, others[0])
+            m.setInput(1, others[1])
+            above.append(m)
 
         colour, sunpart, depth, zkeys, shadows = [], [], [], [], []
         motion = {1: [], -1: []}
@@ -1196,7 +1182,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat|SunMapWhite)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale)"),

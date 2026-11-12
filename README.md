@@ -43,9 +43,10 @@ wisps, grain, swirl and wind shear. Layers are put over each other nearest first
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
-'layers shadow each other' (main tab, on by default) lets a higher layer shade the sunlit side of
-the layers below it, so a cumulus deck under an altocumulus sheet goes patchy. Each layer renders
-a small map of its shadow seen from the sun; layers are ranked by their middle height.
+'layers shadow each other' (main tab, on by default) lets each layer shade the sunlit side of the
+clouds below it in the other layers, so a cumulus deck under an altocumulus sheet goes patchy and
+a hero cloud shades the deck beside it. Each layer renders a small map of its shadow seen from
+the sun; a thick layer above dims the sun to a soft glow rather than black.
 
 For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
 the passes the view needs (the node's label says PREVIEW). For fast playback, **bake now** renders

@@ -132,7 +132,7 @@ def main():
             a, b = g[k], g["l2_" + k[3:]]
             if isinstance(a, (nuke.PyScript_Knob, nuke.Text_Knob, nuke.Tab_Knob)):
                 continue
-            if k[3:].startswith("box_") or k[3:] == "mid_m":
+            if k[3:].startswith("box_"):
                 continue  # read from the layer's own knobs and box input (box1, box2...)
             sa, sb = a.toScript(), b.toScript()
             a.fromScript(sb)

@@ -148,10 +148,11 @@ def render(w, h, params):
         params["map_file"] = raw
         params.setdefault("use_map", "1")
     if "smap" in params:
-        # The sun map of the layers above: a .npy of h x w floats (transmittance), rows going up
-        # (as the kernel's output 5 comes back from render() flipped, pass it un-flipped).
+        # The other layers' sun map: a .npy of h x w x 3 floats (output 5's optical depth and
+        # altitude moments), rows going up (output 5 comes back from render() flipped, so flip it
+        # back).
         sm = np.load(params.pop("smap")).astype(np.float32)
-        im = np.repeat(sm[..., None], 4, axis=2)
+        im = np.concatenate([sm[..., :3], np.ones(sm.shape[:2] + (1,), np.float32)], axis=2)
         raw = os.path.join(BUILD, "smap.raw")
         with open(raw, "wb") as f:
             f.write(np.array(im.shape[1::-1], dtype=np.int32).tobytes())

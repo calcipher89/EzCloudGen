@@ -29,9 +29,9 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
 
 - `blink/EzCloudGen.blink` is one cloud layer. The same kernel serves every pass, picked by its
   `output` param: 0 colour, 1 sun share, 2 Planar Z, 3 ground shadow on the bg, 4 motion
-  vector to the other frame, and 5 the layer's sun map (transmittance towards the sun from the
-  ground, 768 square). Each layer reads the product of the sun maps of the higher layers as
-  `smap`, so upper layers shadow lower ones. A layer is either a deck (a curved-earth shell driven by a 2D
+  vector to the other frame, and 5 the layer's sun map (optical depth towards the sun from the
+  ground plus its altitude moments, 768 square). Each layer reads the sum of the other layers'
+  maps as `smap` and keeps the part above each point, so layers shadow what is below them. A layer is either a deck (a curved-earth shell driven by a 2D
   weather field, the `weather()`, `profile()` and `cloud()` functions) or a placed volume
   (`volume=1`, `volumeShape()` in a box's local frame). Both share the erosion stack: billows,
   wisps, grain, swirl and shear. Lighting is a short sun march (`sunDepth()`) with

@@ -38,9 +38,12 @@
 //           for forward vectors, the previous for backward), a = opacity. The clouds' mean point
 //           along the ray moves with the wind (decks) or with the box (volumes), and is projected
 //           through the other frame's camera. No lighting, so it is cheap.
-// output 5: rgb = the sun map: this layer's transmittance towards the sun, seen from the ground
-//           (see sunMapUV), for the layers below it. Another layer reads the product of the
-//           maps of the layers above it as `smap` (use_sun_map), dimming its direct sun.
+// output 5: the sun map, for the other layers: along the ray from the ground up towards the sun
+//           (see sunMapUV), r = this layer's optical depth, g and b = its first and second
+//           moments of altitude in km (sum of optical depth x km, x km^2). Maps of several
+//           layers add up. Another layer reads the sum of the others' maps as `smap`
+//           (use_sun_map) and dims its direct sun by the part of the optical depth above the
+//           point (see tauAbove), so a layer only shadows what is below it.
 //
 // Occlusion: `zin` red is the bg's depth (scene units, as depthMode says). With occlude on, the
 // march stops at the bg's surface, so clouds go behind mountains and buildings. Depth of 0, or
@@ -837,19 +840,29 @@ local:
     return float2(gx * k, gz * k);
   }
 
-  // How much sun the layers above let through to p (1 without a sun map).
-  float sunFromAbove(float3 p)
+  // The other layers' optical depth between p and the sun (0 without a sun map). Each sun map
+  // texel holds the optical depth along the sun ray and its altitude moments; the occluder is
+  // taken as a uniform slab (mean +- sqrt(3) sd), and only the part above p shades it. It joins
+  // the layer's own sun depth in the multiple scattering octaves, so a thick layer above dims
+  // the sun to a soft glow instead of black, as real cloud shadows on cloud do.
+  float tauAbove(float3 p)
   {
     if (useSunMap != 1 || sun.y <= 0.0f)
-      return 1.0f;
+      return 0.0f;
     float w = float(smap.bounds.width());
     float h = float(smap.bounds.height());
     if (w < 2.0f || h < 2.0f)
-      return 1.0f;
+      return 0.0f;
     float2 uv = sunMapUV(p);
     float4 m = bilinear(smap, smap.bounds.x1 + (uv.x * 0.5f + 0.5f) * w - 0.5f,
                         smap.bounds.y1 + (uv.y * 0.5f + 0.5f) * h - 0.5f);
-    return clamp(m.x, 0.0f, 1.0f);
+    float tau = m.x;
+    if (tau < 1e-4f)
+      return 0.0f;
+    float mean = m.y / tau;
+    float hw = sqrt(3.0f * max(m.z / tau - mean * mean, 0.0f)) + 0.02f;
+    float f = clamp((altitude(p) * 0.001f - (mean - hw)) / (2.0f * hw), 0.0f, 1.0f);
+    return tau * (1.0f - f);
   }
 
   // ---- Rays ---------------------------------------------------------------------------------
@@ -1009,6 +1022,8 @@ local:
       // Planar Z per metre along the ray.
       float zPer = 1.0f / length(cd);
       float3 o = cam;
+      // The smallest detail worth marching: half a metre, or a sun map texel on the ground.
+      float footMin = 0.5f;
       if (output == 5) {
         // The sun map (see sunMapUV): march from this texel's ground point up towards the sun;
         // the main march's transmittance is the answer, with no lighting.
@@ -1016,11 +1031,12 @@ local:
         float mv = v * 2.0f - 1.0f;
         float r = sqrt(mu * mu + mv * mv);
         if (r > 0.995f || sun.y <= 0.0f) {
-          acc += float4(1.0f, 1.0f, 1.0f, 1.0f);
+          acc += float4(0.0f, 0.0f, 0.0f, 1.0f);
           continue;
         }
         float k = sunMapSize / (1.0f - r);
         o = float3(mu * k, 1.0f, mv * k);
+        footMin = 2.0f * sunMapSize / (frameSize.x * (1.0f - r) * (1.0f - r));
         d = sun;
       }
       float cosT = dot(d, sun);
@@ -1095,6 +1111,12 @@ local:
       }
 
       float T = 1.0f;
+      // The sun map: optical depth and its altitude moments (km).
+      float tau = 0.0f;
+      float tm1 = 0.0f;
+      float tm2 = 0.0f;
+      // The sun map marches on through thick cloud, to see where its optical depth ends.
+      float tStop = output == 5 ? 1e-4f : 0.01f;
       float3 col = float3(0.0f);
       float3 sunPart = float3(0.0f);
       float dep = 0.0f;
@@ -1106,9 +1128,9 @@ local:
         float tEnd = k == 0 ? i0e : i1e;
         bool first = true;
         int steps = 0;
-        while (t < tEnd && T > 0.01f && steps < maxSteps) {
+        while (t < tEnd && T > tStop && steps < maxSteps) {
           steps++;
-          float foot = max(t * pixAng, 0.5f);
+          float foot = max(t * pixAng, footMin);
           float dt = max(minStep, t * 0.012f / quality);
           if (first) {
             // Jitter the first step per pixel, so the steps don't band.
@@ -1124,11 +1146,17 @@ local:
             float ext = exp(-sig * dt);
             float w = T * (1.0f - ext);
             dep += w * tm;
+            if (output == 5) {
+              float km = altitude(p) * 0.001f;
+              tau += sig * dt;
+              tm1 += sig * dt * km;
+              tm2 += sig * dt * km * km;
+            }
             if (output != 2 && output != 4 && output != 5) {
               float h1 = min(layerH, 3000.0f) * 0.05f;
               float h2 = min(layerH, 3000.0f) * 0.2f;
               float occU = 0.0f;
-              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0;
+              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0 + tauAbove(p);
               // Multiple scattering octaves (Wrenninge).
               float ms = 0.0f;
               float oa = 1.0f;
@@ -1143,7 +1171,7 @@ local:
               }
               // Powder: dark edges facing away from the sun.
               float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
-              float3 direct = sunColor * (ms * powder * sunFromAbove(p));
+              float3 direct = sunColor * (ms * powder);
               // Sky light from above, ground bounce from below.
               float hn = 0.0f;
               if (volume == 1)
@@ -1173,7 +1201,7 @@ local:
       }
       float alpha = 1.0f - T;
       if (output == 5) {
-        acc += float4(T, T, T, 1.0f);
+        acc += float4(tau, tm1, tm2, 1.0f);
       } else if (output == 2) {
         float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
