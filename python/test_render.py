@@ -132,13 +132,47 @@ def main():
             a, b = g[k], g["l2_" + k[3:]]
             if isinstance(a, (nuke.PyScript_Knob, nuke.Text_Knob, nuke.Tab_Knob)):
                 continue
-            if k[3:].startswith("box_"):
-                continue  # the box readers belong to the layer's own input (box1, box2...)
+            if k[3:].startswith("box_") or k[3:] == "mid_m":
+                continue  # read from the layer's own knobs and box input (box1, box2...)
             sa, sb = a.toScript(), b.toScript()
             a.fromScript(sb)
             b.fromScript(sa)
     g["knobChanged"].setValue(kc)
     render("layered_swapped")
+
+    # Layers shadow each other: a cumulus deck under an altocumulus deck gets less direct sun
+    # with 'layers shadow each other' on; the altocumulus on its own is untouched.
+    g["l3_enable"].setValue(False)
+    set_type("l1_", "Cumulus")
+    set_type("l2_", "Altocumulus")
+    g["l2_coverage"].setValue(0.75)
+
+    def mean_sun():
+        n, tot = 0, 0.0
+        for y in range(H // 60, H, H // 30):
+            for x in range(W // 96, W, W // 48):
+                tot += g.sample("cloud_sun.green", x + 0.5, y + 0.5, frame=1001)
+                n += 1
+        return tot / n
+
+    g["layer_shadows"].setValue(False)
+    render("layer_shadows_off")
+    sun_off = mean_sun()
+    g["layer_shadows"].setValue(True)
+    render("layer_shadows")
+    sun_on = mean_sun()
+    g["l1_enable"].setValue(False)
+    top_on = mean_sun()
+    g["layer_shadows"].setValue(False)
+    top_off = mean_sun()
+    g["layer_shadows"].setValue(True)
+    g["l1_enable"].setValue(True)
+    print("layer shadows: sun share %.4f -> %.4f, top layer alone %.4f -> %.4f"
+          % (sun_off, sun_on, top_off, top_on))
+    if not sun_on < sun_off * 0.98:
+        raise RuntimeError("the upper layer cast no shadow on the lower one")
+    if abs(top_on - top_off) > 1e-4:
+        raise RuntimeError("layer shadows changed a layer with nothing above it")
     # The variations sheet of layer 1 (a cumulus deck).
     g["l2_enable"].setValue(False)
     g["l3_enable"].setValue(False)

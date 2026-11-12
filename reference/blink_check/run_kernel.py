@@ -3,7 +3,8 @@
     python3 reference/blink_check/run_kernel.py out.exr_or_png [width] [k=v ...]
 
 Parameters are the kernel's define() names (cam_position=0,3000,0 ...); map=picture.png feeds the
-coverage map input (and sets use_map=1); depth=z.npy feeds the bg depth (and sets occlude=1). Writes rgba as a
+coverage map input (and sets use_map=1); smap=t.npy feeds the sun map of the layers above (and
+sets use_sun_map=1); depth=z.npy feeds the bg depth (and sets occlude=1). Writes rgba as a
 tone-mapped PNG (and a .npy of the raw floats beside it).
 """
 
@@ -46,6 +47,7 @@ int main(int argc, char **argv) {
   proto.define();
   std::vector<float> mapPix;
   std::vector<float> zPix;
+  std::vector<float> smapPix;
   for (int i = 3; i + 1 < argc; i += 2) {
     if (!strcmp(argv[i], "map_file")) {
       // Raw: int w, int h, then w * h rgba floats, rows going up.
@@ -57,6 +59,21 @@ int main(int argc, char **argv) {
           proto.cmap.pix = mapPix.data();
           proto.cmap.bounds.x2 = mw;
           proto.cmap.bounds.y2 = mh;
+        }
+      }
+      if (f) fclose(f);
+      continue;
+    }
+    if (!strcmp(argv[i], "smap_file")) {
+      // Raw like map_file: the sun map of the layers above.
+      FILE *f = fopen(argv[i + 1], "rb");
+      int mw = 0, mh = 0;
+      if (f && fread(&mw, 4, 1, f) == 1 && fread(&mh, 4, 1, f) == 1) {
+        smapPix.resize(size_t(mw) * mh * 4);
+        if (fread(smapPix.data(), 4, smapPix.size(), f) == smapPix.size()) {
+          proto.smap.pix = smapPix.data();
+          proto.smap.bounds.x2 = mw;
+          proto.smap.bounds.y2 = mh;
         }
       }
       if (f) fclose(f);
@@ -130,6 +147,17 @@ def render(w, h, params):
             f.write(np.ascontiguousarray(im).tobytes())
         params["map_file"] = raw
         params.setdefault("use_map", "1")
+    if "smap" in params:
+        # The sun map of the layers above: a .npy of h x w floats (transmittance), rows going up
+        # (as the kernel's output 5 comes back from render() flipped, pass it un-flipped).
+        sm = np.load(params.pop("smap")).astype(np.float32)
+        im = np.repeat(sm[..., None], 4, axis=2)
+        raw = os.path.join(BUILD, "smap.raw")
+        with open(raw, "wb") as f:
+            f.write(np.array(im.shape[1::-1], dtype=np.int32).tobytes())
+            f.write(np.ascontiguousarray(im).tobytes())
+        params["smap_file"] = raw
+        params.setdefault("use_sun_map", "1")
     if "depth" in params:
         # The bg depth for occlusion: a .npy of h x w floats, rows going down (as a picture).
         z = np.load(params.pop("depth")).astype(np.float32)[::-1]

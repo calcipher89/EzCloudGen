@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.10.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.11.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -43,6 +43,9 @@ wisps, grain, swirl and wind shear. Layers are put over each other nearest first
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
+'layers shadow each other' (main tab, on by default) lets a higher layer shade the sunlit side of
+the layers below it, so a cumulus deck under an altocumulus sheet goes patchy. Each layer renders
+a small map of its shadow seen from the sun; layers are ranked by their middle height.
 
 For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
 the passes the view needs (the node's label says PREVIEW). For fast playback, **bake now** renders
