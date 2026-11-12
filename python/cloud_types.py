@@ -9,7 +9,7 @@ DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, win
                 cell_km=0.5, warp=1.5, g=0.8, ambient=1.0, sky_occ=1.0, shadow=0.0, octaves=3, billow=1.0, streaks=0.0, vary=0.0,
                 # Placed volumes (volume=1): shape 0 ellipsoid, 1 dome, 2 anvil, 3 box; size in m (full);
                 # place_km: how far in front of the camera 'place in front of camera' puts it.
-                volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.0, lump_size=600, small_lumps=0.0, place_km=10,
+                volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.0, lump_size=600, small_lumps=0.0, skirt=0.0, place_km=10,
                 # Erosion stack (billows are detail/erosion above).
                 wisp_size=60, wisp_amount=0.0, grain_size=15, grain_amount=0.0, swirl=0.0, swirl_size=400,
                 turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0,
@@ -21,7 +21,7 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
               detail="detail_size", erosion="erosion", sigma="sigma", cells="cells", cell_km="cell_km",
               warp="warp", g="forward", ambient="ambient", sky_occ="sky_occlusion", shadow="shadow_depth", octaves="octaves", billow="billow",
               streaks="streaks", vary="vary", volume="volume", vol_shape="vol_shape", vol_size="vol_size",
-              lumps="lumps", lump_size="lump_size", small_lumps="small_lumps", place_km="place_km", wisp_size="wisp_size",
+              lumps="lumps", lump_size="lump_size", small_lumps="small_lumps", skirt="skirt", place_km="place_km", wisp_size="wisp_size",
               wisp_amount="wisp_amount", grain_size="grain_size", grain_amount="grain_amount", swirl="swirl",
               swirl_size="swirl_size", turbulence="turbulence", crumble="crumble", crumble_size="crumble_size",
               shear="shear", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
@@ -98,6 +98,13 @@ TYPES = {
     "Puff": dict(volume=1, vol_shape=0, vol_size=(600, 450, 600), base=800, lumps=0.4, lump_size=150,
                  place_km=2, coverage=0.5, edge=0.08, detail=60, erosion=0.5, sigma=0.05, octaves=3,
                  billow=1.0, wisp_size=20, wisp_amount=0.4, grain_size=6, grain_amount=0.3, small_lumps=0.3),
+    # A soft, photographic cumulus: big smooth billows on top, a wide soft skirt of wisps
+    # around the base, bright sky-lit shadows.
+    "Soft Cumulus": dict(volume=1, vol_shape=1, vol_size=(5000, 2600, 4000), base=1400, lumps=1.0,
+                         lump_size=900, place_km=12, coverage=0.5, edge=0.09, taper=0.0, bottom=0.04,
+                         detail=220, erosion=0.3, sigma=0.09, warp=1.2, octaves=3, billow=1.0,
+                         wisp_size=300, wisp_amount=0.6, small_lumps=0.45, skirt=1.0, ambient=1.3,
+                         sky_occ=0.4),
 }
 
 

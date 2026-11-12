@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.16.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.17.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -32,7 +32,7 @@ EzCloudGen). Inputs:
   channel.
 
 Each of the three Layer tabs has a type menu that fills in its knobs. A layer is either a sky
-deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Storm Anvil, Fog Bank, Puff):
+deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Soft Cumulus, Storm Anvil, Fog Bank, Puff):
 picking a volume type drops it 'distance' ahead of the camera ('place in front of camera' does
 it again), then position, rotate and size move it. Or plug any 3D node (a Cube, an Axis, a
 TransformGeo, parented or tracked) into the layer's **box1/box2/box3** input: the volume fills
@@ -57,6 +57,10 @@ instead of into flat grey.
 and Cumulus Congestus use them), and 'small lumps' adds a second set a bit under half the size
 riding on them, for cauliflower heads. Cumulus keep a flat base: the lobes run straight down to it
 from a fifth of the way up, and the base itself is thin and ragged, not a plate.
+'skirt' (after 'small lumps') gives smooth, firm billows on top and a wide, soft skirt of wisps
+around the base: it calms the erosion higher up, and widens the edge and feeds the wisps low down.
+The Soft Cumulus type uses it, with more sky light, for a softer, more photographic cloud (see the
+SoftCloud demo).
 'edge steps' (main tab, by 'quality'; default 3) takes finer ray steps where a ray meets cloud, and
 the sun's shadow march takes 10 steps (was 6), so surfaces and edges come out clean instead of
 grainy at one sample; it costs roughly 1.5 to 2 times the render time, and the preview turns it

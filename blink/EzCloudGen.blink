@@ -133,6 +133,7 @@ param:
   float lumps;
   float lumpSize;
   float lumps2;
+  float skirt;
   // Per-side fades of a volume: how far in from each face of the box (0..1 of the box) the
   // density is eaten away; the erosion noise then tears that margin up.
   float fadeTop;
@@ -263,6 +264,7 @@ local:
     defineParam(lumps, "lumps", 0.5f);
     defineParam(lumpSize, "lump_size", 600.0f);
     defineParam(lumps2, "small_lumps", 0.0f);
+    defineParam(skirt, "skirt", 0.0f);
     defineParam(fadeTop, "fade_top", 0.0f);
     defineParam(fadeBottom, "fade_bottom", 0.0f);
     defineParam(fadeLeft, "fade_left", 0.0f);
@@ -801,7 +803,10 @@ local:
       ly = alt - b - 0.5f * thickness;
       lz = p.z + camPosition.z * sceneScale + offset.y;
     }
-    float e = max(edge, 1e-3f);
+    // Skirt: real cumulus are smooth, firm billows on top and soft, torn wisps around the base.
+    // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
+    float sk = skirt * (1.0f - sstep(0.1f, 0.55f, hn));
+    float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk);
     // The light march sees no small lumps, and skips the lobes deep inside the cloud, where
     // they can't open it up (they take at most 0.31 * lumps away).
     bool core = cheap && (c - 0.31f * lumps + 0.03f) >= e + 0.12f;
@@ -842,7 +847,8 @@ local:
       // one makes its few coarse steps band the shading into flat patches.
       return clamp((c + 0.03f) / (e + 0.12f), 0.0f, 1.0f);
     }
-    float reach = 0.12f * (erosion + wispAmount + grainAmount);
+    float wispAmt = wispAmount * (1.0f + 2.0f * sk);
+    float reach = 0.12f * (erosion + wispAmt + grainAmount);
     if (c < -reach)
       return 0.0f;
     // The detail's coordinates: world metres, rising slowly (boil) with evolve.
@@ -878,19 +884,20 @@ local:
       wz += uz * sw * 2.0f;
     }
     // An anvil's top is a smooth, spreading ice sheet: fewer billows there.
-    float er = erosion * (volume == 1 && volShape == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f);
+    float er = erosion * (volume == 1 && volShape == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f)
+               * (1.0f - 0.7f * skirt * sstep(0.3f, 0.7f, hn));
     if (er > 0.0f) {
       float oct = lod(detailSize, foot, octaves);
       if (oct > 0.0f)
         c += er * (detail3(wx / detailSize, wy / detailSize, wz / detailSize, oct) - 0.5f) * 0.24f;
     }
     // Wisps and grain eat the thin edges more than the cores.
-    float thin = 1.0f - clamp(c / (3.0f * e), 0.0f, 1.0f);
-    if (wispAmount > 0.0f) {
+    float thin = 1.0f - clamp(c / (3.0f * max(edge, 1e-3f)), 0.0f, 1.0f);
+    if (wispAmt > 0.0f) {
       float ws = max(wispSize, 1.0f);
       float oct = lod(ws, foot, 2.0f);
       if (oct > 0.0f)
-        c += wispAmount * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f + 0.6f * thin);
+        c += wispAmt * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f * (1.0f - min(sk, 1.0f)) + (0.6f + 0.4f * min(sk, 1.0f)) * thin);
     }
     if (grainAmount > 0.0f) {
       float gs = max(grainSize, 1.0f);
