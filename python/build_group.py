@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.11.0"
+VERSION = "0.12.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -79,12 +79,23 @@ EROSION = [
     ("grain_size", "grain size", "Size of the grain, in metres.", 1, 100),
     ("swirl", "swirl", "Curls the detail around, for swirly wisps.", 0, 1),
     ("swirl_size", "swirl size", "Size of the swirls, in metres.", 20, 3000),
+    ("turbulence", "turbulence", "A finer, second swirl (a third the size) that makes the edges roll and churn; "
+                                 "animate 'evolve' to boil it.", 0, 1),
+    ("crumble", "crumble", "Bites chunks out of the thin edges, for torn, ragged cloud and fog.", 0, 1),
+    ("crumble_size", "crumble size", "Size of the chunks crumble bites out, in metres.", 5, 1000),
     ("shear", "wind shear", "Leans the tops downwind (along 'wind direction').", -1, 1),
 ]
 # A placed volume (types with volume on).
 VOLUME = [
     ("lumps", "lumps", "Big noise that breaks the shape into towers and bulges.", 0, 1.5),
     ("lump_size", "lump size", "Size of the lumps, in metres.", 20, 5000),
+    ("fade_top", "fade top", "Eats the cloud away towards the top of its box, this far in (0..1 of the box): "
+                             "the erosion tears the margin up. Fog that sits low and thins out above.", 0, 1),
+    ("fade_bottom", "fade bottom", "The same towards the bottom of the box.", 0, 1),
+    ("fade_left", "fade left", "The same towards the box's left side (local -X).", 0, 1),
+    ("fade_right", "fade right", "The same towards the box's right side (local +X).", 0, 1),
+    ("fade_front", "fade front", "The same towards the box's front (local +Z).", 0, 1),
+    ("fade_back", "fade back", "The same towards the box's back (local -Z).", 0, 1),
 ]
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
 # Knobs shown only for decks, and only for volumes.
@@ -92,8 +103,8 @@ DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", 
              "map_amount", "map_channel"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
-            "release_box", "lumps",
-            "lump_size"]
+            "release_box", "lumps", "lump_size", "fade_top", "fade_bottom", "fade_left", "fade_right",
+            "fade_front", "fade_back"]
 
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
           "cloud_sun": ["red", "green", "blue"],

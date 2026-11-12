@@ -54,6 +54,12 @@ SETUPS = [
     ("PaintedSky", "Coverage map: clouds only where the map is painted white (a disc left, a band right)",
      [("Cumulus", {"coverage": 0.35}), None, ("Cirrus", {"coverage": 0.3})],
      {"sun_direction": sun(28, 30), "map_frame": 1001, "_map": True}),
+    ("CanyonFog", "Overcast canyon from 450 m up: ground fog in the floor, torn low cloud, a wisp passing close",
+     [("Ground Fog", {"base": -40, "place_km": 2.6, "across": 0.1, "vol_size": (4500, 550, 5000)}),
+      ("Torn Low Cloud", {"base": 230, "place_km": 1.7, "across": -0.5}),
+      ("Wispy Fog", {"base": -30, "place_km": 1.15, "across": 0.0, "vol_size": (1400, 320, 1400)})],
+     {"sun_direction": sun(14, 20), "sun_intensity": 0.18, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
+      "haze_color": "0.2 0.23 0.28", "haze_distance": 8, "_bg": "Ncanyon", "_cam": "Ncanyoncam"}),
 ]
 
 
@@ -142,6 +148,7 @@ def main():
             'Viewer inputs: 1-4 sky decks. 5 HeroVolume: layer 2 fills the wireframe Cube in its box2 input (move it in 3D).\\n'
             '6 StormFront. 7 Mountains: a ridge plate with depth.Z, so the clouds go behind it and shadow it (view Shadow),\\n'
             'with motion vectors on; 8 is its VectorBlur. 9 PaintedSky: a coverage map says where the clouds go.\\n'
+            '10 CanyonFog: overcast canyon (its own camera, CanyonCam): ground fog, torn low cloud, a close wisp.\\n'
             'Each EzCloudGen: Layer tabs have the type menu,\\n'
             'view shows Comp / Clouds / Sun share / Depth / Variations / Shadow, resolution Half (Full for finals).\\n'
             'Outputs: rgba, depth.Z (Planar Z, scene units, for EzCloudShafts), cloud, cloud_sun, cloud_sky, cloud_shadow,\\n'
@@ -175,7 +182,44 @@ def main():
             " expr3 {elev < top ? 80000 : 0}",
             " name MountainRidge", " label \"stand-in plate with depth.Z (a ridge 8 km away)\"",
             " xpos 2600", " ypos -200", "}",
-            "set Nridge [stack 0]"]
+            "set Nridge [stack 0]",
+            # The canyon setup: its own camera looking down into a canyon under an overcast sky,
+            # with cliffs either side, a floor and a far ridge (all with depth.Z, decimetres).
+            "Camera2 {", " inputs 0",
+            " translate {0 4500 0}",
+            " rotate {-12 {curve x1001 0 x1100 8} 0}",
+            " focal 24", " haperture 36", " vaperture 20.25",
+            " name CanyonCam", " label \"450 m up, looking 12 deg down\"", " xpos 3000", " ypos -300", "}",
+            "set Ncanyoncam [stack 0]",
+            "Constant {", " inputs 0", " channels rgba", " color {0.3 0.32 0.36 1}",
+            " name OvercastSky", " label \"stand-in overcast sky\"", " xpos 3200", " ypos -300", "}",
+            "Expression {",
+            " temp_name0 elev",
+            " temp_expr0 {-12 + degrees(atan((y / height - 0.5) * 20.25 / 24))}",
+            " temp_name1 az",
+            " temp_expr1 {CanyonCam.rotate.y - degrees(atan((x / width - 0.5) * 36 / 24))}",
+            " temp_name2 wall",
+            # A V-shaped canyon: the walls lean back with height, with a rough, broken edge.
+            # wall: degrees inside the rock (> 0), used soft for the colour (anti-aliased edge).
+            " temp_expr2 {min(abs(az) - 11 - 0.7 * (elev + 12) - 2.5 * noise(elev / 2.5, az / 4, 1) - "
+            "1.2 * noise(elev * 1.3, az, 2), 9 + 2 * sin(radians(az * 11)) + noise(az / 2, 0, 3) - elev)}",
+            " temp_name3 ridge",
+            " temp_expr3 {elev < 1.2 + 0.8 * sin(radians(az * 9))}",
+            " channel0 {rgba.red rgba.green rgba.blue none}",
+            # Rock in layered strata, a darker floor, a hazy far ridge.
+            # Rock: broad irregular bands broken by vertical cracks, a darker floor, a hazy far
+            # ridge; the cliff's edge is blended over about 0.2 degrees.
+            " expr0 {lerp(elev < -4.3 ? 0.04 + 0.012 * noise(az / 2, elev * 2, 3) : ridge ? 0.16 : r, "
+            "0.025 + 0.02 * noise(az / 5, elev * 0.7, 0) + 0.015 * noise(az * 2.5, elev / 5, 7) * noise(az / 2, elev, 9), "
+            "clamp(wall / 0.2 + 0.5, 0, 1))}",
+            " channel3 depth",
+            # Planar Z: the floor's range along the view axis (the camera looks 12 degrees down);
+            # the walls recede with their angle from the view axis.
+            " expr3 {wall > 0 ? 9000 + 300 * abs(az) : elev < -4.3 ? 4500 / tan(radians(-elev)) * cos(radians(12)) + "
+            "4500 * sin(radians(12)) : ridge ? 60000 : 0}",
+            " name CanyonPlate", " label \"stand-in canyon plate with depth.Z\"",
+            " xpos 3200", " ypos -200", "}",
+            "set Ncanyon [stack 0]"]
     viewer_inputs = []
     for i, (name, label, layers, knobs) in enumerate(SETUPS):
         x = 200 + i * 400
@@ -183,7 +227,7 @@ def main():
                 " note_font_size 20", " tile_color 0x3a5a4aff", " xpos %d" % (x - 60), " ypos -40",
                 " bdwidth 360", " bdheight 220", "}"]
         # The node's inputs by number: bg 0, camera 1, atmos 2, sun 3, map 4, box1-3 5-7.
-        srcs = {0: knobs.get("_bg", "Nsky"), 1: "Ncam"}
+        srcs = {0: knobs.get("_bg", "Nsky"), 1: knobs.get("_cam", "Ncam")}
         box = knobs.get("_box")
         if box:
             # A Cube in the layer's box input, as 'make 3D box' leaves it: placed and sized like
