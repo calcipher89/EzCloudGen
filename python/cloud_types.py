@@ -85,7 +85,7 @@ TYPES = {
     # Thin, curling veils of fog: little body, all edge.
     "Wispy Fog": dict(volume=1, vol_shape=0, vol_size=(1500, 300, 1200), base=50, lumps=1.0, lump_size=250,
                       place_km=1.5, coverage=0.45, edge=1.0, detail=50, erosion=0.4, sigma=0.015, billow=0.0,
-                      octaves=2.5, wisp_size=20, wisp_amount=0.9, swirl=0.8, swirl_size=120, turbulence=0.7,
+                      octaves=2.5, wisp_size=20, wisp_amount=0.8, swirl=0.45, swirl_size=90, turbulence=0.5,
                       crumble=0.9, crumble_size=40, g=0.8, ambient=0.9, fade_top=0.4, fade_bottom=0.3),
     # Ragged low cloud (scud): a dense, lumpy grey core torn to shreds at its edges.
     "Torn Low Cloud": dict(volume=1, vol_shape=0, vol_size=(1200, 500, 900), base=200, lumps=1.1,

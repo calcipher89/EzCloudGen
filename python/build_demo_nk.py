@@ -210,7 +210,7 @@ def main():
             # Rock: broad irregular bands broken by vertical cracks, a darker floor, a hazy far
             # ridge; the cliff's edge is blended over about 0.2 degrees.
             " expr0 {lerp(elev < -4.3 ? 0.04 + 0.012 * noise(az / 2, elev * 2, 3) : ridge ? 0.16 : r, "
-            "0.055 + 0.03 * noise(az / 5, elev * 0.7, 0) + 0.02 * noise(az * 2.5, elev / 5, 7) * noise(az / 2, elev, 9), "
+            "0.025 + 0.02 * noise(az / 5, elev * 0.7, 0) + 0.015 * noise(az * 2.5, elev / 5, 7) * noise(az / 2, elev, 9), "
             "clamp(wall / 0.2 + 0.5, 0, 1))}",
             " channel3 depth",
             # Planar Z: the floor's range along the view axis (the camera looks 12 degrees down);
