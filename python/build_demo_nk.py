@@ -32,7 +32,7 @@ SETUPS = [
     ("GoldenHour", "Golden hour, backlit: stratocumulus + altocumulus, gap toward the sun",
      [("Stratocumulus", {"coverage": 0.6}), ("Altocumulus", {}), None],
      {"sun_direction": sun(6, 8), "light_from": "Manual", "sun_color": "14 7 2.6",
-      "sky_color": "0.22 0.16 0.2", "ground_color": "0.1 0.05 0.02", "haze_color": "1.8 0.95 0.45",
+      "sky_color": "0.12 0.15 0.27", "ground_color": "0.1 0.05 0.02", "haze_color": "1.6 1.1 0.75",
       "gap_amount": 0.7, "gap_size": 3}),
     ("Overcast", "Overcast: stratus under altostratus",
      [("Stratus", {"coverage": 0.85, "erosion": 0.55, "billow": 0.6, "sigma": 0.03, "vary": 0.4}), ("Altostratus", {}), None],
@@ -58,12 +58,12 @@ SETUPS = [
      [("Ground Fog", {"base": -40, "place_km": 2.6, "across": 0.1, "vol_size": (4500, 550, 5000)}),
       ("Torn Low Cloud", {"base": 230, "place_km": 1.7, "across": -0.5}),
       ("Wispy Fog", {"base": -30, "place_km": 1.15, "across": 0.0, "vol_size": (1400, 320, 1400)})],
-     {"sun_direction": sun(14, 20), "sun_intensity": 0.18, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
+     {"sun_direction": sun(14, 20), "sun_intensity": 0.13, "sky_color": "0.24 0.3 0.42", "sky_intensity": 0.6,
       "haze_color": "0.2 0.23 0.28", "haze_distance": 8, "_bg": "Ncanyon", "_cam": "Ncanyoncam"}),
     ("HighCam", "Golden hour from 1130 m up: the decks run out to the horizon, ground below it",
      [("Stratocumulus", {"coverage": 0.6}), ("Altocumulus", {}), None],
      {"sun_direction": sun(6, 8), "light_from": "Manual", "sun_color": "14 7 2.6",
-      "sky_color": "0.22 0.16 0.2", "ground_color": "0.1 0.05 0.02", "haze_color": "1.8 0.95 0.45",
+      "sky_color": "0.12 0.15 0.27", "ground_color": "0.1 0.05 0.02", "haze_color": "1.6 1.1 0.75",
       "gap_amount": 0.7, "gap_size": 3, "_bg": "Nhighsky", "_cam": "Nhighcam"}),
 ]
 

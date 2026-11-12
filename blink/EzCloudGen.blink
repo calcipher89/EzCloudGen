@@ -115,6 +115,7 @@ param:
   float forward;
   float ambient;
   float skyOcclusion;
+  float shadowDepth;
   int useSunMap;
   float sunMapSize;
   float octaves;
@@ -243,6 +244,7 @@ local:
     defineParam(forward, "forward", 0.8f);
     defineParam(ambient, "ambient", 1.0f);
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
+    defineParam(shadowDepth, "shadow_depth", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
@@ -1226,20 +1228,25 @@ local:
               float h2 = min(layerH, 3000.0f) * 0.2f;
               float occU = 0.0f;
               float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0 + tauAbove(p);
-              // Multiple scattering octaves (Wrenninge).
+              // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
+              // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
+              // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
               float ms = 0.0f;
+              float oaK = 0.3f + 0.3f * clamp(shadowDepth, 0.0f, 1.0f);
               float oa = 1.0f;
               float ob = 1.0f;
               float oc = 1.0f;
               for (int o = 0; o < 4; o++) {
                 float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT);
                 ms += ob * exp(-od * oa) * ph;
-                oa *= 0.3f;
+                oa *= oaK;
                 ob *= 0.6f;
                 oc *= 0.5f;
               }
-              // Powder: dark edges facing away from the sun.
+              // Powder: thin edges facing away from the sun are darker. Looking towards the
+              // sun it fades, so backlit edges keep their silver lining.
               float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
+              powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
               float3 direct = sunColor * (ms * powder);
               // Sky light from above, ground bounce from below.
               float hn = 0.0f;

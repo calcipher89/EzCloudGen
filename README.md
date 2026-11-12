@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.13.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.14.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -48,6 +48,11 @@ parallax. Layers are put over each other nearest first, per pixel.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
+'shadow depth' (in 'more shape', after 'sky occlusion') sets how far light diffuses through the
+cloud: 0 glows right through with soft, luminous shadows, 1 keeps the folds and cores dark (Storm
+Anvil uses 0.7; the rest 0). Backlit edges keep their silver lining. With Manual light, 'haze
+color' is tinted half way towards the sky colour's hue, so far clouds fade cool into the air
+instead of into flat grey.
 'layers shadow each other' (main tab, on by default) lets each layer shade the sunlit side of the
 clouds below it in the other layers, so a cumulus deck under an altocumulus sheet goes patchy and
 a hero cloud shades the deck beside it. Each layer renders a small map of its shadow seen from
