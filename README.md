@@ -50,7 +50,7 @@ sky light below it, deepening bases and the folds between lobes: 1 for cumulus, 
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
 'shadow depth' (in 'more shape', after 'sky occlusion') sets how far light diffuses through the
 cloud: 0 glows right through with soft, luminous shadows, 1 keeps the folds and cores dark (Storm
-Anvil uses 0.7; the rest 0.3). Backlit edges keep their silver lining. With Manual light, 'haze
+Anvil uses 0.7; the rest 0). Backlit edges keep their silver lining. With Manual light, 'haze
 color' is tinted half way towards the sky colour's hue, so far clouds fade cool into the air
 instead of into flat grey.
 'layers shadow each other' (main tab, on by default) lets each layer shade the sunlit side of the

@@ -6,7 +6,7 @@ Keys are the prototype's names; KERNEL maps them to the Blink kernel's parameter
 
 DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, wind_deg=20, edge=0.12,
                 taper=0.0, bottom=0.08, top=0.3, detail=180, erosion=0.5, sigma=0.04, cells=0.0,
-                cell_km=0.5, warp=1.5, g=0.8, ambient=1.0, sky_occ=1.0, shadow=0.3, octaves=3, billow=1.0, streaks=0.0, vary=0.0,
+                cell_km=0.5, warp=1.5, g=0.8, ambient=1.0, sky_occ=1.0, shadow=0.0, octaves=3, billow=1.0, streaks=0.0, vary=0.0,
                 # Placed volumes (volume=1): shape 0 ellipsoid, 1 dome, 2 anvil, 3 box; size in m (full);
                 # place_km: how far in front of the camera 'place in front of camera' puts it.
                 volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.5, lump_size=600, place_km=10,
