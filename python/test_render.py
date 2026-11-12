@@ -309,10 +309,19 @@ def main():
         exec(g["knobChanged"].value(), {"nuke": nuke})
     finally:
         nuke.thisNode, nuke.thisKnob = saved
-    if g.node("DepthSource")["from0"].value() != "rgba.alpha":
+    # Nuke gives channels back by short name ('alpha' for rgba.alpha).
+    if (g.node("DepthSource")["from0"].value() not in ("rgba.alpha", "alpha")
+            or g.node("DepthEnsure")["channels"].value() not in ("rgba.alpha", "alpha")):
         raise RuntimeError("depth channel knob didn't reach DepthSource")
+    # Back to depth.Z: the knob says 'depth', which a Copy would read as cutout.depth.
     g["depth_channel"].setValue("depth.Z")
-    g.node("DepthSource")["from0"].setValue("depth.Z")
+    nuke.thisNode, nuke.thisKnob = (lambda: g), (lambda: g["depth_channel"])
+    try:
+        exec(g["knobChanged"].value(), {"nuke": nuke})
+    finally:
+        nuke.thisNode, nuke.thisKnob = saved
+    if g.node("DepthSource")["from0"].value() != "depth.Z":
+        raise RuntimeError("depth.Z on the knob gave DepthSource " + g.node("DepthSource")["from0"].value())
     g.setInput(0, sky)
 
     # The layers the node adds.

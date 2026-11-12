@@ -151,7 +151,10 @@ def knob_changed():
             "        exec(n[p + 'place'].value(), {'nuke': nuke})\n"
             "    layers = [p]\n"
             "elif k.name() == 'depth_channel':\n"
-            "    n.node('DepthSource')['from0'].setValue(k.value())\n"
+            "    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n"
+            "    c = {'depth': 'depth.Z'}.get(k.value(), k.value())\n"
+            "    n.node('DepthEnsure')['channels'].setValue(c)\n"
+            "    n.node('DepthSource')['from0'].setValue(c)\n"
             "elif k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -672,7 +675,10 @@ def build():
         # The bg's depth in red, in the work format (black without one: all sky).
         zsrc = nuke.nodes.Copy(name="DepthSource", from0="depth.Z", to0="rgba.red")
         zsrc.setInput(0, nuke.toNode("WorkBlack"))
-        zsrc.setInput(1, bg)
+        # A Copy errors on a channel its input lacks: add it (black) when the bg has none.
+        zadd = nuke.nodes.AddChannels(name="DepthEnsure", channels="depth.Z")
+        zadd.setInput(0, bg)
+        zsrc.setInput(1, zadd)
         zwork = nuke.nodes.Reformat(name="DepthWork", type="scale", filter="Impulse", black_outside=True)
         zwork["scale"].setExpression("parent.work_scale")
         zwork.setInput(0, zsrc)
@@ -816,7 +822,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthSource|DepthWork)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp)"),
