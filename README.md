@@ -76,10 +76,8 @@ a hero cloud shades the deck beside it. Each layer renders a small map of its sh
 the sun; a thick layer above dims the sun to a soft glow rather than black.
 
 For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
-the passes the view needs (the node's label says PREVIEW). For fast playback, **bake now** renders
-the Comp with all its layers to 'bake folder' (EXR, one folder per script and node) and plays it
-back from disk ('use bake'); 'status' says when the settings changed since the bake (camera and
-bg changes aren't tracked).
+the passes the view needs (the node's label says PREVIEW). For fast playback or the farm, precomp
+the node with your own Write (channels all keeps every layer) and read it back.
 
 'show me variations' (main tab) shows nine seeds of one layer side by side ('next nine' for
 more); type the number of the one you like (1 top left, 9 bottom right) into 'use number' and

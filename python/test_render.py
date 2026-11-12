@@ -500,32 +500,6 @@ def main():
         raise RuntimeError("preview isn't faster")
     g["preview"].setValue(False)
 
-    # Bake: three frames to tests/out/bake, played back from disk, and out of date after a change.
-    g["bake_folder"].setValue(OUT + "/bake")
-    g["bake_first"].setValue(1001)
-    g["bake_last"].setValue(1003)
-    print("bake status before: " + g["bake_status"].evaluate())
-    render("bake_live")
-    live = [g.sample(c, W / 2 + 0.5, H / 2 + 0.5, frame=1001) for c in ("rgba.red", "cloud.alpha", "depth.Z")]
-    t = time.time()
-    g["bake_now"].execute()
-    print("bake: 3 frames in %.2fs to %s" % (time.time() - t, g.node("BakeWrite")["file"].evaluate()))
-    if not g["use_bake"].value():
-        raise RuntimeError("bake now didn't switch to the bake")
-    print("bake status after: " + g["bake_status"].evaluate())
-    if g["bake_status"].evaluate() != "up to date":
-        raise RuntimeError("fresh bake isn't up to date")
-    render("bake_played")  # must match bake_live
-    baked = [g.sample(c, W / 2 + 0.5, H / 2 + 0.5, frame=1001) for c in ("rgba.red", "cloud.alpha", "depth.Z")]
-    print("bake: live %s, baked %s, label '%s'" % (live, baked, g["label"].evaluate()))
-    if max(abs(a - b) / max(abs(a), 1e-3) for a, b in zip(live, baked)) > 1e-3:
-        raise RuntimeError("baked frames don't match the live render")
-    g["l1_coverage"].setValue(g["l1_coverage"].value() + 0.05)
-    print("bake status after a change: " + g["bake_status"].evaluate())
-    if not g["bake_status"].evaluate().startswith("OUT OF DATE"):
-        raise RuntimeError("bake isn't flagged out of date after a change")
-    g["l1_coverage"].setValue(g["l1_coverage"].value() - 0.05)
-    g["use_bake"].setValue(False)
     g["l2_enable"].setValue(False)
     g["l3_enable"].setValue(False)
 

@@ -266,54 +266,6 @@ def box_expr(layer, what, step=0):
               % (BOX_INPUT + layer, BOX_INPUT + layer, step, what))
 
 
-# ---- Bake ---------------------------------------------------------------------------------
-
-# A fingerprint of the settings that change the picture (every knob but the bake's own, the view
-# and the panel's), to tell when a bake is out of date. Inputs (camera moves, bg) aren't in it.
-BAKE_SKIP = ("bake_", "view", "preview", "use_bake", "variation", "show_variations", "next_variations",
-             "selected", "xpos", "ypos", "label", "note_font", "tile_color", "gl_color", "hide_input",
-             "postage_stamp", "cached", "dope_sheet", "help", "onCreate", "knobChanged", "updateUI",
-             "icon", "indicators", "panel", "box_lib", "version")
-BAKE_HASH = ("import hashlib\n"
-             "n = nuke.thisNode()\n"
-             "parts = []\n"
-             "for name in sorted(n.knobs()):\n"
-             "    if name.startswith(%r):\n"
-             "        continue\n"
-             "    k = n[name]\n"
-             "    if k.Class() in ('Tab_Knob', 'Text_Knob', 'PyScript_Knob'):\n"
-             "        continue\n"
-             "    parts.append(name + '=' + k.toScript())\n"
-             "h = hashlib.md5('\\n'.join(parts).encode()).hexdigest()\n" % (BAKE_SKIP,))
-BAKE_NOW = (BAKE_HASH +
-            "import os\n"
-            "w = n.node('BakeWrite')\n"
-            "path = w['file'].evaluate()\n"
-            "if path:\n"
-            "    d = os.path.dirname(path)\n"
-            "    if not os.path.isdir(d):\n"
-            "        os.makedirs(d)\n"
-            "view = n['view'].value()\n"
-            "n['view'].setValue('Comp')\n"
-            "n['use_bake'].setValue(False)\n"
-            "try:\n"
-            "    nuke.execute(w, int(n['bake_first'].value()), int(n['bake_last'].value()))\n"
-            "finally:\n"
-            "    n['view'].setValue(view)\n"
-            "n['bake_hash'].setValue(h)\n"
-            "n.node('BakeRead')['reload'].execute()\n"
-            "n['use_bake'].setValue(True)\n")
-# A String_Knob can't hold an expression (and would show TCL as text), so knobChanged writes the
-# status after every change (setting bake_hash after a bake counts too).
-# Its own namespace: knob scripts share one, and its n, k, s... would clobber a running button's.
-BAKE_STATUS_UPDATE = ("if k.name() != 'bake_status':\n    exec(%r, {'nuke': nuke})\n" % (
-    BAKE_HASH + "s = 'no bake yet' if not n['bake_hash'].value() else "
-                "('up to date' if h == n['bake_hash'].value() else "
-                "'OUT OF DATE: settings changed since the bake, bake again')\n"
-                "if n['bake_status'].value() != s:\n"
-                "    n['bake_status'].setValue(s)\n"))
-
-
 # ---- The type menu ------------------------------------------------------------------------
 
 def knob_changed():
@@ -354,7 +306,7 @@ def knob_changed():
             "    for name in %r:\n"
             "        n[p + name].setVisible(not vol)\n"
             "    for name in %r:\n"
-            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY)) + BAKE_STATUS_UPDATE
+            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY))
 
 
 def place_script(p):
@@ -495,32 +447,6 @@ def build_knobs(g):
         "Clouds fade out towards this distance (km). The default reaches past the horizon from high up.").setValue(400)
     g["max_distance"].setRange(5, 500)
 
-    add(g, nuke.Text_Knob("bake_divider", "bake"))
-    k = add(g, nuke.File_Knob("bake_folder", "bake folder"),
-            "Where 'bake now' writes the frames: <folder>/<script>/<node>/<script>_<node>.####.exr. TCL works, "
-            "e.g. [getenv JOB].")
-    k.setValue("/data/jobs/[getenv JOB]/sequences/[getenv SEQ]/shots/[getenv SHOT]/nuke/comp/ezCloudGen/cache")
-    k = add(g, nuke.Int_Knob("bake_first", "frames"), "First frame to bake.")
-    k.setValue(int(nuke.root()["first_frame"].value()))
-    k = add(g, nuke.Int_Knob("bake_last", ""), "Last frame to bake.")
-    k.setValue(int(nuke.root()["last_frame"].value()))
-    k.clearFlag(nuke.STARTLINE)
-    add(g, nuke.PyScript_Knob("bake_range_here", "script range",
-                              "n = nuke.thisNode()\n"
-                              "n['bake_first'].setValue(int(nuke.root()['first_frame'].value()))\n"
-                              "n['bake_last'].setValue(int(nuke.root()['last_frame'].value()))\n"),
-        "Sets the frames to the script's frame range.")
-    g["bake_range_here"].clearFlag(nuke.STARTLINE)
-    add(g, nuke.PyScript_Knob("bake_now", "bake now", BAKE_NOW),
-        "Renders the Comp (with every layer the node outputs) to the bake folder, then plays it back from "
-        "disk ('use bake' on): fast playback, and no Blink on the farm.")
-    k = add(g, nuke.Boolean_Knob("use_bake", "use bake"),
-            "Plays the Comp view back from the baked frames instead of rendering. The other views still render.")
-    k.clearFlag(nuke.STARTLINE)
-    k = add(g, nuke.String_Knob("bake_status", "status"), "Whether the settings changed since the bake.")
-    k.setValue("no bake yet")  # kept current by knobChanged (BAKE_STATUS_UPDATE)
-    k.setEnabled(False)
-    hidden(g, nuke.String_Knob("bake_hash"))
 
     add(g, nuke.Text_Knob("scene_divider", "scene"))
     add(g, nuke.Double_Knob("scene_scale", "units to metres"),
@@ -965,8 +891,8 @@ def build():
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)
     g["tile_color"].setValue(0x8fb3d9ff)
-    # The node says when it is a quick preview or played back from a bake.
-    g["label"].setValue('[expr {[value preview] ? "PREVIEW" : ""}] [expr {[value use_bake] ? "(baked)" : ""}]')
+    # The node says when it is a quick preview.
+    g["label"].setValue('[expr {[value preview] ? "PREVIEW" : ""}]')
     with g:
         bg = nuke.nodes.Input(name="bg")
         cam = nuke.nodes.Input(name="camera")
@@ -1221,28 +1147,8 @@ def build():
             view.setInput(j, n)
         view["which"].setExpression("parent.view")
 
-        # Bake: the Comp to disk ('bake now' runs the Write), and played back from there.
-        bake_file = ("[value parent.bake_folder]/[file rootname [file tail [value root.name]]]/[value parent.name]/"
-                     "[file rootname [file tail [value root.name]]]_[value parent.name].####.exr")
-        bw = nuke.nodes.Write(name="BakeWrite", file_type="exr", channels="all")
-        bw["file"].setValue(bake_file)
-        bw["datatype"].setValue("32 bit float")
-        if bw.knob("create_directories"):
-            bw["create_directories"].setValue(True)
-        bw.setInput(0, view)
-        br = nuke.nodes.Read(name="BakeRead")
-        br["file"].setValue(bake_file)
-        br["first"].setExpression("parent.bake_first")
-        br["last"].setExpression("parent.bake_last")
-        br["origfirst"].setExpression("parent.bake_first")
-        br["origlast"].setExpression("parent.bake_last")
-        br["on_error"].setValue("black")
-        bs = nuke.nodes.Switch(name="BakeOrLive")
-        bs.setInput(0, view)
-        bs.setInput(1, br)
-        bs["which"].setExpression("parent.use_bake && parent.view==0")
         out = nuke.nodes.Output(name="Output1")
-        out.setInput(0, bs)
+        out.setInput(0, view)
 
     # Inputs in the order nuke numbers them: by creation, bg 0, camera 1, atmos 2, sun 3, map 4.
     problems = node_layout.apply_nuke(g, modules=MODULES, labels=LABELS)
@@ -1260,11 +1166,10 @@ MODULES = [
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot|MotionOrNot)"),
     ("Views", 0x5a4a6aff, r"(View_.*|ViewOutput)"),
-    ("Bake", 0x5a5a3aff, r"(BakeWrite|BakeRead|BakeOrLive)"),
     ("Output", 0x6a4a4aff, r"(Output\d*)"),
 ]
 LABELS = {"FormatSource": "bg plugged in", "CompOrClouds": "bg plugged in", "BreakoutOrNot": "breakout", "MotionOrNot": "motion vectors",
-          "ViewOutput": "view", "BakeOrLive": "use bake"}
+          "ViewOutput": "view"}
 
 
 def save(g):

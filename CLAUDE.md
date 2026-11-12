@@ -40,7 +40,7 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
 - `python/build_group.py` builds the whole Group inside Nuke:
   - one BlinkScript per layer per pass;
   - the stack;
-  - the depth, shadow, motion-vector and bake/preview chains;
+  - the depth, shadow, motion-vector and preview chains;
   - all knobs.
   Kernel params are driven by knob expressions. The camera matrix, EzAtmosScatter light and the
   box inputs are Python expressions, and the box-matrix code is stored as text in the hidden
