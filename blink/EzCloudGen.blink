@@ -638,6 +638,15 @@ local:
       }
     }
     float c = f - (0.82f - 0.55f * cov);
+    if (cov < coverage && c > 0.0f) {
+      // Where the map thins the layer, raising the threshold alone leaves only the low tops of
+      // the noise above it: every surviving cloud is barely positive, so it renders as a thin,
+      // smooth, see-through veil. Real cloud in a clearer patch is fewer, smaller clouds, each
+      // as dense as anywhere else, so what is left is scaled back up to the layer's own range.
+      float t0 = 0.82f - 0.55f * coverage;
+      float t1 = 0.82f - 0.55f * cov;
+      c *= min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
+    }
     if (cov > coverage) {
       // Where the map adds coverage, the 2D noise alone would stand in straight columns all the
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
@@ -723,7 +732,9 @@ local:
       // The underside sags near the tower.
       float bot = 0.66f + 0.12f * rr - 0.05f * exp(-rxz * rxz / 0.3f);
       float mid = 0.5f * (top + bot);
-      float half = max(0.5f * (top - bot), 1e-3f);
+      // A lens thinner than a ray step is hit by some samples and missed by others: speckle.
+      // So it keeps a minimum thickness, and the rim fades by its outline (rr) instead.
+      float half = max(0.5f * (top - bot), 0.045f);
       // The underside fades over a longer distance than the top: softer, more ragged.
       float dv = sh < mid ? (mid - sh) / (half * 1.5f) : (sh - mid) / half;
       float dLens = max(rr, dv);
