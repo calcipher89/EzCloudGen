@@ -37,6 +37,7 @@ LAYER_DEFAULTS = {
     "shear": "0", "map_amount": "1", "map_channel": "0", "map_drift": "0,0", "other_offset": "0,0",
     "other_vol_center": "0,20000,-60000", "vol_axes": "0", "vol_axis_x": "1,0,0", "vol_axis_y": "0,1,0",
     "vol_axis_z": "0,0,1", "layer_seed": "0",
+    "map_mode": "0", "sil_distance": "10000", "sil_depth": "6000",
 }
 
 MAIN = r'''
