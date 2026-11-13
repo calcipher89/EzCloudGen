@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.29.0"
+VERSION = "0.30.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -665,6 +665,13 @@ def build_knobs(g):
                 "Which channel of the map this deck reads: paint each deck in its own channel to place "
                 "them separately.")
         k.clearFlag(nuke.STARTLINE)
+        k = add(g, nuke.Enumeration_Knob(p + "detail_model", "detail model", ["soft billows", "classic"]),
+                "soft billows: the fine detail is Perlin-Worley billow noise (rounded, soft-edged billows that "
+                "run into each other) and it thins the cloud rather than only pushing a surface in and out, so "
+                "the outer cloud is soft, see-through puffs and wisps over a dense core; 'swirl' and "
+                "'turbulence' curl it with curl noise, so wisps roll instead of smearing. Best on clouds seen "
+                "close up. classic: as before (cauliflower billows with a crisp skin), which holds up better on "
+                "far decks and big masses many km away.")
         k = add(g, nuke.Enumeration_Knob(p + "map_use", "map use", ["footprint", "silhouette"]),
                 "footprint: the map marks where clouds stand on the layer, seen from above (they rise "
                 "from it in heaps). silhouette: the painted shape is the cloud mass's outline as the "
@@ -930,6 +937,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n[k + "billow_light"].setExpression("parent.billow_light")
     n[k + "billow_shrink"].setExpression("parent.billow_shrink")
+
     n[k + "use_grid"].setExpression("parent.light_grid && %d < 2" % output if lgrid is not None else "0")
     n[k + "grid_w"].setValue(GRID_W)
     n[k + "grid_h"].setValue(GRID_H)
@@ -980,6 +988,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
         one("map_amount", p + "map_amount")
         one("map_channel", p + "map_channel")
         one("map_mode", p + "map_use")
+        one("detail_model", "%sdetail_model == 0 ? 1 : 0" % p)
         one("sil_distance", "%ssil_distance * 1000" % p)
         one("sil_depth", "%ssil_depth * 1000" % p)
         since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
