@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.29.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.30.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -99,6 +99,15 @@ and the colour and sun passes read it back smoothly: soft, noise-free self-shado
 mass, and the other layers' shadows exactly (instead of the sun map's slab estimate). Each point still
 marches the first couple of billows (or a grid cell) towards the sun itself, so the fine detail
 shades itself. The bake takes about 4 s on the GPU.
+'detail model' (per layer, by 'map use'): **soft billows** (the default) builds the fine detail from
+Perlin-Worley noise, as in Guerrilla's clouds for Horizon: gradient noise remapped by inverted Worley
+cells, so billows are rounded, soft-edged and run into each other. The detail thins the cloud as a
+density as well as moving its outline, so the outer cloud is soft, see-through puffs over a dense
+core, billowy on top and wispier towards the base; 'swirl' and 'turbulence' curl it with curl noise
+(the cross product of two gradient-noise gradients), so wisps roll instead of smearing into streaks.
+Best on clouds seen close up. **classic** is the earlier cauliflower billows with a crisp skin, which
+hold their form better on far decks and masses many km away. Soft billows take about half as long
+again to render.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).

@@ -224,6 +224,8 @@ param:
   // How a deck reads the map: 0 a footprint on the layer, 1 a silhouette seen through the map
   // camera, standing sil_distance (m) away and sil_depth (m) deep.
   int map_mode[3];
+  // Each layer's detail: 0 classic, 1 soft billows.
+  int detail_model[3];
   float sil_distance[3];
   float sil_depth[3];
   float layer_seed[3];
@@ -518,6 +520,92 @@ local:
       }
     }
     return sqrt(best);
+  }
+
+  // ---- Gradient noise and Perlin-Worley -----------------------------------------------------
+
+  // A lattice point's gradient, each component in -1..1.
+  float3 ghash3(float x, float y, float z)
+  {
+    return float3(hash3(x, y, z) * 2.0f - 1.0f, hash3(y + 19.1f, z + 7.3f, x + 3.7f) * 2.0f - 1.0f,
+                  hash3(z + 11.3f, x + 5.9f, y + 17.7f) * 2.0f - 1.0f);
+  }
+
+  // Gradient (Perlin) noise, about -0.7..0.7, with its derivative (x: value; y, z, w: d/dx, d/dy,
+  // d/dz). Smooth all over, with no grid-aligned blobs or creases (value noise has both).
+  float4 gnoised(float x, float y, float z)
+  {
+    float ix = floor(x);
+    float iy = floor(y);
+    float iz = floor(z);
+    float fx = x - ix;
+    float fy = y - iy;
+    float fz = z - iz;
+    float ux = fx * fx * fx * (fx * (fx * 6.0f - 15.0f) + 10.0f);
+    float uy = fy * fy * fy * (fy * (fy * 6.0f - 15.0f) + 10.0f);
+    float uz = fz * fz * fz * (fz * (fz * 6.0f - 15.0f) + 10.0f);
+    float dux = 30.0f * fx * fx * (fx * (fx - 2.0f) + 1.0f);
+    float duy = 30.0f * fy * fy * (fy * (fy - 2.0f) + 1.0f);
+    float duz = 30.0f * fz * fz * (fz * (fz - 2.0f) + 1.0f);
+    float3 ga = ghash3(ix, iy, iz);
+    float3 gb = ghash3(ix + 1.0f, iy, iz);
+    float3 gc = ghash3(ix, iy + 1.0f, iz);
+    float3 gd = ghash3(ix + 1.0f, iy + 1.0f, iz);
+    float3 ge = ghash3(ix, iy, iz + 1.0f);
+    float3 gf = ghash3(ix + 1.0f, iy, iz + 1.0f);
+    float3 gg = ghash3(ix, iy + 1.0f, iz + 1.0f);
+    float3 gh = ghash3(ix + 1.0f, iy + 1.0f, iz + 1.0f);
+    float va = dot(ga, float3(fx, fy, fz));
+    float vb = dot(gb, float3(fx - 1.0f, fy, fz));
+    float vc = dot(gc, float3(fx, fy - 1.0f, fz));
+    float vd = dot(gd, float3(fx - 1.0f, fy - 1.0f, fz));
+    float ve = dot(ge, float3(fx, fy, fz - 1.0f));
+    float vf = dot(gf, float3(fx - 1.0f, fy, fz - 1.0f));
+    float vg = dot(gg, float3(fx, fy - 1.0f, fz - 1.0f));
+    float vh = dot(gh, float3(fx - 1.0f, fy - 1.0f, fz - 1.0f));
+    float k1 = vb - va;
+    float k2 = vc - va;
+    float k3 = ve - va;
+    float k4 = va - vb - vc + vd;
+    float k5 = va - vc - ve + vg;
+    float k6 = va - vb - ve + vf;
+    float k7 = -va + vb + vc - vd + ve - vf - vg + vh;
+    float v = va + ux * k1 + uy * k2 + uz * k3 + ux * uy * k4 + uy * uz * k5 + uz * ux * k6 + ux * uy * uz * k7;
+    float3 g = ga + ux * (gb - ga) + uy * (gc - ga) + uz * (ge - ga) + ux * uy * (ga - gb - gc + gd)
+               + uy * uz * (ga - gc - ge + gg) + uz * ux * (ga - gb - ge + gf)
+               + ux * uy * uz * (-ga + gb + gc - gd + ge - gf - gg + gh);
+    float dx = g.x + dux * (k1 + uy * k4 + uz * k6 + uy * uz * k7);
+    float dy = g.y + duy * (k2 + ux * k4 + uz * k5 + ux * uz * k7);
+    float dz = g.z + duz * (k3 + uy * k5 + ux * k6 + ux * uy * k7);
+    return float4(v, dx, dy, dz);
+  }
+
+  // Perlin-Worley billow noise, 0..1, octaves as for detail3 (Schneider's clouds for Horizon):
+  // gradient noise remapped by inverted Worley cells, so billows are rounded and soft-edged and
+  // run into each other instead of standing as separate balls. billow 1: billows; 0: its
+  // inverse, wisps. Finer octaves keep more with 'detail sharpness'.
+  float pwfbm(float x, float y, float z, float oct)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      float pn = clamp(gnoised(x * 0.8f + 4.1f, y * 0.8f, z * 0.8f).x * 0.75f + 0.5f, 0.0f, 1.0f);
+      float wd = worley3(x, y, z);
+      float wi = 1.0f - wd;
+      float pw = clamp((pn - (wi - 1.0f)) / (2.0f - wi), 0.0f, 1.0f);
+      s += amp * w * pw;
+      tot += amp * w;
+      amp *= 0.5f + 0.17f * clamp(detailSharpness, 0.0f, 1.0f);
+      x = x * 2.03f + 1.7f;
+      y = y * 2.03f + 3.1f;
+      z = z * 2.03f + 5.3f;
+    }
+    return s / max(tot, 1e-6f);
   }
 
   float worley3(float x, float y, float z)
@@ -1033,7 +1121,10 @@ local:
       bool flatBase = (volume[lyr] == 0 && !(useMap == 1 && map_mode[lyr] == 1 && map_amount[lyr] > 0.0f))
                       || (volume[lyr] == 1 && vol_shape[lyr] == 1);
       float ls = max(lump_size[lyr], 10.0f);
-      float lyl = flatBase ? max(ly, (volume[lyr] == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
+      // Below the base height the lobes change only slowly with height (not at all, as before,
+      // stood their cell walls up as straight vertical slivers through the base).
+      float lfl = (volume[lyr] == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height;
+      float lyl = flatBase && ly < lfl ? lfl + (ly - lfl) * 0.3f : ly;
       float lob = 0.0f;
       float lamp = 1.0f;
       float lf = 1.0f;
@@ -1087,16 +1178,23 @@ local:
     // steeply the shape rises at the point (measured over half a billow), so they displace the
     // surface by the same distance everywhere, about a billow: the shape acts as a distance to
     // its surface, as in a modelled cloud volume.
-    float ev = clamp(evenDetail, 0.0f, 1.0f);
+    // (Soft billows thin the cloud as a density, so they don't need it; there the slope's jumps
+    // where two parts of a shape meet showed as thin shards.)
+    float ev = detail_model[lyr] == 1 ? 0.0f : clamp(evenDetail, 0.0f, 1.0f);
     float fk = 1.0f;
     if (ev > 0.0f && c >= -4.0f * reach - 4.0f * soften - 0.05f) {
       float hg = max(2.0f * detail_size[lyr], 2.0f * foot);
       float gx = 0.0f;
       float gy = 0.0f;
       float gz = 0.0f;
+      bool nearWall = false;
       for (int gk = 0; gk < 3; gk++) {
         float3 q = p + (gk == 0 ? float3(hg, 0.0f, 0.0f) : gk == 1 ? float3(0.0f, hg, 0.0f) : float3(0.0f, 0.0f, hg));
-        float d = (baseField(q, foot, sd, lyr) - cBase) / hg;
+        float bq = baseField(q, foot, sd, lyr);
+        // (A step out of a volume's box reads -1 there: no slope from that side, or the box's
+        // walls showed through as thin bright slivers.)
+        float d = bq <= -0.99f ? 0.0f : (bq - cBase) / hg;
+        nearWall = nearWall || bq <= -0.99f;
         if (gk == 0)
           gx = d;
         else if (gk == 1)
@@ -1107,7 +1205,10 @@ local:
       float g = sqrt(gx * gx + gy * gy + gz * gz);
       // 0.03 per billow is the slope of a typical placed volume's shape, which the fixed amounts
       // were tuned on (they give it billows about two billow sizes deep).
-      fk = 1.0f + (clamp(g * detail_size[lyr] / 0.03f, 0.8f, 2.0f) - 1.0f) * ev;
+      // Faded in over the band where it is worked out, so there is no seam at its edge.
+      float band0 = -4.0f * reach - 4.0f * soften - 0.05f;
+      float fin = nearWall ? 0.0f : sstep(band0, 0.5f * band0, c);
+      fk = 1.0f + (clamp(sqrt(g * detail_size[lyr] / 0.03f), 0.85f, 1.6f) - 1.0f) * ev * fin;
       e *= fk;
       soften *= fk;
       reach *= fk;
@@ -1140,6 +1241,20 @@ local:
       if (amt <= 0.0f || lod(ss, foot, 1.0f) <= 0.0f)
         continue;
       float sw = amt * ss;
+      if (detail_model[lyr] == 1) {
+        // Curl noise: the cross product of two noise gradients has no sources or sinks, so it
+        // moves the detail the way flowing air does: wisps curl and roll round instead of being
+        // smeared into feathery streaks.
+        float4 na = gnoised(wx / ss + 1.3f, wy / ss, wz / ss);
+        float4 nb = gnoised(wx / ss + 31.7f, wy / ss + 7.1f, wz / ss + 3.9f);
+        float cx = na.z * nb.w - na.w * nb.z;
+        float cy = na.w * nb.y - na.y * nb.w;
+        float cz = na.y * nb.z - na.z * nb.y;
+        wx += cx * sw * 0.6f;
+        wy += cy * sw * 0.6f;
+        wz += cz * sw * 0.6f;
+        continue;
+      }
       float ux = vnoise3(wx / ss + 1.3f, wy / ss, wz / ss) - 0.5f;
       float uy = vnoise3(wx / ss, wy / ss + 7.1f, wz / ss) - 0.5f;
       float uz = vnoise3(wx / ss, wy / ss, wz / ss + 3.9f) - 0.5f;
@@ -1148,14 +1263,26 @@ local:
       wz += uz * sw * 2.0f;
     }
     // An anvil's top is a smooth, spreading ice sheet: fewer billows there.
+    float softErode = 0.0f;
     float er = erosion[lyr] * (volume[lyr] == 1 && vol_shape[lyr] == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f)
                * (1.0f - 0.7f * skirt[lyr] * sstep(0.3f, 0.7f, hn));
     if (er > 0.0f) {
       // 'billow shrink': big soft lobes low in the cloud, smaller, tighter cauliflower near the top.
       float dsz = detail_size[lyr] * (1.0f + clamp(billowShrink, 0.0f, 1.0f) * (0.35f - 0.7f * hn));
       float oct = lod(dsz, foot, octaves[lyr]);
-      if (oct > 0.0f)
-        c += er * fk * (detail3(wx / dsz, wy / dsz, wz / dsz, oct, lyr) - 0.5f) * 0.24f;
+      if (oct > 0.0f) {
+        if (detail_model[lyr] == 1) {
+          // Soft billows: the detail thins the cloud rather than moving a solid surface (see the
+          // end). Billowy on top, wispier towards the base, as real cumulus are.
+          float pd = sstep(0.25f, 0.75f, pwfbm(wx / dsz, wy / dsz, wz / dsz, oct));
+          float wisp = clamp(max(1.0f - billow[lyr], 0.7f * (1.0f - sstep(0.0f, 0.35f, hn))), 0.0f, 1.0f);
+          softErode = er * (pd + (1.0f - 2.0f * pd) * wisp);
+          // A little of it moves the surface too, so the outline still has billows.
+          c += er * fk * (pd - 0.5f) * 0.3f;
+        } else {
+          c += er * fk * (detail3(wx / dsz, wy / dsz, wz / dsz, oct, lyr) - 0.5f) * 0.24f;
+        }
+      }
     }
     // Wisps and grain eat the thin edges more than the cores.
     float thin = 1.0f - clamp(c / (3.0f * max(edge[lyr], 1e-3f) * fk), 0.0f, 1.0f);
@@ -1183,6 +1310,14 @@ local:
         }
         c -= crumble[lyr] * fk * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
       }
+    }
+    if (detail_model[lyr] == 1) {
+      // Soft billows: a softer base density (a wider edge), then the detail eats into it as a
+      // density (remap(base, detail, 1, 0, 1)): it hollows the thin outer cloud into soft,
+      // see-through puffs and wisps at every scale and leaves the dense core whole.
+      float bd = clamp((c + soften) / (e * 1.5f), 0.0f, 1.0f);
+      float m = clamp(softErode * 1.6f, 0.0f, 0.92f);
+      return clamp((bd - m) / (1.0f - m), 0.0f, 1.0f);
     }
     return clamp((c + soften) / e, 0.0f, 1.0f);
   }
