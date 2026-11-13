@@ -204,6 +204,11 @@ param:
   // The layers: which are on, and each one's seed (the global seed jitters the steps). The
   // sun map pass marches one layer only (onlyLayer), or all of them (-1).
   int layer_on[3];
+  // How a deck reads the map: 0 a footprint on the layer, 1 a silhouette seen through the map
+  // camera, standing sil_distance (m) away and sil_depth (m) deep.
+  int map_mode[3];
+  float sil_distance[3];
+  float sil_depth[3];
   float layer_seed[3];
   int onlyLayer;
 
@@ -597,6 +602,9 @@ local:
     else
       f = fbm2(u2, v2, oct, sd);
     float cov = coverage[lyr];
+    float silBack = 0.0f;
+    float silW = 0.0f;
+    bool silOn = useMap == 1 && map_amount[lyr] > 0.0f && map_mode[lyr] == 1;
     if (useMap == 1 && map_amount[lyr] > 0.0f) {
       // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
       // the painted area as one solid mass), black clears. The lookup is warped by the cloud
@@ -619,6 +627,18 @@ local:
         fx = (fbm2(u * 1.7f + 31.0f, v * 1.7f + 7.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
         fz = (fbm2(u * 1.7f + 5.0f, v * 1.7f + 43.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
       }
+      bool sil = map_mode[lyr] == 1;
+      // A silhouette fills the layer's height, so its edges and its front and back are pushed
+      // about by 3D noise: 2D noise there would stand up as vertical curtains and streaks.
+      float s3a = 0.0f;
+      float s3b = 0.0f;
+      float s3c = 0.0f;
+      if (sil) {
+        float L3 = sc * 0.6f;
+        s3a = vnoise3(X / L3 + 7.0f + sd, p.y / L3, Z / L3) - 0.5f;
+        s3b = vnoise3(X / L3 - 3.0f, p.y / L3 + 19.0f + sd, Z / L3) - 0.5f;
+        s3c = vnoise3(X / (L3 * 0.35f), p.y / (L3 * 0.35f), Z / (L3 * 0.35f) + 31.0f + sd) - 0.5f;
+      }
       float m = 0.0f;
       float mn = 0.0f;
       for (int mt = 0; mt < 5; mt++) {
@@ -626,24 +646,51 @@ local:
         float oz = fz + (mt == 3 ? 0.5f * mr : mt == 4 ? -0.5f * mr : 0.0f);
         if (mt > 0 && mr <= 0.0f)
           break;
-        float mv = mapCoverage(float3(p.x + wx * ws + hx * hs + ox, base[lyr] + 0.5f * thickness[lyr],
-                                      p.z + wz * ws + hz * hs + oz), lyr);
+        // A silhouette is read at the point's own height (pushed up and down by the noise too, so
+        // its top billows), a footprint at the layer's middle height.
+        float my = sil ? p.y + (s3a + 0.25f * s3c) * hs * 1.2f : base[lyr] + 0.5f * thickness[lyr];
+        float sx = sil ? (s3b + 0.25f * s3c) * hs * 1.2f : 0.0f;
+        float mv = mapCoverage(float3(p.x + wx * ws + hx * hs + ox + sx, my, p.z + wz * ws + hz * hs + oz), lyr);
         if (mv >= 0.0f) {
           m += mv;
           mn += 1.0f;
         }
       }
       m = mn > 0.0f ? m / mn : -1.0f;
-      if (m >= 0.0f) {
+      if (sil) {
+        // A silhouette: the painted shape is the cloud's outline as the camera sees it, between
+        // sil_distance - sil_depth / 2 and + sil_depth / 2 from the map camera (soft ends, and
+        // the ends wander with the noise so the mass isn't a flat-faced slab). Clear elsewhere.
+        float dist = length(float3(p.x, p.y, p.z) - mc) + (s3a + s3b + 0.5f * s3c) * sil_depth[lyr] * 0.6f;
+        float half = max(sil_depth[lyr], 100.0f) * 0.5f;
+        float win = 1.0f - sstep(half * 0.6f, half, fabs(dist - sil_distance[lyr]));
+        m = max(m, 0.0f) * win;
+      } else if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
         // instead of being extruded straight up into walls.
         float n = clamp((p.y - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
         m *= 1.0f - 0.8f * n * (1.0f - m);
-        float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (0.6f - coverage[lyr]) * (2.0f * m - 1.0f);
+      }
+      if (m >= 0.0f) {
+        float top = sil ? 0.8f : 0.6f;
+        float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (top - coverage[lyr]) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(map_amount[lyr], 1.0f);
+        if (sil) {
+          // The paint sets the outline, top included: give back most of what the layer's height
+          // profile (domes, rounded top) takes away where it is painted.
+          float hp = clamp((altitude(p) - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
+          silW = clamp(2.0f * m - 1.0f, 0.0f, 1.0f) * min(map_amount[lyr], 1.0f);
+          silBack = 0.8f * silW * profile(hp, lyr);
+        }
       }
     }
-    float c = f - (0.82f - 0.55f * cov);
+    if (silW > 0.0f) {
+      // Inside a painted silhouette the cloud fills the layer's height, so the 2D field (which
+      // stands up in vertical streaks there) gives way to a 3D one: heaps and billows all over.
+      float f3 = vfbm3(X / (sc * 0.8f) + 5.0f * sd, p.y / (sc * 0.8f), Z / (sc * 0.8f), min(oct, 4.0f));
+      f += (f3 - f) * 0.5f * silW;
+    }
+    float c = f - (0.82f - 0.55f * cov) + silBack;
     if (cov < coverage[lyr] && c > 0.0f) {
       // Where the map thins the layer, raising the threshold alone leaves only the low tops of
       // the noise above it: every surviving cloud is barely positive, so it renders as a thin,
@@ -658,6 +705,12 @@ local:
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
       float L = max(thickness[lyr], 100.0f) * 0.7f;
       float hb = min((cov - coverage[lyr]) * 4.0f, 1.0f);
+      if (silOn) {
+        // A painted silhouette fills the layer's whole height: heaps the size of the clouds (and
+        // a finer set) instead, or the 2D field stands up in vertical streaks.
+        L = min(L, sc * 0.5f);
+        c += hb * 0.2f * (vnoise3(X / (L * 0.4f) + 3.0f * sd, p.y / (L * 0.4f), Z / (L * 0.4f)) - 0.5f);
+      }
       c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
       // And the thick middles are eased back, so the profile and taper round their tops at
       // different heights instead of all of them reaching the layer's top as one flat lid.

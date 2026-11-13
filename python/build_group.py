@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.23.2"
+VERSION = "0.24.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -107,7 +107,7 @@ VOLUME = [
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
-             "map_amount", "map_channel"]
+             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
             "release_box", "fade_top", "fade_bottom", "fade_left", "fade_right",
@@ -644,6 +644,20 @@ def build_knobs(g):
                 "Which channel of the map this deck reads: paint each deck in its own channel to place "
                 "them separately.")
         k.clearFlag(nuke.STARTLINE)
+        k = add(g, nuke.Enumeration_Knob(p + "map_use", "map use", ["footprint", "silhouette"]),
+                "footprint: the map marks where clouds stand on the layer, seen from above (they rise "
+                "from it in heaps). silhouette: the painted shape is the cloud mass's outline as the "
+                "camera on 'map frame' sees it, so you can draw towers, a shelf or a wall of cloud "
+                "where you want it; set how far away it stands and how deep it is. Black is clear "
+                "sky, white is cloud, and the layer's noise tears the edges.")
+        k = add(g, nuke.Double_Knob(p + "sil_distance", "silhouette distance"),
+                "How far from the camera the painted mass stands, in km ('map use' silhouette).")
+        k.setRange(1, 60)
+        k.setValue(10)
+        k = add(g, nuke.Double_Knob(p + "sil_depth", "silhouette depth"),
+                "How deep the painted mass is, front to back, in km ('map use' silhouette).")
+        k.setRange(0.2, 20)
+        k.setValue(5)
         add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
         k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
                 "The volume's overall shape, before lumps and erosion break it up.")
@@ -930,6 +944,9 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
         # The coverage map, drifting with the wind since the map frame.
         one("map_amount", p + "map_amount")
         one("map_channel", p + "map_channel")
+        one("map_mode", p + "map_use")
+        one("sil_distance", "%ssil_distance * 1000" % p)
+        one("sil_depth", "%ssil_depth * 1000" % p)
         since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
         vec("map_drift", ("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, since, p),
                           "%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p)))

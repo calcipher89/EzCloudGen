@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.23.2: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.24.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -64,6 +64,13 @@ clipping to white. The render time is about the same.
 Overscan: with a bg whose bbox is bigger than its format, the clouds (and the depth, motion vectors
 and shadow) render out to that bbox, carrying on past the frame edge as the camera would see them.
 A bbox smaller than the format still gets clouds over the whole format.
+'map use' (per deck, by 'map channel'): **footprint** (as before) marks where clouds stand on the
+layer, seen from above. **silhouette** makes the painted shape the cloud mass's outline as the
+camera on 'map frame' sees it: paint towers, a shelf or a wall of cloud where you want them (a soft
+Roto works best), and set 'silhouette distance' (km from the camera) and 'silhouette depth' (km,
+front to back). Black is clear sky. Inside the paint the deck fills its whole height with 3D heaps,
+the painted top overrides the layer's dome profile, and 3D noise frays the outline and the front and
+back, so it reads as cloud, not a cut-out. Make the layer thick enough to reach the painted top.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
