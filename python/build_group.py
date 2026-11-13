@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.30.0"
+VERSION = "0.31.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -575,6 +575,10 @@ def build_knobs(g):
         "gently sloping faces (a big swell, a painted mass's front, a deck's broad tops) come out smooth and "
         "steep ones crumbled. Costs up to about 70% more render time. 0: as before.").setValue(1)
     g["even_detail"].setRange(0, 1)
+    add(g, nuke.Int_Knob("horizon_samples", "horizon samples"),
+        "Near the horizon a deck is seen edge on and its clouds shrink below a pixel, so they shimmer and crawl "
+        "on a camera move. This takes that many times the samples in the band within a few degrees of level "
+        "(only there, so it costs little). 1: as before.").setValue(4)
     add(g, nuke.Double_Knob("sky_shading", "sky shading"),
         "Lights the clouds with the sky from all round, not only from overhead: a lobe's open face takes the "
         "full sky and the folds between lobes little, so the shadow side of a cloud keeps its form and takes "
@@ -945,6 +949,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "grid_ty"].setValue(GRID_T)
     n[k + "grid_far"].setExpression("min(parent.max_distance * 1000, 80000)")
     n[k + "even_detail"].setExpression("parent.even_detail")
+    n[k + "horizon_samples"].setExpression("parent.horizon_samples")
     n[k + "sky_shading"].setExpression("parent.sky_shading")
     n[k + "round_lobes"].setExpression("parent.round_lobes")
     n[k + "map_softness"].setExpression("parent.map_softness")
