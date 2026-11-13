@@ -73,6 +73,12 @@ TYPES = {
                              lump_size=1300, place_km=12, coverage=0.55, edge=0.06, bottom=0.04, detail=220,
                              erosion=0.45, sigma=0.08, warp=1.2, octaves=4, billow=1.0, wisp_size=80,
                              wisp_amount=0.08, small_lumps=0.5, sky_occ=1.0),
+    # A one-sided cloud shelf: thick and dark at one end, thinning and lifting to a torn, streaky
+    # trailing edge. Point it by turning the box; its +x end trails.
+    "Shelf Cloud": dict(volume=1, vol_shape=5, vol_size=(9000, 2600, 6000), base=1500, lumps=0.5,
+                        lump_size=700, place_km=9, coverage=0.5, edge=0.08, bottom=0.04, detail=200,
+                        erosion=0.45, sigma=0.06, warp=1.2, octaves=4, billow=0.8, wisp_size=150,
+                        wisp_amount=0.35, sky_occ=0.6, shadow=0.4),
     # A thunderstorm: a tall column spreading into a flat anvil, leaning downwind.
     "Storm Anvil": dict(volume=1, vol_shape=2, vol_size=(15000, 11000, 15000), base=1200, lumps=0.6,
                         lump_size=1500, place_km=40, coverage=0.5, edge=0.05, bottom=0.02, detail=450,
