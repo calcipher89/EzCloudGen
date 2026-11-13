@@ -132,6 +132,7 @@ param:
   float diffusion;
   float detailSharpness;
   float billowLight;
+  float skyShading;
   float roundLobes;
   float billowShrink;
   float mapSoftness;
@@ -265,6 +266,7 @@ local:
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(skyShading, "sky_shading", 0.0f);
     defineParam(roundLobes, "round_lobes", 0.0f);
     defineParam(billowShrink, "billow_shrink", 0.0f);
     defineParam(mapSoftness, "map_softness", 0.0f);
@@ -1173,7 +1175,10 @@ local:
   // probes straight up, h1 and h2 above p, and returns their density times length in occ (sky
   // occlusion). They share the loop's one cloud() call: Blink inlines cloud() at every call
   // site, and a separate call made the kernel take minutes to compile on the CPU.
-  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, int lyr)
+  // side: with 'sky shading', how much of the sky a point sees round about (four probes slanted
+  // 45 degrees up to the four sides, 0 buried .. 1 open); below: the same straight down, for the
+  // light off the ground.
+  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, float &side, float &below, int lyr)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -1199,7 +1204,12 @@ local:
     // wander and blend instead of standing as straight, flat-shaded facets.
     float sj = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sd) - 0.5f), 0.0f, 1.0f);
     float ds = detail_size[lyr];
-    for (int i = 0; i < steps + 2; i++) {
+    side = 1.0f;
+    below = 1.0f;
+    float sideSum = 0.0f;
+    float probeK = sigma[lyr] * density[lyr] * 1.25f * sky_occlusion[lyr];
+    int probes = skyShading > 0.0f ? 7 : 2;
+    for (int i = 0; i < steps + probes; i++) {
       float3 q;
       float fq;
       float len;
@@ -1214,20 +1224,35 @@ local:
         prev = max(prev, t);
         q = p + sun * t;
         fq = foot + t * 0.02f;
-      } else {
+      } else if (i < steps + 2) {
         float h = i == steps ? h1 : h2;
         len = i == steps ? h1 : h2 - h1;
         q = p + float3(0.0f, h, 0.0f);
         fq = foot + h * 0.05f;
+      } else {
+        // Sky shading: one sample half way along each of four slanted directions, and one down.
+        int k = i - steps - 2;
+        float3 dir = k == 0 ? float3(0.7071f, 0.7071f, 0.0f) : k == 1 ? float3(-0.7071f, 0.7071f, 0.0f)
+                   : k == 2 ? float3(0.0f, 0.7071f, 0.7071f) : k == 3 ? float3(0.0f, 0.7071f, -0.7071f)
+                            : float3(0.0f, -1.0f, 0.0f);
+        len = h2;
+        q = p + dir * (0.5f * h2);
+        fq = foot + h2 * 0.05f;
       }
       // The first sky probe sees the detail too with billow light on: creases go dark.
       float bd = 0.0f;
       float dn = cloud(q, fq, i > 1 && !(i == steps && bl > 0.0f), sd, lyr, bd) * len;
       if (i < steps)
         od += dn;
-      else
+      else if (i < steps + 2)
         occ += dn;
+      else if (i < steps + 6)
+        sideSum += exp(-dn * probeK);
+      else
+        below = exp(-dn * probeK);
     }
+    if (probes > 2)
+      side = 0.25f * sideSum;
     return od;
   }
 
@@ -1332,7 +1357,9 @@ local:
     h1 += (0.6f * detail_size[lyr] - h1) * clamp(billowLight, 0.0f, 1.0f);
     float h2 = max(min(layerH, 3000.0f) * 0.2f, 2.0f * h1);
     float occU = 0.0f;
-    float od = sunDepth(p, foot, sd, h1, h2, occU, lyr) * sig0 + tauAbove(p, lyr);
+    float sideVis = 1.0f;
+    float belowVis = 1.0f;
+    float od = sunDepth(p, foot, sd, h1, h2, occU, sideVis, belowVis, lyr) * sig0 + tauAbove(p, lyr);
     // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
     // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
     // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
@@ -1385,6 +1412,13 @@ local:
     occU = occK > 1e-4f ? occK * (1.0f - exp(-occU * sig0 * 1.25f * sky_occlusion[lyr] / occK)) : 0.0f;
     float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
     float dnl = exp(-sig * hn * th) * 0.35f;
+    // 'sky shading': the sky comes from all round, not only from overhead. A lobe's open face
+    // takes the full sky and the folds between lobes little, so the shadow side of a cloud has
+    // form (and the sky's colour) instead of one flat grey; the ground's light reaches only what
+    // can see down.
+    float ss = clamp(skyShading, 0.0f, 1.0f);
+    up += (0.35f * up + 0.65f * sideVis * exp(-sig * (1.0f - hn) * th * 0.25f) - up) * ss;
+    dnl *= 1.0f + (belowVis * 1.6f - 1.0f) * ss;
     float3 amb = (skyColor * up + groundColor * dnl) * ambient[lyr];
     return direct + amb;
   }

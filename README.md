@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.25.3: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.26.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -79,6 +79,11 @@ abrupt edge comes out as a smooth face.
 noise their own size, so a cloud is a pile of rounded heads rather than domes meeting along straight,
 faceted seams. The light march's steps are also shifted by a smooth noise per point: on fixed steps, a
 big cloud's shadow inside itself came out as flat-shaded, hard-edged contours.
+'sky shading' (by 'billow shrink', on by default; 0 = as before) lights the clouds with the sky from
+all round, not only from overhead: four probes slanted to the sides and one down. A lobe's open face
+takes the full sky and the folds between lobes little, so the shadow side of a cloud (all you see of a
+backlit one) keeps its form and takes the sky's colour instead of going one flat grey, and the ground's
+light reaches only what can see down.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
