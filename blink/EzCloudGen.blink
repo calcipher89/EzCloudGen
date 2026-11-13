@@ -1665,8 +1665,12 @@ local:
           float io = 5.588238f * float(s);
           float ign = fr(52.9829189f * fr(0.06711056f * pos.x + 0.00583715f * pos.y));
           float strat = ns > 1 ? float(s) / float(ns) : 0.0f;
-          float jit = jumps < 2 ? fr(ign + strat + 0.618034f * float(5 * jumps) + seed * 0.37f)
-                                : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
+          // With several samples, plain hash noise per pixel, stratified over the samples: the
+          // gradient noise's regular weave showed as a fine mesh over lit surfaces that more
+          // samples could not average away. One sample keeps the gradient noise (less grain).
+          float jit = ns > 1 ? fr(hash3(pos.x + 0.5f, pos.y + 0.5f, float(jumps) * 13.1f + seed) + strat)
+                     : jumps < 2 ? fr(ign + 0.618034f * float(5 * jumps) + seed * 0.37f)
+                                 : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
           dt *= jit + 0.02f;
           jump = false;
           jumps++;
