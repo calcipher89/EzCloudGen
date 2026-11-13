@@ -106,8 +106,8 @@ density as well as moving its outline, so the outer cloud is soft, see-through p
 core, billowy on top and wispier towards the base; 'swirl' and 'turbulence' curl it with curl noise
 (the cross product of two gradient-noise gradients), so wisps roll instead of smearing into streaks.
 Best on clouds seen close up. **classic** is the earlier cauliflower billows with a crisp skin, which
-hold their form better on far decks and masses many km away. Soft billows take about half as long
-again to render.
+hold their form better on far decks and masses many km away. Soft billows skip 'even detail', so they
+render in about the same time as classic.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
