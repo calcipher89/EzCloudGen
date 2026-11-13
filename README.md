@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.26.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.27.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -68,13 +68,13 @@ A bbox smaller than the format still gets clouds over the whole format.
 layer, seen from above. **silhouette** makes the painted shape the cloud mass's outline as the
 camera on 'map frame' sees it: paint towers, a shelf or a wall of cloud where you want them (a soft
 Roto works best), and set 'silhouette distance' (km from the camera) and 'silhouette depth' (km,
-front to back). Black is clear sky. Inside the paint the layer's own cloud field and lobes shape the
-mass (so it keeps the same fine detail as an unpainted deck), the painted top overrides the layer's
-dome profile, and 3D noise frays the outline and the front and back, so it reads as cloud, not a
-cut-out. Make the layer thick enough to reach the painted top. The mass fades out over a long
-distance at its front and back, and hard painted edges are best softened with 'map softness' (about
-1): the billow detail can only bite deep into a slope as gentle as the cloud field's own, so an
-abrupt edge comes out as a smooth face.
+front to back). Black is clear sky. A painted mass is built the way a placed volume is: the paint,
+blurred wide (at least a third of the layer's 'size', more with 'map softness'), gives a smooth,
+gently sloping measure of how far inside the shape a point is, and the layer's 'lumps' swell it into
+rounded heads which the billows then erode. On so gentle a slope they shape the surface at their
+full size, so the mass has the same lobes and detail as a hero cloud. Use 'lumps' about 1 with a
+'lump size' of a quarter to a third of the mass, and make the layer thick enough to reach the
+painted top. The mass fades out over a long distance at its front and back.
 'round lobes' (by 'billow shrink', on by default; 0 = as before) bends the big lobes' cells by a
 noise their own size, so a cloud is a pile of rounded heads rather than domes meeting along straight,
 faceted seams. The light march's steps are also shifted by a smooth noise per point: on fixed steps, a

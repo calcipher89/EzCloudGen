@@ -609,6 +609,45 @@ local:
     float silBack = 0.0f;
     float silW = 0.0f;
     bool silOn = useMap == 1 && map_amount[lyr] > 0.0f && map_mode[lyr] == 1;
+    if (silOn) {
+      // A painted silhouette is built the way a placed volume is, not as a thresholded deck: a
+      // smooth, gently sloping 'how far inside the paint' field (the paint blurred wide, times
+      // the fall-off at the front and back), which the lobes then swell and the billows erode.
+      // On so gentle a slope they displace the surface by their full size, as on a volume: big
+      // rounded heads with billows on them. (A deck's own 2D field cut by the paint gave columns
+      // and a crumbled, popcorn mass.)
+      float L3 = sc * 0.6f;
+      float s3a = vnoise3(X / L3 + 7.0f + sd, p.y / L3, Z / L3) - 0.5f;
+      float s3b = vnoise3(X / L3 - 3.0f, p.y / L3 + 19.0f + sd, Z / L3) - 0.5f;
+      float s3c = vnoise3(X / (L3 * 0.35f), p.y / (L3 * 0.35f), Z / (L3 * 0.35f) + 31.0f + sd) - 0.5f;
+      // The blur: at least a third of the cloud size, more with 'map softness'.
+      float R = max(clamp(mapSoftness, 0.0f, 2.0f) * sc * 0.6f, 0.35f * sc);
+      float bx = p.x + (s3b + 0.25f * s3c) * sc * 0.5f;
+      float by = p.y + (s3a + 0.25f * s3c) * sc * 0.5f;
+      float m = 0.0f;
+      float mn = 0.0f;
+      for (int mt = 0; mt < 7; mt++) {
+        float ox = mt == 1 ? R : mt == 2 ? -R : mt == 3 ? 0.5f * R : mt == 4 ? -0.5f * R : 0.0f;
+        float oy = mt == 5 ? 0.5f * R : mt == 6 ? -0.5f * R : 0.0f;
+        float mv = mapCoverage(float3(bx + ox, by + oy, p.z), lyr);
+        if (mv >= 0.0f) {
+          m += mv;
+          mn += 1.0f;
+        }
+      }
+      m = mn > 0.0f ? m / mn : 0.0f;
+      float dist = length(float3(p.x, p.y, p.z) - mc) + (s3a + s3b + 0.5f * s3c) * sil_depth[lyr] * 0.6f;
+      float half = max(sil_depth[lyr], 100.0f) * 0.5f;
+      float win = 1.0f - sstep(half * 0.15f, half * 1.5f, fabs(dist - sil_distance[lyr]));
+      float inside = m * win * min(map_amount[lyr], 1.0f);
+      float cs = (inside - 0.5f) * 0.6f + (coverage[lyr] - 0.5f) * 0.3f;
+      // A little of the layer's own field, so the mass is not the paint alone.
+      cs += (f - 0.5f) * 0.15f;
+      // The paint sets the top: most of what the layer's height profile takes away comes back.
+      float hp = clamp((altitude(p) - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
+      cs += 0.8f * clamp(2.0f * inside - 1.0f, 0.0f, 1.0f) * profile(hp, lyr);
+      return cs;
+    }
     if (useMap == 1 && map_amount[lyr] > 0.0f) {
       // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
       // the painted area as one solid mass), black clears. The lookup is warped by the cloud
@@ -982,7 +1021,7 @@ local:
       float add = la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
       // On a deck the lobes only swell cloud that is already there: out in the clear air
       // between the clouds they would make loose floating balls.
-      if (volume[lyr] == 0 && add > 0.0f)
+      if (volume[lyr] == 0 && add > 0.0f && !(useMap == 1 && map_mode[lyr] == 1 && map_amount[lyr] > 0.0f))
         add *= clamp((c + 0.06f) / 0.12f, 0.0f, 1.0f);
       c += add;
       if (flatBase)
