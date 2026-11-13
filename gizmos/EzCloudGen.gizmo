@@ -450,7 +450,7 @@ Gizmo {
  addUserKnob {43 box_lib l "box lib" +INVISIBLE}
  box_lib "\nimport math\n\n\ndef find_box(n, idx):\n    # The 3D transforms in the box input, outermost first: TransformGeos down to the geometry\n    # (a Cube), or one Axis (its world_matrix already holds its parents). Dots pass through.\n    chain = \[]\n    b = n.input(idx)\n    while b is not None:\n        if b.knob('world_matrix') or b.knob('rot_order'):\n            chain.append(b)\n            if b.knob('world_matrix') or b.knob('cube'):\n                break\n        b = b.input(0) if b.maxInputs() else None\n    return chain\n\n\ndef mul(a, c):\n    r = \[0.0] * 16\n    for i in range(4):\n        for j in range(4):\n            r\[i * 4 + j] = sum(a\[i * 4 + k] * c\[k * 4 + j] for k in range(4))\n    return r\n\n\ndef rot(axis, deg):\n    a = math.radians(deg)\n    c, s = math.cos(a), math.sin(a)\n    if axis == 'X':\n        return \[1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]\n    if axis == 'Y':\n        return \[c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]\n    return \[c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n\n\ndef local_matrix(b, f):\n    # Translate, rotate (rot_order, first letter applied first), scale, in xform_order, about\n    # the pivot: what Nuke's 3D transform knobs do.\n    t = \[b\['translate'].getValueAt(f, i) for i in range(3)]\n    r = \[b\['rotate'].getValueAt(f, i) for i in range(3)] if b.knob('rotate') else \[0, 0, 0]\n    u = b\['uniform_scale'].getValueAt(f) if b.knob('uniform_scale') else 1.0\n    sc = \[b\['scaling'].getValueAt(f, i) * u for i in range(3)] if b.knob('scaling') else \[u, u, u]\n    pv = \[b\['pivot'].getValueAt(f, i) for i in range(3)] if b.knob('pivot') else \[0, 0, 0]\n    T = \[1, 0, 0, t\[0], 0, 1, 0, t\[1], 0, 0, 1, t\[2], 0, 0, 0, 1]\n    S = \[sc\[0], 0, 0, 0, 0, sc\[1], 0, 0, 0, 0, sc\[2], 0, 0, 0, 0, 1]\n    R = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for ax in (b\['rot_order'].value() if b.knob('rot_order') else 'ZXY'):\n        R = mul(rot(ax, r\['XYZ'.index(ax)]), R)\n    parts = \{'S': S, 'R': R, 'T': T\}\n    P = \[1, 0, 0, pv\[0], 0, 1, 0, pv\[1], 0, 0, 1, pv\[2], 0, 0, 0, 1]\n    Pi = \[1, 0, 0, -pv\[0], 0, 1, 0, -pv\[1], 0, 0, 1, -pv\[2], 0, 0, 0, 1]\n    M = Pi\n    for c in (b\['xform_order'].value() if b.knob('xform_order') else 'SRT'):\n        if c == 'T':\n            M = mul(P, M)\n        M = mul(parts\[c], M)\n    return M\n\n\ndef box_matrix(b, f):\n    if b.knob('world_matrix'):\n        return \[b\['world_matrix'].getValueAt(f, i) for i in range(16)]\n    M = local_matrix(b, f)\n    # A parent Axis on the node's axis input (a TransformGeo's input 1; a Cube has none).\n    for i in range(1, b.maxInputs()):\n        p = b.input(i)\n        if p is not None and p.knob('world_matrix'):\n            M = mul(\[p\['world_matrix'].getValueAt(f, j) for j in range(16)], M)\n            break\n    return M\n\n\ndef box_value(n, idx, step, what):\n    # what: found, center (3), axis_x/y/z (3, unit), size (3, metres). One float, index in what.\n    chain = find_box(n, idx)\n    if not chain:\n        return 0.0\n    if what == 'found':\n        return 1.0\n    name, i = what.rsplit(':', 1)\n    i = int(i)\n    M = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for t in chain:\n        M = mul(M, box_matrix(t, nuke.frame() + step))\n    b = chain\[-1]\n    # The geometry's own extent: a Cube's 'cube' knob, else a unit cube about the origin.\n    e = \[b\['cube'].value(j) for j in range(6)] if b.knob('cube') else \[-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]\n    c = \[(e\[0] + e\[3]) / 2.0, (e\[1] + e\[4]) / 2.0, (e\[2] + e\[5]) / 2.0]\n    if name == 'center':\n        return M\[i * 4] * c\[0] + M\[i * 4 + 1] * c\[1] + M\[i * 4 + 2] * c\[2] + M\[i * 4 + 3]\n    if name.startswith('axis'):\n        j = 'xyz'.index(name\[-1])\n        col = \[M\[j], M\[4 + j], M\[8 + j]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2) or 1.0\n        return col\[i] / l\n    if name == 'size':\n        col = \[M\[i], M\[4 + i], M\[8 + i]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2)\n        return l * abs(e\[3 + i] - e\[i]) * (n\['scene_scale'].value() or 1.0)\n    return 0.0\n"
  addUserKnob {20 about l About}
- addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.23.1"}
+ addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.23.2"}
  addUserKnob {78 cam_world_matrix l "camera matrix" +INVISIBLE n 16}
  cam_world_matrix {{"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 0) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 1) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 2) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 3) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 4) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 5) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 6) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 7) if c is not None else 3000\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 8) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 9) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 10) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 11) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 12) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 13) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 14) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 15) if c is not None else 1\}]"}}
  addUserKnob {7 cam_focal +INVISIBLE}
@@ -519,7 +519,7 @@ Gizmo {
   xpos -40
   ypos -60
   bdwidth 1780
-  bdheight 418
+  bdheight 478
  }
  BackdropNode {
   inputs 0
@@ -528,9 +528,9 @@ Gizmo {
   label "Back to full size"
   note_font_size 32
   xpos -40
-  ypos 1083
-  bdwidth 1420
-  bdheight 439
+  ypos 1143
+  bdwidth 1240
+  bdheight 529
   z_order 1
  }
  BackdropNode {
@@ -540,7 +540,7 @@ Gizmo {
   label Layers
   note_font_size 32
   xpos -40
-  ypos 2307
+  ypos 2457
   bdwidth 520
   bdheight 859
   z_order 2
@@ -552,7 +552,7 @@ Gizmo {
   label "Clouds (all layers in one march)"
   note_font_size 32
   xpos -40
-  ypos 675
+  ypos 735
   bdwidth 1060
   bdheight 349
   z_order 3
@@ -564,7 +564,7 @@ Gizmo {
   label Views
   note_font_size 32
   xpos -40
-  ypos 3225
+  ypos 3375
   bdwidth 880
   bdheight 349
   z_order 4
@@ -576,7 +576,7 @@ Gizmo {
   label Shadows
   note_font_size 32
   xpos 140
-  ypos 1581
+  ypos 1731
   bdwidth 520
   bdheight 349
   z_order 5
@@ -588,7 +588,7 @@ Gizmo {
   label "Sun maps"
   note_font_size 32
   xpos 140
-  ypos 417
+  ypos 477
   bdwidth 520
   bdheight 199
   z_order 6
@@ -600,7 +600,7 @@ Gizmo {
   label Comp
   note_font_size 32
   xpos -40
-  ypos 1989
+  ypos 2139
   bdwidth 340
   bdheight 259
   z_order 7
@@ -612,7 +612,7 @@ Gizmo {
   label Output
   note_font_size 32
   xpos -40
-  ypos 3624
+  ypos 3774
   bdwidth 160
   bdheight 118
   z_order 8
@@ -658,7 +658,7 @@ Gizmo {
   name bg
   xpos 180
  }
-set N4602e000 [stack 0]
+set Nf03ce000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -686,10 +686,64 @@ set N4602e000 [stack 0]
   xpos 0
   ypos 180
  }
-set N46046800 [stack 0]
+set Nf03e6800 [stack 0]
+ Crop {
+  box {{0} {0} {input.width} {input.height}}
+  name FormatBox
+  xpos 180
+  ypos 240
+ }
+push $Nf03e6800
+ Merge2 {
+  inputs 2
+  operation plus
+  name WorkArea
+  xpos 0
+  ypos 300
+ }
+ Reformat {
+  type scale
+  scale {{parent.work_scale}}
+  filter impulse
+  pbb true
+  name WorkFormat
+  xpos 0
+  ypos 360
+ }
+set Nf03e7400 [stack 0]
+ Dot {
+  name LayoutDot11
+  xpos 86
+  ypos 363
+ }
+ Dot {
+  name LayoutDot12
+  xpos 86
+  ypos 795
+ }
+set Nb334d800 [stack 0]
+ Dot {
+  name LayoutDot18
+  xpos 86
+  ypos 1233
+ }
+set Nb3365000 [stack 0]
+ Dot {
+  name LayoutDot19
+  xpos 394
+  ypos 1233
+ }
+set Nb3365400 [stack 0]
+push $Nf03e6800
  Dot {
   name LayoutDot1
   xpos 394
+  ypos 183
+ }
+set Nb331cc00 [stack 0]
+ Dot {
+  name LayoutDot2
+  xpos 574
   ypos 183
  }
  Reformat {
@@ -701,80 +755,96 @@ set N46046800 [stack 0]
   filter impulse
   black_outside true
   name SunMapFormat
-  xpos 360
+  xpos 540
   ypos 240
  }
  Dot {
-  name LayoutDot40
-  xpos 470
+  name LayoutDot50
+  xpos 626
   ypos 243
  }
  Dot {
-  name LayoutDot41
-  xpos 470
-  ypos 507
+  name LayoutDot51
+  xpos 626
+  ypos 567
  }
-set Nab96c00 [stack 0]
+set Nb33cd400 [stack 0]
  Dot {
-  name LayoutDot45
-  xpos 470
-  ypos 855
+  name LayoutDot55
+  xpos 626
+  ypos 945
  }
-set Nab97c00 [stack 0]
+set Nb33e4400 [stack 0]
  Dot {
-  name LayoutDot46
+  name LayoutDot57
   xpos 430
-  ypos 855
+  ypos 945
  }
-set Nabae000 [stack 0]
+set Nb33e4c00 [stack 0]
  Dot {
-  name LayoutDot47
+  name LayoutDot59
   xpos 250
-  ypos 855
+  ypos 945
  }
-set Nabae400 [stack 0]
-push $Nabae400
-push $Nabae400
-push $N4602e000
+set Nb33e5400 [stack 0]
+push $Nb33e5400
+push $Nb33e5400
+push $Nf03ce000
  AddChannels {
   channels depth
   name DepthEnsure
   xpos 180
   ypos 60
  }
-push $N46046800
+ Dot {
+  name LayoutDot38
+  xpos 290
+  ypos 63
+ }
+ Dot {
+  name LayoutDot39
+  xpos 290
+  ypos 243
+ }
+push $Nb331cc00
  Copy {
   inputs 2
   from0 depth.Z
   to0 rgba.red
   name DepthSource
-  xpos 180
+  xpos 360
   ypos 240
  }
  Reformat {
   type scale
   scale {{parent.work_scale}}
   filter impulse
-  black_outside true
+  pbb true
   name DepthWork
-  xpos 180
+  xpos 360
   ypos 300
  }
  Dot {
-  name LayoutDot30
-  xpos 290
+  name LayoutDot40
+  xpos 470
   ypos 303
  }
  Dot {
-  name LayoutDot31
-  xpos 290
-  ypos 765
+  name LayoutDot41
+  xpos 470
+  ypos 885
  }
-set Nab7c400 [stack 0]
+set Nb33b2c00 [stack 0]
  Dot {
-  name LayoutDot32
-  xpos 232
-  ypos 765
+  name LayoutDot42
+  xpos 376
+  ypos 885
+ }
+set Nb33b3000 [stack 0]
+ Dot {
+  name LayoutDot45
+  xpos 196
+  ypos 885
  }
  Input {
   inputs 0
@@ -795,60 +865,40 @@ set Nab7c400 [stack 0]
   ypos 60
  }
  Dot {
-  name LayoutDot17
+  name LayoutDot25
   xpos 446
   ypos 63
  }
  Dot {
-  name LayoutDot18
+  name LayoutDot26
   xpos 446
-  ypos 477
+  ypos 537
  }
-set Nab49000 [stack 0]
+set Nb337f000 [stack 0]
  Dot {
-  name LayoutDot22
+  name LayoutDot30
   xpos 446
-  ypos 825
+  ypos 855
  }
-set Nab62000 [stack 0]
+set Nb339a000 [stack 0]
  Dot {
-  name LayoutDot23
-  xpos 376
-  ypos 825
+  name LayoutDot31
+  xpos 412
+  ypos 855
  }
-set Nab62400 [stack 0]
+set Nb339a400 [stack 0]
  Dot {
-  name LayoutDot25
-  xpos 196
-  ypos 825
+  name LayoutDot33
+  xpos 232
+  ypos 855
  }
-push $N46046800
- Reformat {
-  type scale
-  scale {{parent.work_scale}}
-  filter impulse
-  black_outside true
-  name WorkFormat
-  xpos 0
-  ypos 240
- }
-set N46046c00 [stack 0]
+push $Nb334d800
  Dot {
-  name LayoutDot10
-  xpos 86
-  ypos 243
- }
- Dot {
-  name LayoutDot11
-  xpos 86
-  ypos 735
- }
- Dot {
-  name LayoutDot12
+  name LayoutDot13
   xpos 214
-  ypos 735
+  ypos 795
  }
-set Nab31800 [stack 0]
+set Nb334dc00 [stack 0]
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -999,23 +1049,29 @@ set Nab31800 [stack 0]
   rebuild_finalise ""
   name Clouds_Shadow
   xpos 180
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !(parent.occlude && parent.bg_found) || !(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"}}
  }
  Dot {
-  name LayoutDot80
-  xpos 470
-  ypos 981
+  name LayoutDot90
+  xpos 518
+  ypos 1041
  }
  Dot {
-  name LayoutDot81
-  xpos 470
-  ypos 1173
+  name LayoutDot91
+  xpos 518
+  ypos 1263
  }
  Dot {
-  name LayoutDot82
-  xpos 394
-  ypos 1173
+  name LayoutDot92
+  xpos 412
+  ypos 1263
+ }
+ CopyBBox {
+  inputs 2
+  name ShadowUpArea
+  xpos 360
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -1023,118 +1079,136 @@ set Nab31800 [stack 0]
   box_height {{FormatSource.height}}
   box_fixed true
   resize distort
-  black_outside true
+  pbb true
   name ShadowUp
   xpos 360
-  ypos 1344
+  ypos 1494
  }
  Dot {
-  name LayoutDot83
+  name LayoutDot93
   xpos 446
-  ypos 1347
+  ypos 1497
  }
  Dot {
-  name LayoutDot84
+  name LayoutDot94
   xpos 446
-  ypos 1731
+  ypos 1881
  }
-set Nac17800 [stack 0]
+set Nb3466000 [stack 0]
  Dot {
-  name LayoutDot86
+  name LayoutDot96
   xpos 446
-  ypos 2397
+  ypos 2577
  }
-set Nac30000 [stack 0]
+set Nb3466800 [stack 0]
  Dot {
-  name LayoutDot89
+  name LayoutDot99
   xpos 446
-  ypos 3345
+  ypos 3495
  }
  Dot {
-  name LayoutDot90
+  name LayoutDot100
   xpos 772
-  ypos 3345
+  ypos 3495
  }
-push $Nab97c00
+push $Nb3365400
  Dot {
-  name LayoutDot48
+  name LayoutDot20
+  xpos 574
+  ypos 1233
+ }
+set Nb3365800 [stack 0]
+ Dot {
+  name LayoutDot21
+  xpos 754
+  ypos 1233
+ }
+set Nb3365c00 [stack 0]
+ Dot {
+  name LayoutDot22
+  xpos 934
+  ypos 1233
+ }
+set Nb337e000 [stack 0]
+ Dot {
+  name LayoutDot23
+  xpos 1114
+  ypos 1233
+ }
+push $Nb33e4400
+ Dot {
+  name LayoutDot56
   xpos 790
-  ypos 855
+  ypos 945
  }
-set Nabae800 [stack 0]
+set Nb33e4800 [stack 0]
  Dot {
-  name LayoutDot49
+  name LayoutDot58
   xpos 970
+  ypos 945
+ }
+set Nb33e5000 [stack 0]
+push $Nb33e5000
+push $Nb33e5000
+push $Nb33b2c00
+ Dot {
+  name LayoutDot43
+  xpos 610
+  ypos 885
+ }
+set Nb33b3400 [stack 0]
+ Dot {
+  name LayoutDot44
+  xpos 736
+  ypos 885
+ }
+set Nb33b3800 [stack 0]
+ Dot {
+  name LayoutDot46
+  xpos 916
+  ypos 885
+ }
+push $Nb339a000
+ Dot {
+  name LayoutDot32
+  xpos 556
   ypos 855
  }
-set Nabaec00 [stack 0]
-push $Nabaec00
-push $Nabaec00
-push $Nab7c400
- Dot {
-  name LayoutDot33
-  xpos 412
-  ypos 765
- }
-set Nab7cc00 [stack 0]
+set Nb339a800 [stack 0]
  Dot {
   name LayoutDot34
-  xpos 592
-  ypos 765
+  xpos 772
+  ypos 855
  }
-set Nab7d000 [stack 0]
+set Nb339b000 [stack 0]
  Dot {
   name LayoutDot35
-  xpos 772
-  ypos 765
- }
-set Nab7d400 [stack 0]
- Dot {
-  name LayoutDot36
   xpos 952
-  ypos 765
+  ypos 855
  }
-push $Nab62000
- Dot {
-  name LayoutDot24
-  xpos 610
-  ypos 825
- }
-set Nab62800 [stack 0]
- Dot {
-  name LayoutDot26
-  xpos 736
-  ypos 825
- }
-set Nab63000 [stack 0]
- Dot {
-  name LayoutDot27
-  xpos 916
-  ypos 825
- }
-push $Nab31800
- Dot {
-  name LayoutDot13
-  xpos 394
-  ypos 735
- }
-set Nab31c00 [stack 0]
+push $Nb334dc00
  Dot {
   name LayoutDot14
-  xpos 574
-  ypos 735
+  xpos 394
+  ypos 795
  }
-set Nab48000 [stack 0]
+set Nb3364000 [stack 0]
  Dot {
   name LayoutDot15
-  xpos 754
-  ypos 735
+  xpos 574
+  ypos 795
  }
-set Nab48400 [stack 0]
+set Nb3364400 [stack 0]
  Dot {
   name LayoutDot16
+  xpos 754
+  ypos 795
+ }
+set Nb3364800 [stack 0]
+ Dot {
+  name LayoutDot17
   xpos 934
-  ypos 735
+  ypos 795
  }
  BlinkScript {
   inputs 6
@@ -1286,23 +1360,29 @@ set Nab48400 [stack 0]
   rebuild_finalise ""
   name Clouds_Bwd
   xpos 900
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.motion_vectors || parent.preview"}}
  }
  Dot {
-  name LayoutDot126
+  name LayoutDot136
   xpos 986
-  ypos 969
+  ypos 1029
  }
  Dot {
-  name LayoutDot127
+  name LayoutDot137
   xpos 986
-  ypos 1293
+  ypos 1383
  }
  Dot {
-  name LayoutDot128
-  xpos 1294
-  ypos 1293
+  name LayoutDot138
+  xpos 1132
+  ypos 1383
+ }
+ CopyBBox {
+  inputs 2
+  name BwdUpArea
+  xpos 1080
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -1311,44 +1391,45 @@ set Nab48400 [stack 0]
   box_fixed true
   resize distort
   filter impulse
-  black_outside true
+  pbb true
   name BwdUp
-  xpos 1260
-  ypos 1344
+  xpos 1080
+  ypos 1494
  }
  Multiply {
   channels rgb
   value {{"1 / max(parent.work_scale, 1e-6)"}}
   name BwdScale
-  xpos 1260
-  ypos 1404
+  xpos 1080
+  ypos 1554
  }
  Dot {
-  name LayoutDot129
-  xpos 1346
-  ypos 1407
+  name LayoutDot139
+  xpos 1166
+  ypos 1557
  }
  Dot {
-  name LayoutDot130
-  xpos 1346
-  ypos 2517
+  name LayoutDot140
+  xpos 1166
+  ypos 2667
  }
  Dot {
-  name LayoutDot131
+  name LayoutDot141
   xpos 470
-  ypos 2517
+  ypos 2667
  }
  Dot {
-  name LayoutDot132
+  name LayoutDot142
   xpos 470
-  ypos 3051
+  ypos 3201
  }
-push $Nabae800
-push $Nabae800
-push $Nabae800
-push $Nab7d400
-push $Nab63000
-push $Nab48400
+push $Nb337e000
+push $Nb33e4800
+push $Nb33e4800
+push $Nb33e4800
+push $Nb33b3800
+push $Nb339b000
+push $Nb3364800
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -1499,23 +1580,29 @@ push $Nab48400
   rebuild_finalise ""
   name Clouds_Fwd
   xpos 720
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.motion_vectors || parent.preview"}}
  }
  Dot {
-  name LayoutDot119
+  name LayoutDot129
   xpos 806
-  ypos 969
+  ypos 1029
  }
  Dot {
-  name LayoutDot120
+  name LayoutDot130
   xpos 806
-  ypos 1263
+  ypos 1353
  }
  Dot {
-  name LayoutDot121
-  xpos 1114
-  ypos 1263
+  name LayoutDot131
+  xpos 952
+  ypos 1353
+ }
+ CopyBBox {
+  inputs 2
+  name FwdUpArea
+  xpos 900
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -1524,55 +1611,55 @@ push $Nab48400
   box_fixed true
   resize distort
   filter impulse
-  black_outside true
+  pbb true
   name FwdUp
-  xpos 1080
-  ypos 1344
+  xpos 900
+  ypos 1494
  }
  Multiply {
   channels rgb
   value {{"1 / max(parent.work_scale, 1e-6)"}}
   name FwdScale
-  xpos 1080
-  ypos 1404
+  xpos 900
+  ypos 1554
  }
  Dot {
-  name LayoutDot122
-  xpos 1166
-  ypos 1407
+  name LayoutDot132
+  xpos 986
+  ypos 1557
  }
  Dot {
-  name LayoutDot123
-  xpos 1166
-  ypos 2487
+  name LayoutDot133
+  xpos 986
+  ypos 2637
  }
  Dot {
-  name LayoutDot124
-  xpos 338
-  ypos 2487
+  name LayoutDot134
+  xpos 314
+  ypos 2637
  }
  Dot {
-  name LayoutDot125
-  xpos 338
-  ypos 2991
+  name LayoutDot135
+  xpos 314
+  ypos 3141
  }
-push $Nab96c00
+push $Nb33cd400
  Dot {
-  name LayoutDot43
+  name LayoutDot52
   xpos 592
-  ypos 507
+  ypos 567
  }
-set Nab97400 [stack 0]
-push $Nab97400
-push $Nab97400
-push $Nab97400
-push $Nab49000
+set Nb33cd800 [stack 0]
+push $Nb33cd800
+push $Nb33cd800
+push $Nb33cd800
+push $Nb337f000
  Dot {
-  name LayoutDot20
+  name LayoutDot28
   xpos 574
-  ypos 477
+  ypos 537
  }
-push $Nab97400
+push $Nb33cd800
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -1724,59 +1811,59 @@ push $Nab97400
   rebuild_finalise ""
   name L3_SunMap
   xpos 540
-  ypos 558
+  ypos 618
   disable {{"!(!(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot64
-  xpos 626
-  ypos 561
- }
- Dot {
-  name LayoutDot65
-  xpos 626
-  ypos 915
- }
-set Nabe0c00 [stack 0]
- Dot {
-  name LayoutDot67
-  xpos 638
-  ypos 948
- }
-set Nabe1400 [stack 0]
- Dot {
-  name LayoutDot69
-  xpos 638
-  ypos 1761
- }
- Dot {
-  name LayoutDot70
+  name LayoutDot74
   xpos 650
-  ypos 1761
+  ypos 621
  }
  Dot {
-  name LayoutDot71
+  name LayoutDot75
   xpos 650
-  ypos 1875
+  ypos 975
  }
-push $Nab96c00
+set Nb3419400 [stack 0]
  Dot {
-  name LayoutDot42
+  name LayoutDot77
+  xpos 650
+  ypos 1008
+ }
+set Nb3419c00 [stack 0]
+ Dot {
+  name LayoutDot79
+  xpos 650
+  ypos 1911
+ }
+ Dot {
+  name LayoutDot80
+  xpos 638
+  ypos 1911
+ }
+ Dot {
+  name LayoutDot81
+  xpos 626
+  ypos 2013
+ }
+push $Nb33cd800
+ Dot {
+  name LayoutDot53
   xpos 412
-  ypos 507
+  ypos 567
  }
-set Nab97000 [stack 0]
-push $Nab97000
-push $Nab97000
-push $Nab97000
-push $Nab49000
+set Nb33cdc00 [stack 0]
+push $Nb33cdc00
+push $Nb33cdc00
+push $Nb33cdc00
+push $Nb337f000
  Dot {
-  name LayoutDot19
+  name LayoutDot27
   xpos 394
-  ypos 477
+  ypos 537
  }
-set Nab49400 [stack 0]
-push $Nab97000
+set Nb337f400 [stack 0]
+push $Nb33cdc00
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -1928,53 +2015,53 @@ push $Nab97000
   rebuild_finalise ""
   name L2_SunMap
   xpos 360
-  ypos 558
+  ypos 618
   disable {{"!(!(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot57
+  name LayoutDot67
   xpos 494
-  ypos 561
+  ypos 621
  }
  Dot {
-  name LayoutDot58
+  name LayoutDot68
   xpos 494
-  ypos 885
+  ypos 915
  }
-set Nabcb000 [stack 0]
+set Nb3403800 [stack 0]
  Dot {
-  name LayoutDot60
+  name LayoutDot70
   xpos 494
-  ypos 948
+  ypos 1008
  }
-set Nabcb800 [stack 0]
+set Nb3418000 [stack 0]
  Dot {
-  name LayoutDot62
+  name LayoutDot72
   xpos 494
-  ypos 1701
+  ypos 1851
  }
  Dot {
-  name LayoutDot63
+  name LayoutDot73
   xpos 592
-  ypos 1701
+  ypos 1851
  }
-push $Nab97000
+push $Nb33cdc00
  Dot {
-  name LayoutDot44
+  name LayoutDot54
   xpos 232
-  ypos 507
+  ypos 567
  }
-set Nab97800 [stack 0]
-push $Nab97800
-push $Nab97800
-push $Nab97800
-push $Nab49400
+set Nb33e4000 [stack 0]
+push $Nb33e4000
+push $Nb33e4000
+push $Nb33e4000
+push $Nb337f400
  Dot {
-  name LayoutDot21
+  name LayoutDot29
   xpos 214
-  ypos 477
+  ypos 537
  }
-push $Nab97800
+push $Nb33e4000
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -2126,64 +2213,64 @@ push $Nab97800
   rebuild_finalise ""
   name L1_SunMap
   xpos 180
-  ypos 558
+  ypos 618
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot50
-  xpos 314
-  ypos 561
+  name LayoutDot60
+  xpos 290
+  ypos 621
  }
  Dot {
-  name LayoutDot51
-  xpos 314
-  ypos 795
+  name LayoutDot61
+  xpos 290
+  ypos 825
  }
-set Nabaf400 [stack 0]
+set Nb33e5c00 [stack 0]
  Dot {
-  name LayoutDot53
-  xpos 314
-  ypos 936
+  name LayoutDot63
+  xpos 290
+  ypos 996
  }
-set Nabafc00 [stack 0]
+set Nb3402400 [stack 0]
  Dot {
-  name LayoutDot55
-  xpos 314
-  ypos 1671
+  name LayoutDot65
+  xpos 290
+  ypos 1821
  }
  Dot {
-  name LayoutDot56
+  name LayoutDot66
   xpos 574
-  ypos 1671
+  ypos 1821
  }
  Merge2 {
   inputs 2
   operation plus
   name SunMap_All12
   xpos 540
-  ypos 1812
+  ypos 1962
  }
  Merge2 {
   inputs 2
   operation plus
   name SunMap_All3
   xpos 540
-  ypos 1872
+  ypos 2022
  }
  Dot {
-  name LayoutDot112
+  name LayoutDot122
   xpos 626
-  ypos 1875
+  ypos 2025
  }
  Dot {
-  name LayoutDot113
+  name LayoutDot123
   xpos 626
-  ypos 1143
+  ypos 1203
  }
  Dot {
-  name LayoutDot114
-  xpos 934
-  ypos 1143
+  name LayoutDot124
+  xpos 214
+  ypos 1203
  }
  Reformat {
   type "to box"
@@ -2193,86 +2280,92 @@ set Nabafc00 [stack 0]
   resize distort
   black_outside true
   name SunMapUp
-  xpos 900
-  ypos 1344
+  xpos 180
+  ypos 1434
  }
  Dot {
-  name LayoutDot115
-  xpos 986
-  ypos 1347
- }
- Dot {
-  name LayoutDot116
-  xpos 986
-  ypos 2457
- }
- Dot {
-  name LayoutDot117
+  name LayoutDot125
   xpos 314
-  ypos 2457
+  ypos 1437
  }
  Dot {
-  name LayoutDot118
+  name LayoutDot126
   xpos 314
-  ypos 2871
- }
-push $Nac30000
- Dot {
-  name LayoutDot87
-  xpos 266
-  ypos 2397
+  ypos 2547
  }
  Dot {
-  name LayoutDot88
-  xpos 266
-  ypos 2811
- }
-push $Nabe1400
- Dot {
-  name LayoutDot68
+  name LayoutDot127
   xpos 338
-  ypos 948
+  ypos 2547
  }
-push $Nabcb800
  Dot {
-  name LayoutDot61
+  name LayoutDot128
+  xpos 338
+  ypos 3021
+ }
+push $Nb3466800
+ Dot {
+  name LayoutDot97
+  xpos 266
+  ypos 2577
+ }
+ Dot {
+  name LayoutDot98
+  xpos 266
+  ypos 2961
+ }
+push $Nb3365000
+ Dot {
+  name LayoutDot24
+  xpos 86
+  ypos 1416
+ }
+push $Nb3419c00
+ Dot {
+  name LayoutDot78
+  xpos 338
+  ypos 1008
+ }
+push $Nb3418000
+ Dot {
+  name LayoutDot71
+  xpos 314
+  ypos 1020
+ }
+push $Nb3402400
+ Dot {
+  name LayoutDot64
   xpos 158
-  ypos 948
+  ypos 1008
  }
-push $Nabafc00
+push $Nb33b2c00
  Dot {
-  name LayoutDot54
-  xpos 134
-  ypos 936
+  name LayoutDot47
+  xpos 470
+  ypos 982
  }
-push $Nab7c400
+ Dot {
+  name LayoutDot48
+  xpos 134
+  ypos 987
+ }
+ Dot {
+  name LayoutDot49
+  xpos 134
+  ypos 1029
+ }
+push $Nb339a000
+ Dot {
+  name LayoutDot36
+  xpos 446
+  ypos 996
+ }
  Dot {
   name LayoutDot37
-  xpos 290
-  ypos 927
- }
- Dot {
-  name LayoutDot38
   xpos 110
-  ypos 927
+  ypos 996
  }
- Dot {
-  name LayoutDot39
-  xpos 110
-  ypos 969
- }
-push $Nab62000
- Dot {
-  name LayoutDot28
-  xpos 446
-  ypos 936
- }
- Dot {
-  name LayoutDot29
-  xpos 86
-  ypos 936
- }
-push $N46046c00
+push $Nf03e7400
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -2422,8 +2515,14 @@ push $N46046c00
   rebuild_finalise ""
   name Clouds_Color
   xpos 0
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)))"}}
+ }
+ CopyBBox {
+  inputs 2
+  name ColorUpArea
+  xpos 0
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -2431,12 +2530,12 @@ push $N46046c00
   box_height {{FormatSource.height}}
   box_fixed true
   resize distort
-  black_outside true
+  pbb true
   name ColorUp
   xpos 0
-  ypos 1344
+  ypos 1494
  }
-set N29795400 [stack 0]
+set Nc78f2000 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -2451,35 +2550,36 @@ set N29795400 [stack 0]
   channel3 none
   name ToneScale
   xpos 180
-  ypos 1404
+  ypos 1554
  }
-set N2983a400 [stack 0]
+set Nc78f3400 [stack 0]
  Dot {
-  name LayoutDot2
+  name LayoutDot3
   xpos 766
-  ypos 1407
+  ypos 1557
  }
-push $Nabe0c00
+push $Nb3365c00
+push $Nb3419400
  Dot {
-  name LayoutDot66
-  xpos 646
+  name LayoutDot76
+  xpos 628
+  ypos 975
+ }
+push $Nb3403800
+ Dot {
+  name LayoutDot69
+  xpos 538
   ypos 915
  }
-push $Nabcb000
+push $Nb33e5c00
  Dot {
-  name LayoutDot59
-  xpos 538
-  ypos 885
+  name LayoutDot62
+  xpos 592
+  ypos 825
  }
-push $Nabaf400
- Dot {
-  name LayoutDot52
-  xpos 556
-  ypos 795
- }
-push $Nab7d000
-push $Nab62800
-push $Nab48000
+push $Nb33b3400
+push $Nb339a800
+push $Nb3364400
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -2630,23 +2730,29 @@ push $Nab48000
   rebuild_finalise ""
   name Clouds_Sun
   xpos 540
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
  Dot {
-  name LayoutDot102
-  xpos 650
-  ypos 969
+  name LayoutDot112
+  xpos 674
+  ypos 1029
  }
  Dot {
-  name LayoutDot103
-  xpos 650
-  ypos 1233
+  name LayoutDot113
+  xpos 674
+  ypos 1323
  }
  Dot {
-  name LayoutDot104
-  xpos 754
-  ypos 1233
+  name LayoutDot114
+  xpos 772
+  ypos 1323
+ }
+ CopyBBox {
+  inputs 2
+  name SunUpArea
+  xpos 720
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -2654,10 +2760,10 @@ push $Nab48000
   box_height {{FormatSource.height}}
   box_fixed true
   resize distort
-  black_outside true
+  pbb true
   name SunUp
   xpos 720
-  ypos 1344
+  ypos 1494
  }
  Merge2 {
   inputs 2
@@ -2665,65 +2771,65 @@ push $Nab48000
   output rgb
   name ToneSun
   xpos 720
-  ypos 1464
+  ypos 1614
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
  Dot {
-  name LayoutDot105
+  name LayoutDot115
   xpos 806
-  ypos 1467
+  ypos 1617
  }
  Dot {
-  name LayoutDot106
+  name LayoutDot116
   xpos 806
-  ypos 2427
+  ypos 2607
  }
-set Nac67000 [stack 0]
+set Nb3499800 [stack 0]
  Dot {
-  name LayoutDot107
+  name LayoutDot117
   xpos 412
-  ypos 2427
+  ypos 2607
  }
-set Nac67400 [stack 0]
-push $N2983a400
-push $N29795400
+set Nb3499c00 [stack 0]
+push $Nc78f3400
+push $Nc78f2000
  Merge2 {
   inputs 2
   operation multiply
   output rgb
   name ToneColor
   xpos 0
-  ypos 1464
+  ypos 1614
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N2983a800 [stack 0]
+set Nc78f3800 [stack 0]
  Dot {
-  name LayoutDot72
+  name LayoutDot82
   xpos 86
-  ypos 1467
+  ypos 1617
  }
  Dot {
-  name LayoutDot73
+  name LayoutDot83
   xpos 86
-  ypos 2049
+  ypos 2199
  }
-set Nabfec00 [stack 0]
+set Nb3433400 [stack 0]
  Dot {
-  name LayoutDot75
+  name LayoutDot85
   xpos 86
-  ypos 2367
+  ypos 2517
  }
-set Nabff400 [stack 0]
+set Nb3433c00 [stack 0]
  Dot {
-  name LayoutDot76
+  name LayoutDot86
   xpos 214
-  ypos 2367
+  ypos 2517
  }
-set Nabff800 [stack 0]
+set Nb344e000 [stack 0]
  Dot {
-  name LayoutDot77
+  name LayoutDot87
   xpos 394
-  ypos 2367
+  ypos 2517
  }
  Merge2 {
   inputs 2
@@ -2731,31 +2837,32 @@ set Nabff800 [stack 0]
   output rgb
   name SkyPart
   xpos 360
-  ypos 2568
+  ypos 2718
  }
  Dot {
-  name LayoutDot3
+  name LayoutDot4
   xpos 394
-  ypos 2751
+  ypos 2901
  }
-push $Nac67400
+push $Nb3499c00
  Dot {
-  name LayoutDot108
+  name LayoutDot118
   xpos 290
-  ypos 2427
+  ypos 2607
  }
  Dot {
-  name LayoutDot109
+  name LayoutDot119
   xpos 290
-  ypos 2691
+  ypos 2841
  }
-push $Nabff800
-push $Nabae000
-push $Nabae000
-push $Nabae000
-push $Nab7cc00
-push $Nab62400
-push $Nab31c00
+push $Nb344e000
+push $Nb3365800
+push $Nb33e4c00
+push $Nb33e4c00
+push $Nb33e4c00
+push $Nb33b3000
+push $Nb339a400
+push $Nb3364000
  BlinkScript {
   inputs 6
   recompileCount 2
@@ -2906,23 +3013,29 @@ push $Nab31c00
   rebuild_finalise ""
   name Clouds_Depth
   xpos 360
-  ypos 966
+  ypos 1026
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)))"}}
  }
  Dot {
-  name LayoutDot94
-  xpos 518
-  ypos 969
+  name LayoutDot104
+  xpos 626
+  ypos 1029
  }
  Dot {
-  name LayoutDot95
-  xpos 518
-  ypos 1203
+  name LayoutDot105
+  xpos 638
+  ypos 1293
  }
  Dot {
-  name LayoutDot96
-  xpos 574
-  ypos 1203
+  name LayoutDot106
+  xpos 592
+  ypos 1293
+ }
+ CopyBBox {
+  inputs 2
+  name DepthUpArea
+  xpos 540
+  ypos 1434
  }
  Reformat {
   type "to box"
@@ -2931,38 +3044,38 @@ push $Nab31c00
   box_fixed true
   resize distort
   filter impulse
-  black_outside true
+  pbb true
   name DepthUp
   xpos 540
-  ypos 1344
+  ypos 1494
  }
  Dot {
-  name LayoutDot97
+  name LayoutDot107
   xpos 674
-  ypos 1347
+  ypos 1497
  }
  Dot {
-  name LayoutDot98
+  name LayoutDot108
   xpos 674
-  ypos 2550
+  ypos 2700
  }
-set Nac4b000 [stack 0]
+set Nb3481800 [stack 0]
  Dot {
-  name LayoutDot99
+  name LayoutDot109
   xpos 110
-  ypos 2550
+  ypos 2700
  }
-push $Nabfec00
+push $Nb3433400
  Dot {
-  name LayoutDot74
+  name LayoutDot84
   xpos 214
-  ypos 2049
+  ypos 2199
  }
-push $Nac17800
+push $Nb3466000
  Dot {
-  name LayoutDot85
+  name LayoutDot95
   xpos 214
-  ypos 1731
+  ypos 1881
  }
  Expression {
   channel0 rgb
@@ -2972,23 +3085,23 @@ push $Nac17800
   channel3 none
   name Shadow_Light
   xpos 180
-  ypos 1812
+  ypos 1962
  }
-push $N4602e000
+push $Nf03ce000
  Dot {
-  name LayoutDot7
+  name LayoutDot8
   xpos 266
   ypos 3
  }
  Dot {
-  name LayoutDot8
+  name LayoutDot9
   xpos 266
-  ypos 1641
+  ypos 1791
  }
  Dot {
-  name LayoutDot9
+  name LayoutDot10
   xpos 394
-  ypos 1641
+  ypos 1791
  }
  Merge2 {
   inputs 2
@@ -2996,38 +3109,38 @@ push $N4602e000
   output rgb
   name Shadow_OnBg
   xpos 360
-  ypos 1872
+  ypos 2022
   disable {{"!(parent.occlude && parent.bg_found) || parent.shadow_amount==0"}}
  }
  Dot {
-  name LayoutDot91
+  name LayoutDot101
   xpos 470
-  ypos 1875
+  ypos 2025
  }
  Dot {
-  name LayoutDot92
+  name LayoutDot102
   xpos 470
-  ypos 2079
+  ypos 2229
  }
  Dot {
-  name LayoutDot93
+  name LayoutDot103
   xpos 232
-  ypos 2079
+  ypos 2229
  }
  Merge2 {
   inputs 2
   name CompOver
   xpos 180
-  ypos 2130
+  ypos 2280
  }
-push $N2983a800
+push $Nc78f3800
  Switch {
   inputs 2
   which {{parent.bg_found}}
   name CompOrClouds
   label "bg plugged in"
   xpos 0
-  ypos 2190
+  ypos 2340
  }
  Copy {
   inputs 2
@@ -3035,9 +3148,9 @@ push $N2983a800
   to0 depth.Z
   name Layer_DepthZ
   xpos 0
-  ypos 2568
+  ypos 2718
  }
-set Naa62400 [stack 0]
+set Nb327e400 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -3051,7 +3164,7 @@ add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
   to3 cloud.alpha
   name Layer_Cloud
   xpos 180
-  ypos 2628
+  ypos 2778
  }
 add_layer {cloud_sun cloud_sun.red cloud_sun.green cloud_sun.blue}
  Copy {
@@ -3064,7 +3177,7 @@ add_layer {cloud_sun cloud_sun.red cloud_sun.green cloud_sun.blue}
   to2 cloud_sun.blue
   name Layer_CloudSun
   xpos 180
-  ypos 2688
+  ypos 2838
  }
 add_layer {cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue}
  Copy {
@@ -3077,7 +3190,7 @@ add_layer {cloud_sky cloud_sky.red cloud_sky.green cloud_sky.blue}
   to2 cloud_sky.blue
   name Layer_CloudSky
   xpos 180
-  ypos 2748
+  ypos 2898
  }
 add_layer {cloud_shadow cloud_shadow.red cloud_shadow.green cloud_shadow.blue}
  Copy {
@@ -3090,7 +3203,7 @@ add_layer {cloud_shadow cloud_shadow.red cloud_shadow.green cloud_shadow.blue}
   to2 cloud_shadow.blue
   name Layer_CloudShadow
   xpos 180
-  ypos 2808
+  ypos 2958
  }
 add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
  Copy {
@@ -3103,19 +3216,19 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   to2 cloud_sunmap.blue
   name Layer_CloudSunMap
   xpos 180
-  ypos 2868
+  ypos 3018
   disable {{!parent.sun_map_out}}
  }
-push $Naa62400
+push $Nb327e400
  Switch {
   inputs 2
   which {{parent.breakout}}
   name BreakoutOrNot
   label breakout
   xpos 0
-  ypos 2928
+  ypos 3078
  }
-set N46069e00 [stack 0]
+set Nf0417e00 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -3124,7 +3237,7 @@ set N46069e00 [stack 0]
   to1 forward.v
   name Layer_Forward
   xpos 180
-  ypos 2988
+  ypos 3138
  }
  Copy {
   inputs 2
@@ -3134,143 +3247,143 @@ set N46069e00 [stack 0]
   to1 backward.v
   name Layer_Backward
   xpos 180
-  ypos 3048
+  ypos 3198
  }
-push $N46069e00
+push $Nf0417e00
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
   name MotionOrNot
   label "motion vectors"
   xpos 0
-  ypos 3108
+  ypos 3258
  }
-set N4606a300 [stack 0]
+set Nf0418300 [stack 0]
  Dot {
-  name LayoutDot133
+  name LayoutDot143
   xpos 110
-  ypos 3111
+  ypos 3261
  }
  Dot {
-  name LayoutDot134
+  name LayoutDot144
   xpos 110
-  ypos 3315
+  ypos 3465
  }
  Dot {
-  name LayoutDot135
+  name LayoutDot145
   xpos 232
-  ypos 3315
+  ypos 3465
  }
-set Naccc400 [stack 0]
+set Nb3504c00 [stack 0]
  Dot {
-  name LayoutDot136
+  name LayoutDot146
   xpos 394
-  ypos 3315
+  ypos 3465
  }
-set Naccc800 [stack 0]
+set Nb3505000 [stack 0]
  Dot {
-  name LayoutDot137
+  name LayoutDot147
   xpos 574
-  ypos 3315
+  ypos 3465
  }
-set Nacccc00 [stack 0]
+set Nb3505400 [stack 0]
  Dot {
-  name LayoutDot138
+  name LayoutDot148
   xpos 754
-  ypos 3315
+  ypos 3465
  }
  Copy {
   inputs 2
   channels rgba
   name View_Shadow
   xpos 720
-  ypos 3456
+  ypos 3606
  }
  Dot {
-  name LayoutDot6
+  name LayoutDot7
   xpos 754
-  ypos 3519
+  ypos 3669
  }
-push $N4606a300
-push $Nac4b000
+push $Nf0418300
+push $Nb3481800
  Dot {
-  name LayoutDot100
+  name LayoutDot110
   xpos 674
-  ypos 3375
+  ypos 3525
  }
  Dot {
-  name LayoutDot101
+  name LayoutDot111
   xpos 592
-  ypos 3375
+  ypos 3525
  }
-push $Nacccc00
+push $Nb3505400
  Copy {
   inputs 2
   channels rgba
   name View_Depth
   xpos 540
-  ypos 3456
+  ypos 3606
  }
  Dot {
-  name LayoutDot5
+  name LayoutDot6
   xpos 574
-  ypos 3519
+  ypos 3669
  }
-push $Nac67000
+push $Nb3499800
  Dot {
-  name LayoutDot110
+  name LayoutDot120
   xpos 806
-  ypos 3405
+  ypos 3555
  }
  Dot {
-  name LayoutDot111
+  name LayoutDot121
   xpos 412
-  ypos 3405
+  ypos 3555
  }
-push $Naccc800
+push $Nb3505000
  Copy {
   inputs 2
   channels rgba
   name View_Sun
   xpos 360
-  ypos 3456
+  ypos 3606
  }
  Dot {
-  name LayoutDot4
+  name LayoutDot5
   xpos 394
-  ypos 3507
+  ypos 3657
  }
-push $Nabff400
+push $Nb3433c00
  Dot {
-  name LayoutDot78
+  name LayoutDot88
   xpos 86
-  ypos 3285
+  ypos 3435
  }
  Dot {
-  name LayoutDot79
+  name LayoutDot89
   xpos 214
-  ypos 3285
+  ypos 3435
  }
-push $Naccc400
+push $Nb3504c00
  Copy {
   inputs 2
   channels rgba
   name View_Clouds
   xpos 180
-  ypos 3456
+  ypos 3606
  }
-push $N4606a300
+push $Nf0418300
  Switch {
   inputs 6
   which {{parent.view}}
   name ViewOutput
   label view
   xpos 0
-  ypos 3516
+  ypos 3666
  }
  Output {
   name Output1
   xpos 0
-  ypos 3684
+  ypos 3834
  }
 end_group

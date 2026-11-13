@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.23.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.23.2: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -61,6 +61,9 @@ pixel and caught in the next (the dithered, jagged fringe round clouds against t
 samples per pixel are spread evenly over the pixel and over a step, and bright samples count for
 less when they are averaged, so an edge half on a blazing cloud and half on sky blends instead of
 clipping to white. The render time is about the same.
+Overscan: with a bg whose bbox is bigger than its format, the clouds (and the depth, motion vectors
+and shadow) render out to that bbox, carrying on past the frame edge as the camera would see them.
+A bbox smaller than the format still gets clouds over the whole format.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
