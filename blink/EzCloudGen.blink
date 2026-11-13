@@ -1459,6 +1459,14 @@ local:
     up += (0.35f * up + 0.65f * sideVis * exp(-sig * (1.0f - hn) * th * 0.25f) - up) * ss;
     dnl *= 1.0f + (belowVis * 1.6f - 1.0f) * ss;
     float3 amb = (skyColor * up + groundColor * dnl) * ambient[lyr];
+    // What the sky can't reach directly still gets light that has bounced about inside the cloud:
+    // white (a cloud's droplets don't colour it), a quarter of the open sky's brightness. Without
+    // it the hollows between lobes went a deep, saturated sky blue instead of a soft grey.
+    if (ss > 0.0f) {
+      float skyLum = 0.2126f * skyColor.x + 0.7152f * skyColor.y + 0.0722f * skyColor.z;
+      float fill = 0.25f * skyLum * (1.0f - up) * ambient[lyr] * ss;
+      amb += float3(fill, fill, fill);
+    }
     return direct + amb;
   }
 
