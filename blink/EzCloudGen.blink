@@ -76,6 +76,7 @@ kernel EzCloudGen : ImageComputationKernel<ePixelWise>
   Image<eRead, eAccessRandom, eEdgeClamped> smap;
   Image<eRead, eAccessRandom, eEdgeClamped> smap2;
   Image<eRead, eAccessRandom, eEdgeClamped> smap3;
+  Image<eRead, eAccessRandom, eEdgeClamped> lgrid;
   Image<eWrite> dst;
 
 param:
@@ -132,6 +133,19 @@ param:
   float diffusion;
   float detailSharpness;
   float billowLight;
+  // The light grid (output 6, read back as lgrid): each layer's optical depth towards the sun
+  // (layer 1 in red, 2 in green, 3 in blue),
+  // baked once on a grid that fits the camera's view (gridW x gridH across the frame plus
+  // gridMargin, gridTX x gridTY slices in distance from gridNear to gridFar metres, spaced
+  // evenly in log distance; the slices are tiled across the image).
+  int useGrid;
+  int gridW;
+  int gridH;
+  int gridTX;
+  int gridTY;
+  float gridNear;
+  float gridFar;
+  float gridMargin;
   float evenDetail;
   float skyShading;
   float roundLobes;
@@ -267,6 +281,14 @@ local:
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(useGrid, "use_grid", 0);
+    defineParam(gridW, "grid_w", 192);
+    defineParam(gridH, "grid_h", 108);
+    defineParam(gridTX, "grid_tx", 8);
+    defineParam(gridTY, "grid_ty", 8);
+    defineParam(gridNear, "grid_near", 200.0f);
+    defineParam(gridFar, "grid_far", 80000.0f);
+    defineParam(gridMargin, "grid_margin", 1.25f);
     defineParam(evenDetail, "even_detail", 0.0f);
     defineParam(skyShading, "sky_shading", 0.0f);
     defineParam(roundLobes, "round_lobes", 0.0f);
@@ -1273,7 +1295,8 @@ local:
   // side: with 'sky shading', how much of the sky a point sees round about (four probes slanted
   // 45 degrees up to the four sides, 0 buried .. 1 open); below: the same straight down, for the
   // light off the ground.
-  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, float &side, float &below, int lyr)
+  // farCap: march no further than this (with the light grid, which takes over beyond it).
+  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, float &side, float &below, float farCap, int lyr)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -1287,6 +1310,7 @@ local:
         far = max(t1, 0.0f);
       far = min(far, min(6.0f * thickness[lyr] / max(sun.y, 0.08f), 12000.0f));
     }
+    far = min(far, farCap);
     int steps = max(int(10.0f * quality), 2);
     float od = 0.0f;
     float prev = 0.0f;
@@ -1454,7 +1478,14 @@ local:
     float occU = 0.0f;
     float sideVis = 1.0f;
     float belowVis = 1.0f;
-    float od = sunDepth(p, foot, sd, h1, h2, occU, sideVis, belowVis, lyr) * sig0 + tauAbove(p, lyr);
+    float od = 0.0f;
+    float nearLen = 1e9f;
+    float gOd = useGrid == 1 ? gridDepth(p, lyr, nearLen) : -1.0f;
+    // With the light grid, the layer's own detail is marched only over the first stretch
+    // towards the sun (a couple of billows, or a grid cell), and the grid, which holds every
+    // layer's cloud smoothly and with no noise, gives the rest (the sun map too).
+    od = sunDepth(p, foot, sd, h1, h2, occU, sideVis, belowVis, gOd >= 0.0f ? nearLen : 1e9f, lyr) * sig0
+         + (gOd >= 0.0f ? gOd : tauAbove(p, lyr));
     // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
     // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
     // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
@@ -1526,6 +1557,114 @@ local:
     return direct + amb;
   }
 
+  // ---- The light grid ----------------------------------------------------------------------
+
+  // The grid cell (fractional: x, y across, z slice) for kernel-frame point p; false behind the
+  // camera.
+  bool gridCell(float3 p, float &gx, float &gy, float &gz, float &dist)
+  {
+    float3 rel = p - float3(0.0f, camAlt, 0.0f);
+    float cx = camRow0.x * rel.x + camRow1.x * rel.y + camRow2.x * rel.z;
+    float cy = camRow0.y * rel.x + camRow1.y * rel.y + camRow2.y * rel.z;
+    float cz = camRow0.z * rel.x + camRow1.z * rel.y + camRow2.z * rel.z;
+    if (cz > -1.0f)
+      return false;
+    float hap = haperture;
+    float vap = haperture * frameSize.y / frameSize.x;
+    float u = cx / -cz * focal / hap;
+    float v = cy / -cz * focal / vap;
+    gx = (u / gridMargin + 0.5f) * float(gridW) - 0.5f;
+    gy = (v / gridMargin + 0.5f) * float(gridH) - 0.5f;
+    dist = length(rel);
+    float nd = float(gridTX * gridTY);
+    gz = log(max(dist, 1.0f) / gridNear) / log(gridFar / gridNear) * nd - 0.5f;
+    return true;
+  }
+
+  // One slice of the grid, bilinear inside its tile.
+  float4 gridSlice(float gx, float gy, int k)
+  {
+    int ty = k / gridTX;
+    int tx = k - ty * gridTX;
+    float x = clamp(gx, 0.0f, float(gridW) - 1.001f) + float(tx * gridW);
+    float y = clamp(gy, 0.0f, float(gridH) - 1.001f) + float(ty * gridH);
+    return bilinear(lgrid, float(lgrid.bounds.x1) + x, float(lgrid.bounds.y1) + y);
+  }
+
+  // The optical depth towards the sun from the light grid, looked up nearLen metres towards the
+  // sun from p (so past the cell p is in); -1 where that is off the grid.
+  float gridDepth(float3 p, int lyr, float &nearLen)
+  {
+    float w = float(lgrid.bounds.width());
+    if (w < 2.0f)
+      return -1.0f;
+    float gx = 0.0f;
+    float gy = 0.0f;
+    float gz = 0.0f;
+    float dist = 0.0f;
+    if (!gridCell(p, gx, gy, gz, dist))
+      return -1.0f;
+    // A grid cell's size at this distance, across and in depth.
+    float nd = float(gridTX * gridTY);
+    float across = dist * haperture / focal * gridMargin / float(gridW);
+    float deep = dist * log(gridFar / gridNear) / nd;
+    nearLen = max(2.0f * detail_size[lyr], 1.5f * max(across, deep));
+    float3 q = p + sun * nearLen;
+    if (!gridCell(q, gx, gy, gz, dist))
+      return -1.0f;
+    if (gx < -0.5f || gy < -0.5f || gx > float(gridW) - 0.5f || gy > float(gridH) - 0.5f || gz > nd - 0.5f)
+      return -1.0f;
+    gz = clamp(gz, 0.0f, nd - 1.001f);
+    int k0 = int(floor(gz));
+    float fz = gz - float(k0);
+    float4 g = gridSlice(gx, gy, k0) * (1.0f - fz) + gridSlice(gx, gy, k0 + 1) * fz;
+    // The layer's own cloud, and with 'layers shadow each other' (useSunMap) the others'.
+    float own = lyr == 0 ? g.x : lyr == 1 ? g.y : g.z;
+    return useSunMap == 1 ? g.x + g.y + g.z : own;
+  }
+
+  // The light grid pass: this texel's cell centre, and every layer's optical depth from there
+  // towards the sun, marched long and smooth on the light march's coarse shape.
+  float3 gridBake(int2 pos)
+  {
+    int ty = pos.y / gridH;
+    int tx = pos.x / gridW;
+    int k = ty * gridTX + tx;
+    if (k >= gridTX * gridTY || tx >= gridTX)
+      return float3(0.0f);
+    float i = float(pos.x - tx * gridW);
+    float j = float(pos.y - ty * gridH);
+    float nd = float(gridTX * gridTY);
+    float hap = haperture;
+    float vap = haperture * frameSize.y / frameSize.x;
+    float u = ((i + 0.5f) / float(gridW) - 0.5f) * gridMargin;
+    float v = ((j + 0.5f) / float(gridH) - 0.5f) * gridMargin;
+    float3 cd = float3(u * hap / focal, v * vap / focal, -1.0f);
+    float3 d = normalize(float3(dot(camRow0, cd), dot(camRow1, cd), dot(camRow2, cd)));
+    float dist = gridNear * pow(gridFar / gridNear, (float(k) + 0.5f) / nd);
+    float3 p = float3(0.0f, camAlt, 0.0f) + d * dist;
+    float cell = dist * hap / focal * gridMargin / float(gridW);
+    float odL[3];
+    int steps = 48;
+    float far = 25000.0f;
+    for (int L = 0; L < 3; L++) {
+      odL[L] = 0.0f;
+      if (layer_on[L] != 1)
+        continue;
+      float sig0 = sigma[L] * density[L];
+      float prev = 0.0f;
+      for (int st = 0; st < steps; st++) {
+        float f = (float(st) + 0.5f) / float(steps);
+        float t = far * f * f;
+        float len = t - prev;
+        prev = t;
+        float bd = 0.0f;
+        odL[L] += cloud(p + sun * t, max(cell, t * 0.02f), true, layer_seed[L], L, bd) * len * sig0;
+      }
+    }
+    return float3(odL[0], odL[1], odL[2]);
+  }
+
   // The motion vector (pixels) of layer lyr's cloud at p to the other frame, from (u, v).
   float2 motionOf(float3 p, float u, float v, int lyr)
   {
@@ -1558,6 +1697,11 @@ local:
 
   void process(int2 pos)
   {
+    if (output == 6) {
+      float3 g = gridBake(pos);
+      dst() = float4(g.x, g.y, g.z, 1.0f);
+      return;
+    }
     float3 cam = float3(0.0f, camAlt, 0.0f);
     float hap = haperture;
     float vap = haperture * frameSize.y / frameSize.x;

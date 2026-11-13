@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.28.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.29.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -92,6 +92,13 @@ similar depth all over the cloud, as on a modelled cloud volume whose shape is a
 surface. Without it, gently sloping faces (a big swell, a painted mass's front, a deck's broad tops)
 came out smooth. The scale is kept between 0.8 and 2 times. It costs up to about 70% more render time
 (three more looks at the shape near each surface); set it to 0 for quick work.
+'light grid' (by 'billow shrink', on by default; off = as before) bakes each layer's shadow from the sun
+once per frame, on a grid fitted to the camera's view (192 x 108 cells across the frame plus a margin,
+64 slices in distance from 200 m to 80 km, log spaced, marched 48 steps and 25 km towards the sun),
+and the colour and sun passes read it back smoothly: soft, noise-free self-shadowing through a whole
+mass, and the other layers' shadows exactly (instead of the sun map's slab estimate). Each point still
+marches the first couple of billows (or a grid cell) towards the sun itself, so the fine detail
+shades itself. The bake takes about 4 s on the GPU.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
