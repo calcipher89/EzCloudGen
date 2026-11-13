@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.24.0"
+VERSION = "0.25.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -564,6 +564,11 @@ def build_knobs(g):
         "Big, soft lobes low in the cloud and smaller, tighter cauliflower towards the top, as real cumulus "
         "grow. 0: the same billow size all the way up (as before).").setValue(0)
     g["billow_shrink"].setRange(0, 1)
+    add(g, nuke.Double_Knob("round_lobes", "round lobes"),
+        "Rounds the big lobes ('lumps'): their cells are bent and their seams softened, so a cloud is a pile "
+        "of rounded heads with soft folds between them instead of domes meeting along straight, faceted "
+        "seams. 0: as before.").setValue(1)
+    g["round_lobes"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -904,6 +909,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n[k + "billow_light"].setExpression("parent.billow_light")
     n[k + "billow_shrink"].setExpression("parent.billow_shrink")
+    n[k + "round_lobes"].setExpression("parent.round_lobes")
     n[k + "map_softness"].setExpression("parent.map_softness")
 
     # Per layer: element i of each array (a float3 setting takes three elements per layer).

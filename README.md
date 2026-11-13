@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.24.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.25.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -71,6 +71,10 @@ Roto works best), and set 'silhouette distance' (km from the camera) and 'silhou
 front to back). Black is clear sky. Inside the paint the deck fills its whole height with 3D heaps,
 the painted top overrides the layer's dome profile, and 3D noise frays the outline and the front and
 back, so it reads as cloud, not a cut-out. Make the layer thick enough to reach the painted top.
+'round lobes' (by 'billow shrink', on by default; 0 = as before) bends the big lobes' cells by a
+noise their own size, so a cloud is a pile of rounded heads rather than domes meeting along straight,
+faceted seams. The light march's steps are also shifted by a smooth noise per point: on fixed steps, a
+big cloud's shadow inside itself came out as flat-shaded, hard-edged contours.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).

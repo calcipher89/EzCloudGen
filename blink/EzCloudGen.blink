@@ -132,6 +132,7 @@ param:
   float diffusion;
   float detailSharpness;
   float billowLight;
+  float roundLobes;
   float billowShrink;
   float mapSoftness;
   int useSunMap;
@@ -264,6 +265,7 @@ local:
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(roundLobes, "round_lobes", 0.0f);
     defineParam(billowShrink, "billow_shrink", 0.0f);
     defineParam(mapSoftness, "map_softness", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
@@ -698,7 +700,9 @@ local:
       // as dense as anywhere else, so what is left is scaled back up to the layer's own range.
       float t0 = 0.82f - 0.55f * coverage[lyr];
       float t1 = 0.82f - 0.55f * cov;
-      c *= min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
+      // (Not over a silhouette's soft edge and its front and back: there the boost turned the
+      // smooth fields' contours into hard, faceted faces.)
+      c *= silOn ? 1.0f : min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
     }
     if (cov > coverage[lyr]) {
       // Where the map adds coverage, the 2D noise alone would stand in straight columns all the
@@ -943,14 +947,31 @@ local:
       // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
-      bool flatBase = volume[lyr] == 0 || vol_shape[lyr] == 1;
+      // (Not under a painted silhouette: there the lobes held still below their base height stand
+      // up as straight-sided prisms, the faceted look; the paint sets the base anyway.)
+      bool flatBase = (volume[lyr] == 0 && !(useMap == 1 && map_mode[lyr] == 1 && map_amount[lyr] > 0.0f))
+                      || (volume[lyr] == 1 && vol_shape[lyr] == 1);
       float ls = max(lump_size[lyr], 10.0f);
       float lyl = flatBase ? max(ly, (volume[lyr] == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
       float lamp = 1.0f;
       float lf = 1.0f;
+      // 'round lobes': the lobe cells are bent by a noise their own size, so they aren't
+      // straight-sided Voronoi cells meeting along flat, faceted seams.
+      float rl = clamp(roundLobes, 0.0f, 1.0f);
+      float lwx = 0.0f;
+      float lwy = 0.0f;
+      float lwz = 0.0f;
+      if (rl > 0.0f) {
+        lwx = (vnoise3(lx / ls * 0.6f + 3.7f, lyl / ls * 0.6f, lz / ls * 0.6f) - 0.5f) * 0.9f * rl;
+        lwy = (vnoise3(lx / ls * 0.6f, lyl / ls * 0.6f + 9.1f, lz / ls * 0.6f) - 0.5f) * 0.9f * rl;
+        lwz = (vnoise3(lx / ls * 0.6f, lyl / ls * 0.6f, lz / ls * 0.6f + 5.3f) - 0.5f) * 0.9f * rl;
+      }
       for (int lo = 0; lo < 2; lo++) {
-        float ld = worley3(lx / ls * lf + sd * 3.1f + 13.7f * float(lo), lyl / ls * lf, lz / ls * lf);
+        float qx = (lx / ls + lwx) * lf + sd * 3.1f + 13.7f * float(lo);
+        float qy = (lyl / ls + lwy) * lf;
+        float qz = (lz / ls + lwz) * lf;
+        float ld = worley3(qx, qy, qz);
         lob += lamp * (0.78f - ld * ld - (lo > 0 ? 0.48f : 0.0f));
         lamp *= cheap ? 0.0f : small_lumps[lyr];
         lf *= 2.3f;
@@ -1112,7 +1133,9 @@ local:
       float meanKm = -1.0f;
       float t = sunMapTau(g, altKm, w, h, meanKm, j);
       float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
-      float r = max(120.0f * gapKm, texel);
+      // At least a few texels: far from the camera the map's texels are big, and a tighter
+      // spread drew the other layers' shadows as hard-edged, faceted patches.
+      float r = max(120.0f * gapKm, 3.0f * texel);
       float mk = 0.0f;
       t += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk, j);
       t += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk, j);
@@ -1178,13 +1201,18 @@ local:
     // detail, so each billow shadows its own far side and the creases behind it (the sun march
     // otherwise sees the billows only by chance, and they light flat).
     float bl = clamp(billowLight, 0.0f, 1.0f);
+    // A smooth noise (not a per-point hash, which showed as grain at few samples): the contours
+    // wander and blend instead of standing as straight, flat-shaded facets.
+    float sj = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sd) - 0.5f), 0.0f, 1.0f);
     float ds = detail_size[lyr];
     for (int i = 0; i < steps + 2; i++) {
       float3 q;
       float fq;
       float len;
       if (i < steps) {
-        float f = (float(i) + 0.5f) / float(steps);
+        // The steps are shifted by a random fraction per point: on fixed steps, a big cloud's
+        // shadow inside itself came out in flat-shaded, hard-edged contours (faceted).
+        float f = (float(i) + sj) / float(steps);
         float t = far * f * f;
         if (i < 2)
           t += (min(i == 0 ? 0.25f * ds : ds, far) - t) * bl;
