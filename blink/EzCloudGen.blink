@@ -674,7 +674,7 @@ local:
         m *= 1.0f - 0.8f * n * (1.0f - m);
       }
       if (m >= 0.0f) {
-        float top = sil ? 0.8f : 0.6f;
+        float top = sil ? 0.75f : 0.6f;
         float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (top - coverage[lyr]) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(map_amount[lyr], 1.0f);
         if (sil) {
@@ -685,12 +685,6 @@ local:
           silBack = 0.8f * silW * profile(hp, lyr);
         }
       }
-    }
-    if (silW > 0.0f) {
-      // Inside a painted silhouette the cloud fills the layer's height, so the 2D field (which
-      // stands up in vertical streaks there) gives way to a 3D one: heaps and billows all over.
-      float f3 = vfbm3(X / (sc * 0.8f) + 5.0f * sd, p.y / (sc * 0.8f), Z / (sc * 0.8f), min(oct, 4.0f));
-      f += (f3 - f) * 0.5f * silW;
     }
     float c = f - (0.82f - 0.55f * cov) + silBack;
     if (cov < coverage[lyr] && c > 0.0f) {
@@ -709,13 +703,11 @@ local:
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
       float L = max(thickness[lyr], 100.0f) * 0.7f;
       float hb = min((cov - coverage[lyr]) * 4.0f, 1.0f);
-      if (silOn) {
-        // A painted silhouette fills the layer's whole height: heaps the size of the clouds (and
-        // a finer set) instead, or the 2D field stands up in vertical streaks.
-        L = min(L, sc * 0.5f);
-        c += hb * 0.2f * (vnoise3(X / (L * 0.4f) + 3.0f * sd, p.y / (L * 0.4f), Z / (L * 0.4f)) - 0.5f);
-      }
-      c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
+      // (Not inside a painted silhouette: smooth heaps there, and a smooth 3D field in place of
+      // the layer's own, filled the shape with folds like melted wax and buried the fine
+      // cauliflower detail. The layer's own field and lobes shape it instead.)
+      if (!silOn)
+        c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
       // And the thick middles are eased back, so the profile and taper round their tops at
       // different heights instead of all of them reaching the layer's top as one flat lid.
       if (c > 0.0f)
