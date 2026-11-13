@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.22.0"
+VERSION = "0.23.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -554,6 +554,16 @@ def build_knobs(g):
         "sharp cauliflower edges of a sunlit cumulus. 0: as before (softer). Raise 'quality' or 'edge steps' "
         "if it starts to sparkle.").setValue(0)
     g["detail_sharpness"].setRange(0, 1)
+    add(g, nuke.Double_Knob("billow_light", "billow light"),
+        "Lights each billow on its own: the light march looks a billow towards the sun with all the fine "
+        "detail, so every cauliflower lobe gets a bright sunlit side and a shaded far side, and the creases "
+        "between lobes go dark. 0: as before (billows light flat). 1 for photographic cumulus (it takes "
+        "one more detailed cloud lookup per lit step, so a little longer to render).").setValue(0)
+    g["billow_light"].setRange(0, 1)
+    add(g, nuke.Double_Knob("billow_shrink", "billow shrink"),
+        "Big, soft lobes low in the cloud and smaller, tighter cauliflower towards the top, as real cumulus "
+        "grow. 0: the same billow size all the way up (as before).").setValue(0)
+    g["billow_shrink"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -609,6 +619,10 @@ def build_knobs(g):
                               "nuke.thisNode()['map_frame'].setValue(nuke.frame())"),
         "Sets 'map frame' to the current frame.")
     g["map_frame_here"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.Double_Knob("map_softness", "map softness"),
+        "Blurs the map over a share of the cloud size, so a hard edge in the paint comes out as a slope of "
+        "thinning cloud instead of a straight wall through a tall deck. 0: the map as painted.").setValue(0.5)
+    g["map_softness"].setRange(0, 2)
 
     for i, (tname, on) in enumerate(LAYER_DEFAULTS):
         p = "l%d_" % (i + 1)
@@ -874,6 +888,9 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
     n[k + "sun_glow"].setExpression("parent.sun_glow")
     n[k + "diffusion"].setExpression("parent.diffusion")
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
+    n[k + "billow_light"].setExpression("parent.billow_light")
+    n[k + "billow_shrink"].setExpression("parent.billow_shrink")
+    n[k + "map_softness"].setExpression("parent.map_softness")
 
     # Per layer: element i of each array (a float3 setting takes three elements per layer).
     for layer in (1, 2, 3):
