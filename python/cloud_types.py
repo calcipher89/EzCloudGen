@@ -67,6 +67,12 @@ TYPES = {
                          lump_size=900, place_km=12, coverage=0.5, edge=0.06, taper=0.0, bottom=0.04,
                          detail=220, erosion=0.45, sigma=0.06, warp=1.2, octaves=3, billow=1.0,
                          wisp_size=80, wisp_amount=0.08, grain_size=20, grain_amount=0.04, small_lumps=0.35),
+    # A towering cumulus complex: tall towers on a wide, flat-based shelf, dark at the core and
+    # wispy at the edges. Made to stand in front of the sun.
+    "Towering Cumulus": dict(volume=1, vol_shape=4, vol_size=(10000, 7500, 8000), base=1500, lumps=0.85,
+                             lump_size=1300, place_km=12, coverage=0.55, edge=0.06, bottom=0.04, detail=220,
+                             erosion=0.45, sigma=0.08, warp=1.2, octaves=4, billow=1.0, wisp_size=80,
+                             wisp_amount=0.08, small_lumps=0.5, sky_occ=1.0),
     # A thunderstorm: a tall column spreading into a flat anvil, leaning downwind.
     "Storm Anvil": dict(volume=1, vol_shape=2, vol_size=(15000, 11000, 15000), base=1200, lumps=0.6,
                         lump_size=1500, place_km=40, coverage=0.5, edge=0.05, bottom=0.02, detail=450,

@@ -120,6 +120,8 @@ param:
   float ambient;
   float skyOcclusion;
   float shadowDepth;
+  float sunGlow;
+  float diffusion;
   int useSunMap;
   float sunMapSize;
   float octaves;
@@ -256,6 +258,8 @@ local:
     defineParam(ambient, "ambient", 1.0f);
     defineParam(skyOcclusion, "sky_occlusion", 1.0f);
     defineParam(shadowDepth, "shadow_depth", 0.0f);
+    defineParam(sunGlow, "sun_glow", 0.0f);
+    defineParam(diffusion, "diffusion", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
@@ -724,6 +728,19 @@ local:
       float dv = sh < mid ? (mid - sh) / (half * 1.5f) : (sh - mid) / half;
       float dLens = max(rr, dv);
       dist = min(dCol, dLens);
+    } else if (volShape == 4) {
+      // Towers: a towering cumulus complex. A flat base under an uneven skyline (a few tall
+      // towers standing on a lower, wider shelf), in a ragged footprint with breaks between
+      // its cells. The skyline falls away to the rim, so nothing meets the box walls.
+      float n1 = fbm2(sx * 1.6f + 17.0f + sd * 3.1f, sz * 1.6f - 9.0f, 3.0f, sd);
+      float n2 = fbm2(sx * 3.7f - 5.0f, sz * 3.7f + 23.0f + sd * 1.7f, 2.0f, sd);
+      float tower = sstep(0.42f, 0.66f, n1);
+      float rimF = sqrt(max(1.0f - rxz * rxz, 0.0f));
+      // Breaks between the cells, where the sun gets through ('coverage' closes or opens them).
+      float body = sstep(0.34f, 0.48f, 0.6f * n2 + 0.4f * n1 + (coverage - 0.5f) * 0.6f);
+      float skyline = (0.26f + 0.16f * n2 + 0.58f * tower) * (0.35f + 0.65f * rimF) * body;
+      float foot = rxz / (0.8f + 0.35f * (n2 - 0.5f) + 0.2f * tower);
+      dist = max(max(hs / max(skyline, 0.03f), foot), 1.0f - hn / max(bottomRound, 0.02f));
     } else {
       // Box with soft corners.
       float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
@@ -1124,7 +1141,9 @@ local:
     float3 cam = float3(0.0f, camAlt, 0.0f);
     float hap = haperture;
     float vap = haperture * frameSize.y / frameSize.x;
-    float pixAng = output == 5 ? 0.02f : hap / focal / frameSize.x;
+    // The sun map is also what EzCloudShafts casts its rays from, so it keeps the clouds'
+    // outlines: a footprint of 6 m per km along the sun ray, and steps to match.
+    float pixAng = output == 5 ? 0.006f : hap / focal / frameSize.x;
     // A variations sheet: which tile, where in it, and its seed.
     float sd = seed;
     float px = float(pos.x);
@@ -1274,7 +1293,7 @@ local:
       float dep = 0.0f;
       float layerH = volume == 1 ? min(min(volSize.x, volSize.y), volSize.z) : thickness;
       float minStep = max(min(layerH / 24.0f, detailSize * 0.35f) / quality, 8.0f);
-      int maxSteps = int(220.0f * quality * max(edgeSteps, 1.0f));
+      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(edgeSteps, 1.0f));
       for (int k = 0; k < n; k++) {
         float t = k == 0 ? i0s : i1s;
         float tEnd = k == 0 ? i0e : i1e;
@@ -1290,7 +1309,7 @@ local:
         while (t < tEnd && T > tStop && steps < maxSteps) {
           steps++;
           float foot = max(t * pixAng, footMin);
-          float dt = max(minStep, t * 0.012f / quality);
+          float dt = max(minStep, t * (output == 5 ? 0.005f : 0.012f) / quality);
           if (fine) {
             // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
             dt = min(dt / edgeSteps, max(1.5f / max(sig0, 1e-6f), 4.0f));
@@ -1352,7 +1371,10 @@ local:
               float ob = 1.0f;
               float oc = 1.0f;
               for (int o = 0; o < 4; o++) {
-                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT);
+                // 'sun glow' adds the narrow forward peak of real cloud droplets: thin cloud in front
+                // of the sun blazes, and backlit edges get a hot silver lining (0: as before).
+                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT)
+                           + sunGlow * hg(0.93f * oc, cosT);
                 ms += ob * exp(-od * oa) * ph;
                 oa *= oaK;
                 ob *= 0.6f;
@@ -1363,6 +1385,18 @@ local:
               float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
               powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
               float3 direct = sunColor * (ms * powder);
+              if (diffusion > 0.0f) {
+                // Light diffusion: what a thick cloud really does with sunlight. Single
+                // scattering keeps the forward peak (the silver lining), and the many times
+                // scattered light follows diffusion theory: it falls off as 1 / (1 + k tau),
+                // not exponentially, so the sunlit side is bright white, billows shade off
+                // gradually round their sides, and even the far side of a tower still glows.
+                float single = exp(-od) * (0.75f * hg(forward, cosT) + 0.25f * hg(-0.25f, cosT)
+                                           + sunGlow * hg(0.93f, cosT));
+                float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward) * od);
+                float3 soft = sunColor * (single + many);
+                direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
+              }
               // Sky light from above, ground bounce from below.
               float hn = 0.0f;
               if (volume == 1)
@@ -1390,11 +1424,19 @@ local:
           t += dt;
         }
       }
+      // The march stops once 1% of the light is left: call that opaque. Left as 0.99 it lets
+      // a hundredth of what is behind through, and a sun or a blazing cloud rim behind a dark
+      // cloud is bright enough for that hundredth to draw its outline on it.
+      if (output != 5 && T <= tStop)
+        T = 0.0f;
       float alpha = 1.0f - T;
       if (output == 5) {
         acc += float4(tau, tm1, tm2, 1.0f);
       } else if (output == 2) {
-        float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
+        // Weighted by the sample's opacity (and divided out below): a plain mean over the
+        // samples would halve the depth of an edge pixel that one of two samples misses, and
+        // the layer stack would then draw that edge in front of everything.
+        float z = alpha > 1e-5f ? dep * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
       } else if (output == 4) {
         float2 mv = float2(0.0f, 0.0f);
@@ -1440,6 +1482,11 @@ local:
         }
         acc += float4(col.x, col.y, col.z, alpha);
       }
+    }
+    if (output == 2) {
+      float zm = acc.w > 1e-5f ? acc.x / acc.w : 0.0f;
+      dst() = float4(zm, zm, zm, acc.w / float(ns));
+      return;
     }
     dst() = acc / float(ns);
   }

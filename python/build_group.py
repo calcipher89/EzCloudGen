@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.20.0"
+VERSION = "0.21.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 STACK_KERNEL = "EzCloudGenStack"
@@ -104,7 +104,7 @@ VOLUME = [
     ("fade_front", "fade front", "The same towards the box's front (local +Z).", 0, 1),
     ("fade_back", "fade back", "The same towards the box's back (local -Z).", 0, 1),
 ]
-VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
+VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
              "map_amount", "map_channel"]
@@ -116,7 +116,8 @@ VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size"
 LAYERS = {"cloud": ["red", "green", "blue", "alpha"],
           "cloud_sun": ["red", "green", "blue"],
           "cloud_sky": ["red", "green", "blue"],
-          "cloud_shadow": ["red", "green", "blue"]}
+          "cloud_shadow": ["red", "green", "blue"],
+          "cloud_sunmap": ["red", "green", "blue"]}
 
 
 def find(var, index, knob):
@@ -138,10 +139,32 @@ def py(code):
 
 
 def atmos_light(pixel, channel, fallback):
-    """Python expression: one channel of a pixel of the EzAtmosScatter's measured HDRI light."""
+    """Python expression: one channel of the EzAtmosScatter's light. Pixel 1 is the sun
+    (irradiance), 2 the sky (mean radiance). With an HDRI it is what the atmos measured in it.
+    A self-lit atmos (no HDRI) has measured nothing: its sky is its own sky's mean (SelfLight),
+    and its sun is its manual sun dimmed by the air it crosses on the way down (Kasten-Young
+    air mass, the atmos's own Rayleigh and haze amounts)."""
+    i = ("red", "green", "blue").index(channel)
     return py(FIND_ATMOS +
-              "l = nuke.toNode(a.fullName() + '.Light') if a is not None else None\n"
-              "ret = l.sample('%s', %g, 0.5) if l is not None else %s\n" % (channel, pixel + 0.5, fallback))
+              "ret = %s\n"
+              "if a is not None:\n"
+              "    selflit = a.knob('self_lit') is not None and a['self_lit'].value()\n"
+              "    lnode = nuke.toNode(a.fullName() + ('.SelfLight' if selflit and %d == 2 else '.Light'))\n"
+              "    if lnode is not None and not (selflit and %d == 1):\n"
+              "        ret = lnode.sample('%s', %g, 0.5)\n"
+              "    elif selflit:\n"
+              "        import math\n"
+              "        sk = a['sun_in_use']\n"
+              "        sx, sy, sz = sk.getValueAt(nuke.frame(), 0), sk.getValueAt(nuke.frame(), 1), sk.getValueAt(nuke.frame(), 2)\n"
+              "        el = math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0)))\n"
+              "        am = 1.0 / (math.sin(math.radians(max(el, 0.0))) + 0.50572 * (max(el, 0.0) + 6.07995) ** -1.6364)\n"
+              "        hk = a['camera_height'].value() / 1000.0\n"
+              "        tr = a['rayleigh_coefficients'].getValueAt(nuke.frame(), %d) * a['sky_amount'].value() * a['rayleigh_scale_height'].value() * math.exp(-hk / a['rayleigh_scale_height'].value())\n"
+              "        tm = a['mie_coefficient'].value() / 0.9 * a['haze_amount'].value() * a['haze_height'].value() * math.exp(-hk / max(a['haze_height'].value(), 1e-3))\n"
+              "        ck = a['sun_color']\n"
+              "        tint = ck.getValueAt(nuke.frame(), %d) if ck.arraySize() > 1 and not ck.singleValue() else ck.getValueAt(nuke.frame(), 0)\n"
+              "        ret = tint * a['manual_sun_brightness'].value() * a['sun_strength'].value() * math.exp(-(tr + tm) * am) if el > -1 else 0.0\n"
+              % (fallback, pixel, pixel, channel, pixel + 0.5, i, i))
 
 
 # ---- 3D box inputs ------------------------------------------------------------------------
@@ -481,6 +504,11 @@ def build_knobs(g):
     add(g, nuke.Boolean_Knob("layer_shadows", "layers shadow each other"),
         "A layer shades the sunlit side of the clouds below it in the other layers (a map of its "
         "shadow seen from the sun, one small pass per layer).").setValue(True)
+    add(g, nuke.Boolean_Knob("sun_map_out", "sun shadow layer"),
+        "Adds the cloud_sunmap layer (with 'breakout layers'): all the layers' shadow seen from the sun. "
+        "EzCloudShafts reads it from its clouds input and casts its rays and ground shadows from the real "
+        "cloud volumes, tall ones and ones outside the frame included.").setValue(True)
+    hidden(g, nuke.Double_Knob("sun_map_size")).setValue(SUN_MAP_SIZE)
 
     add(g, nuke.Text_Knob("sun_divider", "sun"))
     sf = add(g, nuke.Enumeration_Knob("sun_from", "sun from", ["Auto", "Axis", "EzAtmosScatter", "Manual"]),
@@ -510,6 +538,17 @@ def build_knobs(g):
         "towards the sun are several times brighter than the bodies and blow out in a plain sRGB view. "
         "0: off (linear, as rendered). 0.5: the top half of the range is compressed. The hue is kept.").setValue(0)
     g["highlight_rolloff"].setRange(0, 1)
+    add(g, nuke.Double_Knob("sun_glow", "sun glow"),
+        "The blaze of thin cloud in front of the sun: adds the narrow forward peak real cloud droplets "
+        "have, so backlit edges and veils near the sun glow hot while the thick cores stay dark. "
+        "0: off. 0.3 to 1 for shots into the sun (use 'highlight rolloff' with it).").setValue(0)
+    g["sun_glow"].setRange(0, 2)
+    add(g, nuke.Double_Knob("diffusion", "light diffusion"),
+        "How the sunlight spreads inside the clouds. 0: the older, darker look. 1: as in thick real "
+        "cloud, where light scattered many times fades slowly with depth: sunlit sides go bright white, "
+        "billows shade off gradually round their sides and cores stay luminous grey instead of dead. "
+        "Use 'highlight rolloff' with it.").setValue(0)
+    g["diffusion"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -846,13 +885,15 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     # The shadows of the layers above, from the sun (only the colour and sun passes read them).
     n[k + "use_sun_map"].setExpression("parent.layer_shadows && %d < 2" % output)
     n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
+    n[k + "sun_glow"].setExpression("parent.sun_glow")
+    n[k + "diffusion"].setExpression("parent.diffusion")
     n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
 
 
 # The sun maps: SUN_MAP_RES square, covering the ground out to about SUN_MAP_SIZE metres at
 # full detail (coarser further out, see sunMapUV in the kernel).
-SUN_MAP_RES = 768
+SUN_MAP_RES = 1536
 SUN_MAP_SIZE = 10000.0
 
 # A layer is off when disabled, and in the Variations view unless it is the one shown.
@@ -950,7 +991,8 @@ def build():
             k = KERNEL + "_"
             sm[k + "samples"].setExpression("1")
             sm[k + "tiles"].setExpression("1")
-            sm["disable"].setExpression("(%s) || !parent.layer_shadows" % (DISABLE % (i, i - 1)))
+            sm["disable"].setExpression("(%s) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"
+                                        % (DISABLE % (i, i - 1)))
             sunmaps.append(sm)
         above = []
         for i in range(1, 4):
@@ -1017,7 +1059,7 @@ def build():
                                      temp_name2="k", temp_expr2="1 - clamp(parent.highlight_rolloff, 0, 0.999)",
                                      channel0="rgb",
                                      expr0="parent.highlight_rolloff <= 0 || m <= k ? gain : "
-                                           "gain * (k + (1 - k) * (1 - exp(-(m - k) / (1 - k)))) / m",
+                                           "gain * (k + (1 - k) * ((m - k) / (1 - k)) / (1 + (m - k) / (1 - k))) / m",
                                      channel1="none", channel2="none", channel3="none")
         tone.setInput(0, col_up)
         toned = []
@@ -1110,9 +1152,26 @@ def build():
             cw["to%d" % j].setValue("cloud_shadow." + c)
         cw.setInput(0, ck)
         cw.setInput(1, shadow_up)
+        # The sun map of all the layers together (cloud_sunmap), stretched over the frame: the
+        # clouds' optical depth towards the sun from the ground up, with its altitude moments.
+        # EzCloudShafts reads it to cast rays and ground shadows from the real volumes.
+        sm_all = nuke.nodes.Merge2(name="SunMap_All12", operation="plus")
+        sm_all.setInput(0, sunmaps[0])
+        sm_all.setInput(1, sunmaps[1])
+        sm_all3 = nuke.nodes.Merge2(name="SunMap_All3", operation="plus")
+        sm_all3.setInput(0, sm_all)
+        sm_all3.setInput(1, sunmaps[2])
+        sm_up = up("SunMapUp", sm_all3)
+        cm = nuke.nodes.Copy(name="Layer_CloudSunMap")
+        for j, c in enumerate(("red", "green", "blue")):
+            cm["from%d" % j].setValue("rgba." + c)
+            cm["to%d" % j].setValue("cloud_sunmap." + c)
+        cm.setInput(0, cw)
+        cm.setInput(1, sm_up)
+        cm["disable"].setExpression("!parent.sun_map_out")
         layers = nuke.nodes.Switch(name="BreakoutOrNot")
         layers.setInput(0, z)
-        layers.setInput(1, cw)
+        layers.setInput(1, cm)
         layers["which"].setExpression("parent.breakout")
         fw = nuke.nodes.Copy(name="Layer_Forward", from0="rgba.red", to0="forward.u",
                              from1="rgba.green", to1="forward.v")
@@ -1161,8 +1220,8 @@ MODULES = [
     ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
     ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
     ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
-    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun)"),
-    ("Shadows", 0x4a4a3aff, r"(Shadow_.*)"),
+    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
+    ("Shadows", 0x4a4a3aff, r"(Shadow_.*|SunMap_All.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot|MotionOrNot)"),
     ("Views", 0x5a4a6aff, r"(View_.*|ViewOutput)"),
