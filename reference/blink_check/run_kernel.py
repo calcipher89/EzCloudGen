@@ -2,10 +2,12 @@
 
     python3 reference/blink_check/run_kernel.py out.exr_or_png [width] [k=v ...]
 
-Parameters are the kernel's define() names (cam_position=0,3000,0 ...); map=picture.png feeds the
-coverage map input (and sets use_map=1); smap=t.npy feeds the sun map of the layers above (and
-sets use_sun_map=1); depth=z.npy feeds the bg depth (and sets occlude=1). Writes rgba as a
-tone-mapped PNG (and a .npy of the raw floats beside it).
+Parameters are the kernel's knob names (cam_position=0,3000,0 ...). The per-layer ones are
+arrays in the kernel: base=2000 sets layer 1, base.2=5000 layer 2 (turn it on with layer_on.2=1).
+Only layer 1 is on by default, and every layer starts from LAYER_DEFAULTS. map=picture.png feeds
+the coverage map input (and sets use_map=1); smap=t.npy feeds a sun map as layer 2's, so it
+shadows layer 1 (and sets use_sun_map=1); depth=z.npy feeds the bg depth (and sets occlude=1).
+Writes rgba as a tone-mapped PNG (and a .npy of the raw floats beside it).
 """
 
 import os
@@ -19,6 +21,23 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
 KERNEL = os.path.join(ROOT, "blink", "EzCloudGen.blink")
 BUILD = os.path.join(HERE, "build")
+
+# Each layer's settings before any are given (the kernel's arrays have no defaults of their own).
+LAYER_DEFAULTS = {
+    "offset": "0,0", "base": "1400", "thickness": "1300", "coverage": "0.42", "scale_km": "1.6",
+    "stretch": "1", "wind_deg": "20", "edge": "0.06", "taper": "0.85", "bottom_round": "0.04",
+    "top_round": "0.15", "detail_size": "220", "erosion": "0.45", "sigma": "0.06", "cells": "0",
+    "cell_km": "0.5", "warp": "1.2", "forward": "0.8", "ambient": "1", "sky_occlusion": "1",
+    "shadow_depth": "0", "octaves": "3.5", "billow": "1", "streaks": "0", "vary": "0", "density": "1",
+    "volume": "0", "vol_shape": "1", "vol_center": "0,20000,-60000", "vol_rotate": "0,0,0",
+    "vol_size": "3000,1800,3000", "lumps": "0.5", "lump_size": "600", "small_lumps": "0", "skirt": "0",
+    "fade_top": "0", "fade_bottom": "0", "fade_left": "0", "fade_right": "0", "fade_front": "0",
+    "fade_back": "0", "wisp_size": "60", "wisp_amount": "0", "grain_size": "15", "grain_amount": "0",
+    "swirl": "0", "swirl_size": "400", "turbulence": "0", "crumble": "0", "crumble_size": "120",
+    "shear": "0", "map_amount": "1", "map_channel": "0", "map_drift": "0,0", "other_offset": "0,0",
+    "other_vol_center": "0,20000,-60000", "vol_axes": "0", "vol_axis_x": "1,0,0", "vol_axis_y": "0,1,0",
+    "vol_axis_z": "0,0,1", "layer_seed": "0",
+}
 
 MAIN = r'''
 #include <cstdio>
@@ -48,6 +67,8 @@ int main(int argc, char **argv) {
   std::vector<float> mapPix;
   std::vector<float> zPix;
   std::vector<float> smapPix;
+  std::vector<float> smapBlack;
+%(defaults)s
   for (int i = 3; i + 1 < argc; i += 2) {
     if (!strcmp(argv[i], "map_file")) {
       // Raw: int w, int h, then w * h rgba floats, rows going up.
@@ -65,15 +86,22 @@ int main(int argc, char **argv) {
       continue;
     }
     if (!strcmp(argv[i], "smap_file")) {
-      // Raw like map_file: the sun map of the layers above.
+      // Raw like map_file: a sun map, as layer 2's (layers 1 and 3 get black ones the same size).
       FILE *f = fopen(argv[i + 1], "rb");
       int mw = 0, mh = 0;
       if (f && fread(&mw, 4, 1, f) == 1 && fread(&mh, 4, 1, f) == 1) {
         smapPix.resize(size_t(mw) * mh * 4);
+        smapBlack.assign(size_t(mw) * mh * 4, 0.0f);
         if (fread(smapPix.data(), 4, smapPix.size(), f) == smapPix.size()) {
-          proto.smap.pix = smapPix.data();
+          proto.smap2.pix = smapPix.data();
+          proto.smap2.bounds.x2 = mw;
+          proto.smap2.bounds.y2 = mh;
+          proto.smap.pix = smapBlack.data();
           proto.smap.bounds.x2 = mw;
           proto.smap.bounds.y2 = mh;
+          proto.smap3.pix = smapBlack.data();
+          proto.smap3.bounds.x2 = mw;
+          proto.smap3.bounds.y2 = mh;
         }
       }
       if (f) fclose(f);
@@ -119,15 +147,25 @@ def build():
     types = {v: t for t, v in re.findall(r"^\s+(int|float|float2|float3|float4)\s+(\w+);",
                                          src.split("local:")[0], re.M)}
     setters = []
+    vals = {"int": "int(v[0])", "float": "v[0]", "float2": "float2(v[0], v[1])",
+            "float3": "float3(v[0], v[1], v[2])", "float4": "float4(v[0], v[1], v[2], v[3])"}
     for var, name in params:
-        t = types[var]
-        val = {"int": "int(v[0])", "float": "v[0]", "float2": "float2(v[0], v[1])",
-               "float3": "float3(v[0], v[1], v[2])", "float4": "float4(v[0], v[1], v[2], v[3])"}[t]
-        setters.append('  if (!strcmp(name, "%s")) { k.%s = %s; return; }' % (name, var, val))
+        setters.append('  if (!strcmp(name, "%s")) { k.%s = %s; return; }' % (name, var, vals[types[var]]))
+    # The per-layer arrays: the knob name sets layer 1, name.2 and name.3 the others.
+    arrays = re.findall(r"^\s+(int|float|float2|float3)\s+(\w+)\[3\];", src.split("local:")[0], re.M)
+    for t, var in arrays:
+        for i in range(3):
+            key = var if i == 0 else "%s.%d" % (var, i + 1)
+            setters.append('  if (!strcmp(name, "%s")) { k.%s[%d] = %s; return; }' % (key, var, i, vals[t]))
+    defaults = []
+    for t, var in arrays:
+        for i in range(3):
+            val = "1" if var == "layer_on" and i == 0 else "0" if var == "layer_on" else LAYER_DEFAULTS[var]
+            defaults.append('  set(proto, "%s", "%s");' % (var if i == 0 else "%s.%d" % (var, i + 1), val))
     os.makedirs(BUILD, exist_ok=True)
     cpp = os.path.join(BUILD, "kernel.cpp")
     with open(cpp, "w") as f:
-        f.write(MAIN % {"kernel": src, "setters": "\n".join(setters)})
+        f.write(MAIN % {"kernel": src, "setters": "\n".join(setters), "defaults": "\n".join(defaults)})
     exe = os.path.join(BUILD, "kernel")
     subprocess.check_call(["g++", "-O2", "-std=c++17", "-pthread", "-I", HERE, "-Wall",
                            "-Wno-unused-variable", "-o", exe, cpp])

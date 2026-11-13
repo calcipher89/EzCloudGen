@@ -13,8 +13,9 @@ Inputs: 0 bg (the plate or sky to comp over; it also sets the format, optional),
 optional: overrides the sun direction), 4 map (optional: a coverage map painted over the shot;
 see 'coverage map').
 
-Up to three layers (sky decks or placed volumes), each its own BlinkScript (one per output: colour, sun share, depth).
-Layers are put over each other nearest first, per pixel (blink/EzCloudGenStack.blink).
+Up to three layers (sky decks or placed volumes), marched together by one BlinkScript per output
+(colour, sun share, depth, shadow, motion), so where they overlap their clouds interleave.
+Each layer also renders its own sun map, which shadows the other layers.
 """
 
 import os
@@ -27,10 +28,9 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.21.0"
+VERSION = "0.22.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
-STACK_KERNEL = "EzCloudGenStack"
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
 GIZMO_PATH = os.path.join(ROOT, "gizmos", "EzCloudGen.gizmo")
 TYPE_NAMES = list(cloud_types.TYPES)
@@ -785,15 +785,33 @@ def build_knobs(g):
 
 # ---- The nodes inside --------------------------------------------------------------------
 
-def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
+# The sun maps: SUN_MAP_RES square, covering the ground out to about SUN_MAP_SIZE metres at
+# full detail (coarser further out, see sunMapUV in the kernel).
+SUN_MAP_RES = 1536
+SUN_MAP_SIZE = 10000.0
+
+# A layer is off when disabled, and in the Variations view unless it is the one shown.
+DISABLE = "!parent.l%d_enable || (parent.view==4 && parent.variations_of!=%d)"
+
+
+def layer_on(layer):
+    """Expression: layer (1..3) is on."""
+    return "!(%s)" % (DISABLE % (layer, layer - 1))
+
+
+def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
+    """One kernel for all three layers (their settings are 3-element arrays): it marches them
+    together, so overlapping layers interleave. smaps: the three layers' sun maps (each layer is
+    shadowed by the other two's). only: the sun map pass marches that layer (0..2) alone."""
     n = compiled(name, source_file)
     n.setInput(0, src)
     n.setInput(1, cmap)
     n.setInput(2, zin)
-    n.setInput(3, smap)
+    for j, sm in enumerate(smaps):
+        n.setInput(3 + j, sm)
     k = KERNEL + "_"
-    p = "parent.l%d_" % layer
     n[k + "output"].setValue(output)
+    n[k + "only_layer"].setValue(only)
     rows = ((0, 1, 2), (4, 5, 6), (8, 9, 10))
     for r, idx in enumerate(rows):
         for j, m in enumerate(idx):
@@ -818,42 +836,18 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
         n[k + "haze_color"].setExpression("parent.haze_color_in_use.%s" % c, j)
     n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
     n[k + "max_distance"].setExpression("parent.max_distance * 1000")
-    # Only the first deck that is on lays the horizon haze, or it would pile up once per deck.
-    earlier = " && ".join("!(parent.l%d_enable && !parent.l%d_volume)" % (j, j) for j in range(1, layer))
-    n[k + "horizon_haze"].setExpression("parent.horizon_haze" + (" * (%s)" % earlier if earlier else ""))
+    # The kernel lays the horizon haze once, under the decks that are on.
+    n[k + "horizon_haze"].setExpression("parent.horizon_haze")
     n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
     n[k + "edge_steps"].setExpression("parent.preview ? 1 : parent.edge_steps")
     n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
-    n[k + "seed"].setExpression("parent.seed + %sseed" % p)
+    # The global seed jitters the steps; each layer's own seed shapes its clouds.
+    n[k + "seed"].setExpression("parent.seed")
     n[k + "evolve"].setExpression("parent.evolve_speed * parent.time_s")
-    # Drift with the wind: the field is sampled upwind.
-    n[k + "offset"].setExpression("-%swind_speed * parent.time_s * sin(radians(%swind_deg))" % (p, p), 0)
-    n[k + "offset"].setExpression("%swind_speed * parent.time_s * cos(radians(%swind_deg))" % (p, p), 1)
     n[k + "gap_amount"].setExpression("parent.gap_amount")
     n[k + "gap_size"].setExpression("parent.gap_size * 1000")
-    for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
-        n[k + name].setExpression(p + name)
-    # The preview drops the small lumps: they cost a second lobe lookup at every step.
-    n[k + "small_lumps"].setExpression("parent.preview ? 0 : %ssmall_lumps" % p)
-    n[k + "volume"].setExpression(p + "volume")
-    n[k + "vol_shape"].setExpression(p + "vol_shape")
-    # A 3D node in the layer's box input sets the centre, axes and size; else the knobs do.
-    bf = p + "box_found"
-    n[k + "vol_center"].setExpression("%s ? %sbox_center.x : %svol_position.x" % (bf, p, p), 0)
-    n[k + "vol_center"].setExpression("%s ? %sbox_center.y : %svol_position.y + %svol_size.y / 2 / "
-                                      "max(parent.scene_scale, 1e-6)" % (bf, p, p, p), 1)
-    n[k + "vol_center"].setExpression("%s ? %sbox_center.z : %svol_position.z" % (bf, p, p), 2)
-    n[k + "vol_axes"].setExpression(bf)
-    for j, c in enumerate("xyz"):
-        n[k + "vol_rotate"].setExpression("%svol_rotate.%s" % (p, c), j)
-        n[k + "vol_size"].setExpression("%s ? %sbox_size.%s : %svol_size.%s" % (bf, p, c, p, c), j)
-        for a in "xyz":
-            n[k + "vol_axis_" + a].setExpression("%sbox_axis_%s.%s" % (p, a, c), j)
-    n[k + "density"].setExpression(p + "density")
-    # The coverage map, through the camera on the map frame, drifting with the wind since then.
+    # The coverage map camera, the motion vectors' other camera.
     n[k + "use_map"].setExpression("parent.map_found")
-    n[k + "map_amount"].setExpression(p + "map_amount")
-    n[k + "map_channel"].setExpression(p + "map_channel")
     for r, idx in enumerate(rows):
         for j, m in enumerate(idx):
             n[k + "map_row%d" % r].setExpression("parent.map_cam_matrix.%d" % m, j)
@@ -861,12 +855,8 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
         n[k + "map_position"].setExpression("parent.map_cam_matrix.%d" % m, j)
     n[k + "map_focal"].setExpression("parent.map_cam_focal")
     n[k + "map_haperture"].setExpression("parent.map_cam_haperture")
-    since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
-    n[k + "map_drift"].setExpression("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, since, p), 0)
-    n[k + "map_drift"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p), 1)
-    # The variations sheet.
-    n[k + "tiles"].setExpression("parent.view==4 && parent.variations_of==%d ? 3 : 1" % (layer - 1))
-    # Motion vectors: the camera, wind and volume on the other frame (step frames away).
+    # The variations sheet (only the layer shown is on in that view).
+    n[k + "tiles"].setExpression("parent.view==4 ? 3 : 1")
     which = "next" if step > 0 else "prev"
     for r, idx in enumerate(rows):
         for j, m in enumerate(idx):
@@ -875,35 +865,71 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
         n[k + "other_position"].setExpression("parent.cam_%s_matrix.%d" % (which, m), j)
     n[k + "other_focal"].setExpression("parent.cam_%s_focal" % which)
     n[k + "other_haperture"].setExpression("parent.cam_%s_haperture" % which)
-    t_other = "(parent.time_s + (%d) / max(root.fps, 1))" % step
-    n[k + "other_offset"].setExpression("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, t_other, p), 0)
-    n[k + "other_offset"].setExpression("%swind_speed * %s * cos(radians(%swind_deg))" % (p, t_other, p), 1)
-    f_other = "(frame + (%d))" % step
-    bc = "%sbox_center_%s" % (p, which)
-    n[k + "other_vol_center"].setExpression("%s ? %s.x : %svol_position.x%s" % (bf, bc, p, f_other), 0)
-    n[k + "other_vol_center"].setExpression("%s ? %s.y : %svol_position.y%s + %svol_size.y / 2 / "
-                                            "max(parent.scene_scale, 1e-6)" % (bf, bc, p, f_other, p), 1)
-    n[k + "other_vol_center"].setExpression("%s ? %s.z : %svol_position.z%s" % (bf, bc, p, f_other), 2)
     n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
     n[k + "depth_mode"].setExpression("parent.depth_mode")
     n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
-    # The shadows of the layers above, from the sun (only the colour and sun passes read them).
+    # The shadows of the other layers, from their sun maps (only the colour and sun passes read them).
     n[k + "use_sun_map"].setExpression("parent.layer_shadows && %d < 2" % output)
     n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
     n[k + "sun_glow"].setExpression("parent.sun_glow")
     n[k + "diffusion"].setExpression("parent.diffusion")
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
-    n["disable"].setExpression(DISABLE % (layer, layer - 1))
+
+    # Per layer: element i of each array (a float3 setting takes three elements per layer).
+    for layer in (1, 2, 3):
+        i = layer - 1
+        p = "parent.l%d_" % layer
+
+        def one(knob, expr):
+            n[k + knob].setExpression(expr, i)
+
+        def vec(knob, exprs):
+            for c, e in enumerate(exprs):
+                n[k + knob].setExpression(e, i * len(exprs) + c)
+
+        one("layer_on", layer_on(layer))
+        one("layer_seed", "parent.seed + %sseed" % p)
+        # Drift with the wind: the field is sampled upwind.
+        vec("offset", ("-%swind_speed * parent.time_s * sin(radians(%swind_deg))" % (p, p),
+                       "%swind_speed * parent.time_s * cos(radians(%swind_deg))" % (p, p)))
+        for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
+            one(name, p + name)
+        # The preview drops the small lumps: they cost a second lobe lookup at every step.
+        one("small_lumps", "parent.preview ? 0 : %ssmall_lumps" % p)
+        one("volume", p + "volume")
+        one("vol_shape", p + "vol_shape")
+        # A 3D node in the layer's box input sets the centre, axes and size; else the knobs do.
+        bf = p + "box_found"
+        vec("vol_center", ("%s ? %sbox_center.x : %svol_position.x" % (bf, p, p),
+                           "%s ? %sbox_center.y : %svol_position.y + %svol_size.y / 2 / "
+                           "max(parent.scene_scale, 1e-6)" % (bf, p, p, p),
+                           "%s ? %sbox_center.z : %svol_position.z" % (bf, p, p)))
+        one("vol_axes", bf)
+        vec("vol_rotate", ["%svol_rotate.%s" % (p, c) for c in "xyz"])
+        vec("vol_size", ["%s ? %sbox_size.%s : %svol_size.%s" % (bf, p, c, p, c) for c in "xyz"])
+        for a in "xyz":
+            vec("vol_axis_" + a, ["%sbox_axis_%s.%s" % (p, a, c) for c in "xyz"])
+        one("density", p + "density")
+        # The coverage map, drifting with the wind since the map frame.
+        one("map_amount", p + "map_amount")
+        one("map_channel", p + "map_channel")
+        since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
+        vec("map_drift", ("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, since, p),
+                          "%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p)))
+        # Motion vectors: the wind and the volume on the other frame (step frames away).
+        t_other = "(parent.time_s + (%d) / max(root.fps, 1))" % step
+        vec("other_offset", ("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, t_other, p),
+                             "%swind_speed * %s * cos(radians(%swind_deg))" % (p, t_other, p)))
+        f_other = "(frame + (%d))" % step
+        bc = "%sbox_center_%s" % (p, which)
+        vec("other_vol_center", ("%s ? %s.x : %svol_position.x%s" % (bf, bc, p, f_other),
+                                 "%s ? %s.y : %svol_position.y%s + %svol_size.y / 2 / "
+                                 "max(parent.scene_scale, 1e-6)" % (bf, bc, p, f_other, p),
+                                 "%s ? %s.z : %svol_position.z%s" % (bf, bc, p, f_other)))
+    n["disable"].setExpression("!(%s)" % " || ".join(layer_on(j) for j in (1, 2, 3)))
     return n
 
 
-# The sun maps: SUN_MAP_RES square, covering the ground out to about SUN_MAP_SIZE metres at
-# full detail (coarser further out, see sunMapUV in the kernel).
-SUN_MAP_RES = 1536
-SUN_MAP_SIZE = 10000.0
-
-# A layer is off when disabled, and in the Variations view unless it is the one shown.
-DISABLE = "!parent.l%d_enable || (parent.view==4 && parent.variations_of!=%d)"
 
 
 def lf_copy(kernel):
@@ -933,7 +959,6 @@ def build():
     for layer, chans in LAYERS.items():
         nuke.Layer(layer, ["%s.%s" % (layer, c) for c in chans])
     source = lf_copy(KERNEL)
-    stack_source = lf_copy(STACK_KERNEL)
 
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)
@@ -993,59 +1018,30 @@ def build():
         smfmt.setInput(0, nuke.toNode("WorkBlack"))
         sunmaps = []
         for i in range(1, 4):
-            sm = blink("L%d_SunMap" % i, 5, smfmt, mp, smfmt, smfmt, i, source)
+            sm = blink("L%d_SunMap" % i, 5, smfmt, mp, smfmt, [smfmt] * 3, source, only=i - 1)
             k = KERNEL + "_"
             sm[k + "samples"].setExpression("1")
             sm[k + "tiles"].setExpression("1")
-            sm["disable"].setExpression("(%s) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"
-                                        % (DISABLE % (i, i - 1)))
+            sm["disable"].setExpression("!(%s) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"
+                                        % layer_on(i))
             sunmaps.append(sm)
-        above = []
-        for i in range(1, 4):
-            others = [sunmaps[j - 1] for j in range(1, 4) if j != i]
-            m = nuke.nodes.Merge2(name="L%d_SunOthers" % i, operation="plus")
-            m.setInput(0, others[0])
-            m.setInput(1, others[1])
-            above.append(m)
 
-        colour, sunpart, depth, zkeys, shadows = [], [], [], [], []
-        motion = {1: [], -1: []}
-        for i in range(1, 4):
-            sa = above[i - 1]
-            colour.append(blink("L%d_Color" % i, 0, work, mp, zwork, sa, i, source))
-            sp = blink("L%d_Sun" % i, 1, work, mp, zwork, sa, i, source)
-            sp["disable"].setExpression("(%s) || !((parent.breakout && !parent.preview) || parent.view==2)"
-                                        % (DISABLE % (i, i - 1)))
-            sunpart.append(sp)
-            sh = blink("L%d_Shadow" % i, 3, work, mp, zwork, smfmt, i, source)
-            sh["disable"].setExpression("(%s) || !(parent.occlude && parent.bg_found) || "
+        # The passes: one kernel each, marching all the layers together (each is shadowed by the
+        # other layers' sun maps).
+        none_on = "!(%s)" % " || ".join(layer_on(j) for j in (1, 2, 3))
+        col = blink("Clouds_Color", 0, work, mp, zwork, sunmaps, source)
+        sunm = blink("Clouds_Sun", 1, work, mp, zwork, sunmaps, source)
+        sunm["disable"].setExpression("%s || !((parent.breakout && !parent.preview) || parent.view==2)" % none_on)
+        shadow = blink("Clouds_Shadow", 3, work, mp, zwork, [smfmt] * 3, source)
+        shadow["disable"].setExpression("%s || !(parent.occlude && parent.bg_found) || "
                                         "!(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"
-                                        % (DISABLE % (i, i - 1)))
-            shadows.append(sh)
-            for step, nm in ((1, "Fwd"), (-1, "Bwd")):
-                mvn = blink("L%d_%s" % (i, nm), 4, work, mp, zwork, smfmt, i, source, step)
-                mvn["disable"].setExpression("(%s) || !parent.motion_vectors || parent.preview" % (DISABLE % (i, i - 1)))
-                mpm = nuke.nodes.Premult(name="L%d_%sPremult" % (i, nm), channels="rgb")
-                mpm.setInput(0, mvn)
-                motion[step].append(mpm)
-            d = blink("L%d_Depth" % i, 2, work, mp, zwork, smfmt, i, source)
-            zkeys.append(d)
-            pm = nuke.nodes.Premult(name="L%d_DepthPremult" % i, channels="rgb")
-            pm.setInput(0, d)
-            depth.append(pm)
-
-        def stack(prefix, nodes):
-            # Nearest layer first, per pixel, ordered by the depth passes.
-            m = compiled(prefix + "_Stack", stack_source)
-            for j, n in enumerate(nodes + zkeys):
-                m.setInput(j, n)
-            return m
-
-        col = stack("Color", colour)
-        sunm = stack("Sun", sunpart)
-        dep = stack("Depth", depth)
-        unp = nuke.nodes.Unpremult(name="DepthUnpremult", channels="rgb")
-        unp.setInput(0, dep)
+                                        % none_on)
+        dep = blink("Clouds_Depth", 2, work, mp, zwork, [smfmt] * 3, source)
+        motion = {}
+        for step, nm in ((1, "Fwd"), (-1, "Bwd")):
+            mvn = blink("Clouds_%s" % nm, 4, work, mp, zwork, [smfmt] * 3, source, step)
+            mvn["disable"].setExpression("%s || !parent.motion_vectors || parent.preview" % none_on)
+            motion[step] = mvn
 
         def up(name, src):
             r = nuke.nodes.Reformat(name=name, type="to box", box_fixed=True, resize="distort",
@@ -1080,34 +1076,24 @@ def build():
                                      filter="Impulse", black_outside=True)
         dep_up["box_width"].setExpression("FormatSource.width")
         dep_up["box_height"].setExpression("FormatSource.height")
-        dep_up.setInput(0, unp)
+        dep_up.setInput(0, dep)
 
-        # Motion vectors: stacked like depth (nearest layer wins), back to full size and full-size
-        # pixels.
+        # Motion vectors: back to full size and full-size pixels.
         mv_up = {}
         for step, nm in ((1, "Fwd"), (-1, "Bwd")):
-            ms = stack(nm, motion[step])
-            mu = nuke.nodes.Unpremult(name="%sUnpremult" % nm, channels="rgb")
-            mu.setInput(0, ms)
             mr = nuke.nodes.Reformat(name="%sUp" % nm, type="to box", box_fixed=True, resize="distort",
                                      filter="Impulse", black_outside=True)
             mr["box_width"].setExpression("FormatSource.width")
             mr["box_height"].setExpression("FormatSource.height")
-            mr.setInput(0, mu)
+            mr.setInput(0, motion[step])
             mx = nuke.nodes.Multiply(name="%sScale" % nm, channels="rgb")
             mx["value"].setExpression("1 / max(parent.work_scale, 1e-6)")
             mx.setInput(0, mr)
             mv_up[step] = mx
 
-        # Shadows: each layer lets 1 - s of the sun through, so together they block
-        # 1 - (1 - a)(1 - b)(1 - c): a screen. A disabled layer passes black (no shadow).
-        shm = nuke.nodes.Merge2(name="Shadow_Screen12", operation="screen", output="rgb")
-        shm.setInput(0, shadows[0])
-        shm.setInput(1, shadows[1])
-        shm2 = nuke.nodes.Merge2(name="Shadow_Screen3", operation="screen", output="rgb")
-        shm2.setInput(0, shm)
-        shm2.setInput(1, shadows[2])
-        shadow_up = up("ShadowUp", shm2)
+        # Shadows: what all the layers together keep from the bg (the kernel multiplies the
+        # sun each layer lets through).
+        shadow_up = up("ShadowUp", shadow)
         # Darken the bg by shadow_amount for the Comp view.
         lit = nuke.nodes.Expression(name="Shadow_Light", channel0="rgb",
                                     expr0="1 - parent.shadow_amount * r",
@@ -1224,8 +1210,8 @@ def build():
 
 MODULES = [
     ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
-    ("Cloud layers", 0x3a5a4aff, r"(L\d_.*)"),
-    ("Stack the layers", 0x4a5a6aff, r"(Color_Stack|Sun_Stack|Depth_Stack|DepthUnpremult|Fwd_Stack|Bwd_Stack|FwdUnpremult|BwdUnpremult)"),
+    ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
+    ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
     ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
     ("Shadows", 0x4a4a3aff, r"(Shadow_.*|SunMap_All.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),

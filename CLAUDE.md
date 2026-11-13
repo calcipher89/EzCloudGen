@@ -27,19 +27,23 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
 
 ## Architecture
 
-- `blink/EzCloudGen.blink` is one cloud layer. The same kernel serves every pass, picked by its
-  `output` param: 0 colour, 1 sun share, 2 Planar Z, 3 ground shadow on the bg, 4 motion
-  vector to the other frame, and 5 the layer's sun map (optical depth towards the sun from the
-  ground plus its altitude moments, 768 square). Each layer reads the sum of the other layers'
-  maps as `smap` and keeps the part above each point, so layers shadow what is below them. A layer is either a deck (a curved-earth shell driven by a 2D
-  weather field, the `weather()`, `profile()` and `cloud()` functions) or a placed volume
-  (`volume=1`, `volumeShape()` in a box's local frame). Both share the erosion stack: billows,
-  wisps, grain, swirl and shear. Lighting is a short sun march (`sunDepth()`) with
-  multiple-scattering octaves, sky and ground ambient, and haze.
-- `blink/EzCloudGenStack.blink` depth-sorts up to three layers, nearest first, per pixel.
+- `blink/EzCloudGen.blink` marches up to three cloud layers together. Each layer's settings are
+  3-element array params (knob names as before, element i for layer i + 1), and every helper that
+  reads them takes the layer index `lyr`. Where layers overlap, each step samples every layer it
+  is inside and lights each one's share (`shade()`), so their clouds interleave instead of being
+  sorted whole. The same kernel serves every pass, picked by its `output` param: 0 colour, 1 sun
+  share, 2 Planar Z, 3 ground shadow on the bg, 4 motion vector to the other frame, and 5 one
+  layer's sun map (`only_layer`; optical depth towards the sun from the ground plus its altitude
+  moments). Inputs `smap`, `smap2`, `smap3` are the three layers' maps; a layer is shadowed by
+  the other two (`tauAbove()`), keeping the part above each point. A layer is either a deck (a
+  curved-earth shell driven by a 2D weather field, the `weather()`, `profile()` and `cloud()`
+  functions) or a placed volume (`volume=1`, `volumeShape()` in a box's local frame). Both share
+  the erosion stack: billows, wisps, grain, swirl and shear. Lighting is a short sun march
+  (`sunDepth()`) with multiple-scattering octaves, sky and ground ambient, and haze.
+  Blink inlines `cloud()` at every call site: keep it to the three it has (main march, sun
+  march, ground shadow), each inside a loop over the layers.
 - `python/build_group.py` builds the whole Group inside Nuke:
-  - one BlinkScript per layer per pass;
-  - the stack;
+  - one BlinkScript per pass for all the layers, and one sun map pass per layer;
   - the depth, shadow, motion-vector and preview chains;
   - all knobs.
   Kernel params are driven by knob expressions. The camera matrix, EzAtmosScatter light and the
