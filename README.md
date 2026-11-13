@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.24.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.25.3: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -68,9 +68,17 @@ A bbox smaller than the format still gets clouds over the whole format.
 layer, seen from above. **silhouette** makes the painted shape the cloud mass's outline as the
 camera on 'map frame' sees it: paint towers, a shelf or a wall of cloud where you want them (a soft
 Roto works best), and set 'silhouette distance' (km from the camera) and 'silhouette depth' (km,
-front to back). Black is clear sky. Inside the paint the deck fills its whole height with 3D heaps,
-the painted top overrides the layer's dome profile, and 3D noise frays the outline and the front and
-back, so it reads as cloud, not a cut-out. Make the layer thick enough to reach the painted top.
+front to back). Black is clear sky. Inside the paint the layer's own cloud field and lobes shape the
+mass (so it keeps the same fine detail as an unpainted deck), the painted top overrides the layer's
+dome profile, and 3D noise frays the outline and the front and back, so it reads as cloud, not a
+cut-out. Make the layer thick enough to reach the painted top. The mass fades out over a long
+distance at its front and back, and hard painted edges are best softened with 'map softness' (about
+1): the billow detail can only bite deep into a slope as gentle as the cloud field's own, so an
+abrupt edge comes out as a smooth face.
+'round lobes' (by 'billow shrink', on by default; 0 = as before) bends the big lobes' cells by a
+noise their own size, so a cloud is a pile of rounded heads rather than domes meeting along straight,
+faceted seams. The light march's steps are also shifted by a smooth noise per point: on fixed steps, a
+big cloud's shadow inside itself came out as flat-shaded, hard-edged contours.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).

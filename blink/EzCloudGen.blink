@@ -132,6 +132,7 @@ param:
   float diffusion;
   float detailSharpness;
   float billowLight;
+  float roundLobes;
   float billowShrink;
   float mapSoftness;
   int useSunMap;
@@ -264,6 +265,7 @@ local:
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(roundLobes, "round_lobes", 0.0f);
     defineParam(billowShrink, "billow_shrink", 0.0f);
     defineParam(mapSoftness, "map_softness", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
@@ -663,7 +665,11 @@ local:
         // the ends wander with the noise so the mass isn't a flat-faced slab). Clear elsewhere.
         float dist = length(float3(p.x, p.y, p.z) - mc) + (s3a + s3b + 0.5f * s3c) * sil_depth[lyr] * 0.6f;
         float half = max(sil_depth[lyr], 100.0f) * 0.5f;
-        float win = 1.0f - sstep(half * 0.6f, half, fabs(dist - sil_distance[lyr]));
+        // A long, gentle fall-off at the front and back. A short one is far steeper than the
+        // cloud field's own slopes, so the billow detail could only dent it by a few tens of
+        // metres and those faces came out smooth; over this length the mass thins into separate
+        // heaps and the detail bites as deep as it does on a deck's own clouds.
+        float win = 1.0f - sstep(half * 0.15f, half * 1.5f, fabs(dist - sil_distance[lyr]));
         m = max(m, 0.0f) * win;
       } else if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
@@ -672,7 +678,7 @@ local:
         m *= 1.0f - 0.8f * n * (1.0f - m);
       }
       if (m >= 0.0f) {
-        float top = sil ? 0.8f : 0.6f;
+        float top = sil ? 0.75f : 0.6f;
         float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (top - coverage[lyr]) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(map_amount[lyr], 1.0f);
         if (sil) {
@@ -683,12 +689,6 @@ local:
           silBack = 0.8f * silW * profile(hp, lyr);
         }
       }
-    }
-    if (silW > 0.0f) {
-      // Inside a painted silhouette the cloud fills the layer's height, so the 2D field (which
-      // stands up in vertical streaks there) gives way to a 3D one: heaps and billows all over.
-      float f3 = vfbm3(X / (sc * 0.8f) + 5.0f * sd, p.y / (sc * 0.8f), Z / (sc * 0.8f), min(oct, 4.0f));
-      f += (f3 - f) * 0.5f * silW;
     }
     float c = f - (0.82f - 0.55f * cov) + silBack;
     if (cov < coverage[lyr] && c > 0.0f) {
@@ -705,13 +705,11 @@ local:
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
       float L = max(thickness[lyr], 100.0f) * 0.7f;
       float hb = min((cov - coverage[lyr]) * 4.0f, 1.0f);
-      if (silOn) {
-        // A painted silhouette fills the layer's whole height: heaps the size of the clouds (and
-        // a finer set) instead, or the 2D field stands up in vertical streaks.
-        L = min(L, sc * 0.5f);
-        c += hb * 0.2f * (vnoise3(X / (L * 0.4f) + 3.0f * sd, p.y / (L * 0.4f), Z / (L * 0.4f)) - 0.5f);
-      }
-      c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
+      // (Not inside a painted silhouette: smooth heaps there, and a smooth 3D field in place of
+      // the layer's own, filled the shape with folds like melted wax and buried the fine
+      // cauliflower detail. The layer's own field and lobes shape it instead.)
+      if (!silOn)
+        c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
       // And the thick middles are eased back, so the profile and taper round their tops at
       // different heights instead of all of them reaching the layer's top as one flat lid.
       if (c > 0.0f)
@@ -943,14 +941,31 @@ local:
       // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
-      bool flatBase = volume[lyr] == 0 || vol_shape[lyr] == 1;
+      // (Not under a painted silhouette: there the lobes held still below their base height stand
+      // up as straight-sided prisms, the faceted look; the paint sets the base anyway.)
+      bool flatBase = (volume[lyr] == 0 && !(useMap == 1 && map_mode[lyr] == 1 && map_amount[lyr] > 0.0f))
+                      || (volume[lyr] == 1 && vol_shape[lyr] == 1);
       float ls = max(lump_size[lyr], 10.0f);
       float lyl = flatBase ? max(ly, (volume[lyr] == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
       float lamp = 1.0f;
       float lf = 1.0f;
+      // 'round lobes': the lobe cells are bent by a noise their own size, so they aren't
+      // straight-sided Voronoi cells meeting along flat, faceted seams.
+      float rl = clamp(roundLobes, 0.0f, 1.0f);
+      float lwx = 0.0f;
+      float lwy = 0.0f;
+      float lwz = 0.0f;
+      if (rl > 0.0f) {
+        lwx = (vnoise3(lx / ls * 0.6f + 3.7f, lyl / ls * 0.6f, lz / ls * 0.6f) - 0.5f) * 0.9f * rl;
+        lwy = (vnoise3(lx / ls * 0.6f, lyl / ls * 0.6f + 9.1f, lz / ls * 0.6f) - 0.5f) * 0.9f * rl;
+        lwz = (vnoise3(lx / ls * 0.6f, lyl / ls * 0.6f, lz / ls * 0.6f + 5.3f) - 0.5f) * 0.9f * rl;
+      }
       for (int lo = 0; lo < 2; lo++) {
-        float ld = worley3(lx / ls * lf + sd * 3.1f + 13.7f * float(lo), lyl / ls * lf, lz / ls * lf);
+        float qx = (lx / ls + lwx) * lf + sd * 3.1f + 13.7f * float(lo);
+        float qy = (lyl / ls + lwy) * lf;
+        float qz = (lz / ls + lwz) * lf;
+        float ld = worley3(qx, qy, qz);
         lob += lamp * (0.78f - ld * ld - (lo > 0 ? 0.48f : 0.0f));
         lamp *= cheap ? 0.0f : small_lumps[lyr];
         lf *= 2.3f;
@@ -1112,7 +1127,9 @@ local:
       float meanKm = -1.0f;
       float t = sunMapTau(g, altKm, w, h, meanKm, j);
       float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
-      float r = max(120.0f * gapKm, texel);
+      // At least a few texels: far from the camera the map's texels are big, and a tighter
+      // spread drew the other layers' shadows as hard-edged, faceted patches.
+      float r = max(120.0f * gapKm, 3.0f * texel);
       float mk = 0.0f;
       t += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk, j);
       t += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk, j);
@@ -1178,13 +1195,18 @@ local:
     // detail, so each billow shadows its own far side and the creases behind it (the sun march
     // otherwise sees the billows only by chance, and they light flat).
     float bl = clamp(billowLight, 0.0f, 1.0f);
+    // A smooth noise (not a per-point hash, which showed as grain at few samples): the contours
+    // wander and blend instead of standing as straight, flat-shaded facets.
+    float sj = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sd) - 0.5f), 0.0f, 1.0f);
     float ds = detail_size[lyr];
     for (int i = 0; i < steps + 2; i++) {
       float3 q;
       float fq;
       float len;
       if (i < steps) {
-        float f = (float(i) + 0.5f) / float(steps);
+        // The steps are shifted by a random fraction per point: on fixed steps, a big cloud's
+        // shadow inside itself came out in flat-shaded, hard-edged contours (faceted).
+        float f = (float(i) + sj) / float(steps);
         float t = far * f * f;
         if (i < 2)
           t += (min(i == 0 ? 0.25f * ds : ds, far) - t) * bl;
@@ -1643,8 +1665,12 @@ local:
           float io = 5.588238f * float(s);
           float ign = fr(52.9829189f * fr(0.06711056f * pos.x + 0.00583715f * pos.y));
           float strat = ns > 1 ? float(s) / float(ns) : 0.0f;
-          float jit = jumps < 2 ? fr(ign + strat + 0.618034f * float(5 * jumps) + seed * 0.37f)
-                                : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
+          // With several samples, plain hash noise per pixel, stratified over the samples: the
+          // gradient noise's regular weave showed as a fine mesh over lit surfaces that more
+          // samples could not average away. One sample keeps the gradient noise (less grain).
+          float jit = ns > 1 ? fr(hash3(pos.x + 0.5f, pos.y + 0.5f, float(jumps) * 13.1f + seed) + strat)
+                     : jumps < 2 ? fr(ign + 0.618034f * float(5 * jumps) + seed * 0.37f)
+                                 : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
           dt *= jit + 0.02f;
           jump = false;
           jumps++;
