@@ -147,6 +147,7 @@ param:
   float gridFar;
   float gridMargin;
   float evenDetail;
+  int horizonSamples;
   float skyShading;
   float roundLobes;
   float billowShrink;
@@ -292,6 +293,7 @@ local:
     defineParam(gridFar, "grid_far", 80000.0f);
     defineParam(gridMargin, "grid_margin", 1.25f);
     defineParam(evenDetail, "even_detail", 0.0f);
+    defineParam(horizonSamples, "horizon_samples", 1);
     defineParam(skyShading, "sky_shading", 0.0f);
     defineParam(roundLobes, "round_lobes", 0.0f);
     defineParam(billowShrink, "billow_shrink", 0.0f);
@@ -1893,6 +1895,16 @@ local:
     // stair-stepped silhouettes). A pixel whose samples agree comes out the same either way.
     float wacc = 0.0f;
     int ns = max(samples, 1);
+    if (anyDeck && horizonSamples > 1 && output != 5) {
+      // Near the horizon a deck is seen edge on: each pixel looks through kilometres of it, and
+      // its clouds and billows are far smaller than a pixel, so a few samples alias them and
+      // they shimmer and crawl as the camera moves. Take more samples there ('horizon samples'
+      // times as many where the view is within about 2 degrees of level, easing off by 5).
+      float3 cd0 = float3((px / frameSize.x - 0.5f) * hap / focal, (py / frameSize.y - 0.5f) * vap / focal, -1.0f);
+      float dy0 = fabs(normalize(float3(dot(camRow0, cd0), dot(camRow1, cd0), dot(camRow2, cd0))).y);
+      float hk = 1.0f - sstep(0.035f, 0.09f, dy0);
+      ns = int(floor(float(ns) * (1.0f + float(min(horizonSamples, 8) - 1) * hk) + 0.5f));
+    }
     for (int s = 0; s < ns; s++) {
       // Where in the pixel this sample looks: a Halton (2, 3) set, shifted per pixel, so the samples
       // cover the pixel evenly (random spots clump, and cloud edges against the sky came out
