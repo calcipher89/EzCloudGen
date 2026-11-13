@@ -1059,7 +1059,7 @@ def build():
                                      temp_name2="k", temp_expr2="1 - clamp(parent.highlight_rolloff, 0, 0.999)",
                                      channel0="rgb",
                                      expr0="parent.highlight_rolloff <= 0 || m <= k ? gain : "
-                                           "gain * (k + (1 - k) * (1 - exp(-(m - k) / (1 - k)))) / m",
+                                           "gain * (k + (1 - k) * ((m - k) / (1 - k)) / (1 + (m - k) / (1 - k))) / m",
                                      channel1="none", channel2="none", channel3="none")
         tone.setInput(0, col_up)
         toned = []

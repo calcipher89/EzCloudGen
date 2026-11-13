@@ -1424,11 +1424,19 @@ local:
           t += dt;
         }
       }
+      // The march stops once 1% of the light is left: call that opaque. Left as 0.99 it lets
+      // a hundredth of what is behind through, and a sun or a blazing cloud rim behind a dark
+      // cloud is bright enough for that hundredth to draw its outline on it.
+      if (output != 5 && T <= tStop)
+        T = 0.0f;
       float alpha = 1.0f - T;
       if (output == 5) {
         acc += float4(tau, tm1, tm2, 1.0f);
       } else if (output == 2) {
-        float z = alpha > 1e-5f ? dep / alpha * zPer / sceneScale : 0.0f;
+        // Weighted by the sample's opacity (and divided out below): a plain mean over the
+        // samples would halve the depth of an edge pixel that one of two samples misses, and
+        // the layer stack would then draw that edge in front of everything.
+        float z = alpha > 1e-5f ? dep * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
       } else if (output == 4) {
         float2 mv = float2(0.0f, 0.0f);
@@ -1474,6 +1482,11 @@ local:
         }
         acc += float4(col.x, col.y, col.z, alpha);
       }
+    }
+    if (output == 2) {
+      float zm = acc.w > 1e-5f ? acc.x / acc.w : 0.0f;
+      dst() = float4(zm, zm, zm, acc.w / float(ns));
+      return;
     }
     dst() = acc / float(ns);
   }

@@ -70,6 +70,12 @@ takes sunlight: light scattered many times fades slowly with depth (1 / (1 + k t
 theory) instead of dying off, so sunlit sides are bright white, billows shade off gradually round
 their sides and the cores stay a luminous grey. Use 1 for photographic clouds, with 'highlight
 rolloff' 0.3 to 0.5 and 'exposure' to place the whites.
+Fixed in this version, all of which showed as bright outlines or dotted seams where clouds overlap:
+the depth of a cloud's edge pixels was averaged over the samples that missed it too (so far cloud
+edges were drawn in front of nearer cloud); a thick cloud stopped at 99% opaque, so a sun or a
+blazing rim behind it leaked through as an outline; and two layers at about the same depth flipped
+order from pixel to pixel (the order now fades between them). 'highlight rolloff' also has a
+gentler shoulder, so bright cloud keeps its shading instead of going to a flat white.
 The Towering Cumulus type (shape Towers) is a cumulus complex: a few tall towers on a wider,
 flat-based shelf with a ragged footprint, made to stand in front of the sun.
 With an EzAtmosScatter that is self-lit (no HDRI), 'light from' Auto takes the sky light from the
