@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.27.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.28.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -86,6 +86,12 @@ backlit one) keeps its form and takes the sky's colour instead of going one flat
 light reaches only what can see down. What the sky can't reach still gets a white fill, a quarter of
 the open sky's brightness: the light that has bounced about inside the cloud, so the hollows between
 lobes are a soft grey, not a deep sky blue.
+'even detail' (by 'billow shrink', on by default; 0 = as before) scales the billows, wisps and edge at
+each point by how steeply the cloud's shape rises there (measured over two billows), so they bite to a
+similar depth all over the cloud, as on a modelled cloud volume whose shape is a distance to its
+surface. Without it, gently sloping faces (a big swell, a painted mass's front, a deck's broad tops)
+came out smooth. The scale is kept between 0.8 and 2 times. It costs up to about 70% more render time
+(three more looks at the shape near each surface); set it to 0 for quick work.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).

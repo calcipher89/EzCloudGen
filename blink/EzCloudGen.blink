@@ -132,6 +132,7 @@ param:
   float diffusion;
   float detailSharpness;
   float billowLight;
+  float evenDetail;
   float skyShading;
   float roundLobes;
   float billowShrink;
@@ -266,6 +267,7 @@ local:
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(evenDetail, "even_detail", 0.0f);
     defineParam(skyShading, "sky_shading", 0.0f);
     defineParam(roundLobes, "round_lobes", 0.0f);
     defineParam(billowShrink, "billow_shrink", 0.0f);
@@ -914,6 +916,27 @@ local:
   }
 
   // Cloud density 0..1. cheap: no detail noise (for the light march).
+  // The layer's shape before its lobes and detail, as cloud() builds it: positive inside. (For
+  // 'even detail', which measures how steeply it rises.)
+  float baseField(float3 p, float foot, float sd, int lyr)
+  {
+    if (volume[lyr] == 1) {
+      float hv = 0.0f;
+      return volumeShape(p, hv, sd, lyr);
+    }
+    float b = base[lyr];
+    float c = weather(p, foot, sd, lyr);
+    if (vary[lyr] > 0.0f) {
+      float sv = scale_km[lyr] * 2500.0f;
+      float vx = p.x + camPosition.x * sceneScale + offset[lyr].x;
+      float vz = p.z + camPosition.z * sceneScale + offset[lyr].y;
+      b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary[lyr] * thickness[lyr];
+      b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary[lyr] * thickness[lyr] * 0.8f;
+    }
+    float hn = (altitude(p) - b) / thickness[lyr];
+    return c - profile(clamp(hn, 0.0f, 1.0f), lyr) - (hn <= 0.0f || hn >= 1.0f ? 0.3f : 0.0f);
+  }
+
   // band: set to 1 when p is near enough a cloud's surface for the detail to reach it (the
   // march takes fine steps there, so thin rims aren't stepped over).
   float cloud(float3 p, float foot, bool cheap, float sd, int lyr, float &band)
@@ -962,6 +985,7 @@ local:
       ly = alt - b - 0.5f * thickness[lyr];
       lz = p.z + camPosition.z * sceneScale + offset[lyr].y;
     }
+    float cBase = c;
     // Skirt: real cumulus are smooth, firm billows on top and soft, torn wisps around the base.
     // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
     float sk = skirt[lyr] * (1.0f - sstep(0.1f, 0.55f, hn));
@@ -1034,6 +1058,38 @@ local:
     }
     float wispAmt = wisp_amount[lyr] * (1.0f + 2.0f * sk);
     float reach = 0.12f * (erosion[lyr] + wispAmt + grain_amount[lyr]);
+    // 'even detail': the shape's value says how far inside a point is only loosely: where it
+    // rises gently (a big soft swell, a painted mass's front, a deck's broad tops) a fixed amount
+    // of detail moves the surface a long way, and where it rises steeply hardly at all, so some
+    // faces came out smooth and others crumbled. Here the detail and the edge are scaled by how
+    // steeply the shape rises at the point (measured over half a billow), so they displace the
+    // surface by the same distance everywhere, about a billow: the shape acts as a distance to
+    // its surface, as in a modelled cloud volume.
+    float ev = clamp(evenDetail, 0.0f, 1.0f);
+    float fk = 1.0f;
+    if (ev > 0.0f && c >= -4.0f * reach - 4.0f * soften - 0.05f) {
+      float hg = max(2.0f * detail_size[lyr], 2.0f * foot);
+      float gx = 0.0f;
+      float gy = 0.0f;
+      float gz = 0.0f;
+      for (int gk = 0; gk < 3; gk++) {
+        float3 q = p + (gk == 0 ? float3(hg, 0.0f, 0.0f) : gk == 1 ? float3(0.0f, hg, 0.0f) : float3(0.0f, 0.0f, hg));
+        float d = (baseField(q, foot, sd, lyr) - cBase) / hg;
+        if (gk == 0)
+          gx = d;
+        else if (gk == 1)
+          gy = d;
+        else
+          gz = d;
+      }
+      float g = sqrt(gx * gx + gy * gy + gz * gz);
+      // 0.03 per billow is the slope of a typical placed volume's shape, which the fixed amounts
+      // were tuned on (they give it billows about two billow sizes deep).
+      fk = 1.0f + (clamp(g * detail_size[lyr] / 0.03f, 0.8f, 2.0f) - 1.0f) * ev;
+      e *= fk;
+      soften *= fk;
+      reach *= fk;
+    }
     if (c < -reach - soften)
       return 0.0f;
     band = 1.0f;
@@ -1077,21 +1133,21 @@ local:
       float dsz = detail_size[lyr] * (1.0f + clamp(billowShrink, 0.0f, 1.0f) * (0.35f - 0.7f * hn));
       float oct = lod(dsz, foot, octaves[lyr]);
       if (oct > 0.0f)
-        c += er * (detail3(wx / dsz, wy / dsz, wz / dsz, oct, lyr) - 0.5f) * 0.24f;
+        c += er * fk * (detail3(wx / dsz, wy / dsz, wz / dsz, oct, lyr) - 0.5f) * 0.24f;
     }
     // Wisps and grain eat the thin edges more than the cores.
-    float thin = 1.0f - clamp(c / (3.0f * max(edge[lyr], 1e-3f)), 0.0f, 1.0f);
+    float thin = 1.0f - clamp(c / (3.0f * max(edge[lyr], 1e-3f) * fk), 0.0f, 1.0f);
     if (wispAmt > 0.0f) {
       float ws = max(wisp_size[lyr], 1.0f);
       float oct = lod(ws, foot, 2.0f);
       if (oct > 0.0f)
-        c += wispAmt * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f * (1.0f - min(sk, 1.0f)) + (0.6f + 0.4f * min(sk, 1.0f)) * thin);
+        c += wispAmt * fk * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f * (1.0f - min(sk, 1.0f)) + (0.6f + 0.4f * min(sk, 1.0f)) * thin);
     }
     if (grain_amount[lyr] > 0.0f) {
       float gs = max(grain_size[lyr], 1.0f);
       float oct = lod(gs, foot, 1.0f);
       if (oct > 0.0f)
-        c += grain_amount[lyr] * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
+        c += grain_amount[lyr] * fk * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
     }
     if (crumble[lyr] > 0.0f) {
       // Crumble: chunks bitten out of the thin margins (torn edges), two octaves.
@@ -1103,7 +1159,7 @@ local:
           float k = co == 0 ? 1.0f : 2.3f;
           n += (co == 0 ? 0.65f : 0.35f) * vnoise3(wx / cs * k + 17.0f * float(co), wy / cs * k, wz / cs * k);
         }
-        c -= crumble[lyr] * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
+        c -= crumble[lyr] * fk * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
       }
     }
     return clamp((c + soften) / e, 0.0f, 1.0f);
