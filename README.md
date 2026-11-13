@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.23.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.23.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -55,6 +55,12 @@ tighter cauliflower near its top. For photographic cumulus use 'light diffusion'
 sharpness' about 0.6, 'billow light' 1 and 'billow shrink' about 0.6.
 'map softness' (coverage map, default 0.5) frays and blurs the painted edges over part of a cloud's
 size, so a hard edge in the map comes out as cloud thinning out rather than a straight wall.
+Cleaner silhouettes: the march now takes its fine edge steps from the band where a cloud's detail
+can reach, not only once it has hit cloud, so thin bright rims are no longer stepped over in one
+pixel and caught in the next (the dithered, jagged fringe round clouds against the sky). Several
+samples per pixel are spread evenly over the pixel and over a step, and bright samples count for
+less when they are averaged, so an edge half on a blazing cloud and half on sky blends instead of
+clipping to white. The render time is about the same.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
