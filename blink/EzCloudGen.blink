@@ -204,6 +204,11 @@ param:
   // The layers: which are on, and each one's seed (the global seed jitters the steps). The
   // sun map pass marches one layer only (onlyLayer), or all of them (-1).
   int layer_on[3];
+  // How a deck reads the map: 0 a footprint on the layer, 1 a silhouette seen through the map
+  // camera, standing sil_distance (m) away and sil_depth (m) deep.
+  int map_mode[3];
+  float sil_distance[3];
+  float sil_depth[3];
   float layer_seed[3];
   int onlyLayer;
 
@@ -376,6 +381,22 @@ local:
     py += d;
     pz += d;
     return fr((px + py) * pz);
+  }
+
+  // The radical inverse of i in base b (Halton sequences).
+  float radInv(int i, int b)
+  {
+    float f = 1.0f;
+    float r = 0.0f;
+    int n = i;
+    for (int k = 0; k < 8; k++) {
+      if (n <= 0)
+        break;
+      f /= float(b);
+      r += f * float(n - (n / b) * b);
+      n = n / b;
+    }
+    return r;
   }
 
   float fade5(float f)
@@ -581,6 +602,9 @@ local:
     else
       f = fbm2(u2, v2, oct, sd);
     float cov = coverage[lyr];
+    float silBack = 0.0f;
+    float silW = 0.0f;
+    bool silOn = useMap == 1 && map_amount[lyr] > 0.0f && map_mode[lyr] == 1;
     if (useMap == 1 && map_amount[lyr] > 0.0f) {
       // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
       // the painted area as one solid mass), black clears. The lookup is warped by the cloud
@@ -603,6 +627,18 @@ local:
         fx = (fbm2(u * 1.7f + 31.0f, v * 1.7f + 7.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
         fz = (fbm2(u * 1.7f + 5.0f, v * 1.7f + 43.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
       }
+      bool sil = map_mode[lyr] == 1;
+      // A silhouette fills the layer's height, so its edges and its front and back are pushed
+      // about by 3D noise: 2D noise there would stand up as vertical curtains and streaks.
+      float s3a = 0.0f;
+      float s3b = 0.0f;
+      float s3c = 0.0f;
+      if (sil) {
+        float L3 = sc * 0.6f;
+        s3a = vnoise3(X / L3 + 7.0f + sd, p.y / L3, Z / L3) - 0.5f;
+        s3b = vnoise3(X / L3 - 3.0f, p.y / L3 + 19.0f + sd, Z / L3) - 0.5f;
+        s3c = vnoise3(X / (L3 * 0.35f), p.y / (L3 * 0.35f), Z / (L3 * 0.35f) + 31.0f + sd) - 0.5f;
+      }
       float m = 0.0f;
       float mn = 0.0f;
       for (int mt = 0; mt < 5; mt++) {
@@ -610,24 +646,51 @@ local:
         float oz = fz + (mt == 3 ? 0.5f * mr : mt == 4 ? -0.5f * mr : 0.0f);
         if (mt > 0 && mr <= 0.0f)
           break;
-        float mv = mapCoverage(float3(p.x + wx * ws + hx * hs + ox, base[lyr] + 0.5f * thickness[lyr],
-                                      p.z + wz * ws + hz * hs + oz), lyr);
+        // A silhouette is read at the point's own height (pushed up and down by the noise too, so
+        // its top billows), a footprint at the layer's middle height.
+        float my = sil ? p.y + (s3a + 0.25f * s3c) * hs * 1.2f : base[lyr] + 0.5f * thickness[lyr];
+        float sx = sil ? (s3b + 0.25f * s3c) * hs * 1.2f : 0.0f;
+        float mv = mapCoverage(float3(p.x + wx * ws + hx * hs + ox + sx, my, p.z + wz * ws + hz * hs + oz), lyr);
         if (mv >= 0.0f) {
           m += mv;
           mn += 1.0f;
         }
       }
       m = mn > 0.0f ? m / mn : -1.0f;
-      if (m >= 0.0f) {
+      if (sil) {
+        // A silhouette: the painted shape is the cloud's outline as the camera sees it, between
+        // sil_distance - sil_depth / 2 and + sil_depth / 2 from the map camera (soft ends, and
+        // the ends wander with the noise so the mass isn't a flat-faced slab). Clear elsewhere.
+        float dist = length(float3(p.x, p.y, p.z) - mc) + (s3a + s3b + 0.5f * s3c) * sil_depth[lyr] * 0.6f;
+        float half = max(sil_depth[lyr], 100.0f) * 0.5f;
+        float win = 1.0f - sstep(half * 0.6f, half, fabs(dist - sil_distance[lyr]));
+        m = max(m, 0.0f) * win;
+      } else if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
         // instead of being extruded straight up into walls.
         float n = clamp((p.y - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
         m *= 1.0f - 0.8f * n * (1.0f - m);
-        float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (0.6f - coverage[lyr]) * (2.0f * m - 1.0f);
+      }
+      if (m >= 0.0f) {
+        float top = sil ? 0.8f : 0.6f;
+        float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (top - coverage[lyr]) * (2.0f * m - 1.0f);
         cov += (mc2 - cov) * min(map_amount[lyr], 1.0f);
+        if (sil) {
+          // The paint sets the outline, top included: give back most of what the layer's height
+          // profile (domes, rounded top) takes away where it is painted.
+          float hp = clamp((altitude(p) - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
+          silW = clamp(2.0f * m - 1.0f, 0.0f, 1.0f) * min(map_amount[lyr], 1.0f);
+          silBack = 0.8f * silW * profile(hp, lyr);
+        }
       }
     }
-    float c = f - (0.82f - 0.55f * cov);
+    if (silW > 0.0f) {
+      // Inside a painted silhouette the cloud fills the layer's height, so the 2D field (which
+      // stands up in vertical streaks there) gives way to a 3D one: heaps and billows all over.
+      float f3 = vfbm3(X / (sc * 0.8f) + 5.0f * sd, p.y / (sc * 0.8f), Z / (sc * 0.8f), min(oct, 4.0f));
+      f += (f3 - f) * 0.5f * silW;
+    }
+    float c = f - (0.82f - 0.55f * cov) + silBack;
     if (cov < coverage[lyr] && c > 0.0f) {
       // Where the map thins the layer, raising the threshold alone leaves only the low tops of
       // the noise above it: every surviving cloud is barely positive, so it renders as a thin,
@@ -642,6 +705,12 @@ local:
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
       float L = max(thickness[lyr], 100.0f) * 0.7f;
       float hb = min((cov - coverage[lyr]) * 4.0f, 1.0f);
+      if (silOn) {
+        // A painted silhouette fills the layer's whole height: heaps the size of the clouds (and
+        // a finer set) instead, or the 2D field stands up in vertical streaks.
+        L = min(L, sc * 0.5f);
+        c += hb * 0.2f * (vnoise3(X / (L * 0.4f) + 3.0f * sd, p.y / (L * 0.4f), Z / (L * 0.4f)) - 0.5f);
+      }
       c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
       // And the thick middles are eased back, so the profile and taper round their tops at
       // different heights instead of all of them reaching the layer's top as one flat lid.
@@ -806,8 +875,11 @@ local:
   }
 
   // Cloud density 0..1. cheap: no detail noise (for the light march).
-  float cloud(float3 p, float foot, bool cheap, float sd, int lyr)
+  // band: set to 1 when p is near enough a cloud's surface for the detail to reach it (the
+  // march takes fine steps there, so thin rims aren't stepped over).
+  float cloud(float3 p, float foot, bool cheap, float sd, int lyr, float &band)
   {
+    band = 0.0f;
     float hn = 0.0f;
     float c = 0.0f;
     float alt = 0.0f;
@@ -908,6 +980,7 @@ local:
     float reach = 0.12f * (erosion[lyr] + wispAmt + grain_amount[lyr]);
     if (c < -reach - soften)
       return 0.0f;
+    band = 1.0f;
     // The detail's coordinates: world metres, rising slowly (boil) with evolve.
     float wx = p.x + camPosition.x * sceneScale + offset[lyr].x;
     float wy = alt - evolve;
@@ -1126,7 +1199,8 @@ local:
         fq = foot + h * 0.05f;
       }
       // The first sky probe sees the detail too with billow light on: creases go dark.
-      float dn = cloud(q, fq, i > 1 && !(i == steps && bl > 0.0f), sd, lyr) * len;
+      float bd = 0.0f;
+      float dn = cloud(q, fq, i > 1 && !(i == steps && bl > 0.0f), sd, lyr, bd) * len;
       if (i < steps)
         od += dn;
       else
@@ -1166,7 +1240,8 @@ local:
     for (int i = 0; i < steps; i++) {
       float t = s0 + (float(i) + jit) * dt;
       // A wide footprint: soft shadows, and no fine noise to pay for.
-      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd, lyr) * dt;
+      float bd = 0.0f;
+      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd, lyr, bd) * dt;
     }
     return 1.0f - exp(-od * sigma[lyr] * density[lyr]);
   }
@@ -1374,10 +1449,22 @@ local:
     }
 
     float4 acc = float4(0.0f);
+    // The samples' weights: plain for the data passes; for colour and sun share, smaller for
+    // bright samples (1 / (1 + brightness)), so an edge pixel half on a blazing cloud and half on
+    // sky resolves to a blend instead of clipping to solid white once tone mapped (the
+    // stair-stepped silhouettes). A pixel whose samples agree comes out the same either way.
+    float wacc = 0.0f;
     int ns = max(samples, 1);
     for (int s = 0; s < ns; s++) {
-      float jx = ns > 1 ? hash3(pos.x + 0.5f, pos.y + 0.5f, float(s) * 7.0f + seed) : 0.5f;
-      float jy = ns > 1 ? hash3(pos.y + 1.5f, pos.x + 2.5f, float(s) * 3.0f + 5.0f) : 0.5f;
+      // Where in the pixel this sample looks: a Halton (2, 3) set, shifted per pixel, so the samples
+      // cover the pixel evenly (random spots clump, and cloud edges against the sky came out
+      // stair-stepped).
+      float jx = 0.5f;
+      float jy = 0.5f;
+      if (ns > 1) {
+        jx = fr(radInv(s + 1, 2) + hash3(pos.x + 0.5f, pos.y + 0.5f, 7.0f + seed));
+        jy = fr(radInv(s + 1, 3) + hash3(pos.y + 1.5f, pos.x + 2.5f, 5.0f));
+      }
       float u = (px + jx * tf) / frameSize.x;
       float v = (py + jy * tf) / frameSize.y;
       float3 cd = float3((u - 0.5f) * hap / focal, (v - 0.5f) * vap / focal, -1.0f);
@@ -1483,7 +1570,8 @@ local:
         wL[L] = 0.0f;
         dL[L] = 0.0f;
       }
-      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(edgeSteps, 1.0f)) * max(nI, 1);
+      float es = edgeSteps;
+      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(es, 1.0f)) * max(nI, 1);
       // One march through all the layers together: where they overlap, each step samples
       // every layer it is inside, so their clouds interleave instead of being sorted whole.
       // Coarse steps through clear air; on meeting cloud, go back a step and take fine ones
@@ -1542,18 +1630,20 @@ local:
         float dt = max(mStep, t * (output == 5 ? 0.005f : 0.012f) / quality);
         if (fine) {
           // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
-          dt = min(dt / edgeSteps, max(1.5f / max(sigMax, 1e-6f), 4.0f));
+          dt = min(dt / es, max(1.5f / max(sigMax, 1e-6f), 4.0f));
         }
         if (jump) {
           // Jitter the first step into each stretch per pixel, so the steps don't band:
-          // interleaved gradient noise, which spreads the error evenly between neighbours,
-          // shifted per sample. Each sample has its own lattice, so two or more samples
-          // average the weave away.
-          float io = 5.588238f * float(s);
-          float ign = fr(52.9829189f * fr(0.06711056f * (pos.x + io) + 0.00583715f * (pos.y + io)));
+          // interleaved gradient noise, which spreads the error evenly between neighbours.
+          // With several samples, their first steps are spread evenly over a step (stratified), so
+          // between them they cover it: a thin, bright rim that random offsets would hit in one
+          // pixel and miss in the next (a dithered fringe round the silhouette) is caught evenly.
           // After the first two (a layer's own stretches), plain hash noise: the gradient noise
           // offset again and again lines up into diagonal streaks.
-          float jit = jumps < 2 ? fr(ign + 0.618034f * float(5 * jumps) + seed * 0.37f)
+          float io = 5.588238f * float(s);
+          float ign = fr(52.9829189f * fr(0.06711056f * pos.x + 0.00583715f * pos.y));
+          float strat = ns > 1 ? float(s) / float(ns) : 0.0f;
+          float jit = jumps < 2 ? fr(ign + strat + 0.618034f * float(5 * jumps) + seed * 0.37f)
                                 : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
           dt *= jit + 0.02f;
           jump = false;
@@ -1571,11 +1661,17 @@ local:
         // Fade out over the last quarter of maxDistance, so the cap never cuts the deck hard.
         float far = clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
         float sig = 0.0f;
+        bool near = false;
         for (int L = 0; L < 3; L++) {
-          sigL[L] = act[L] == 1 ? cloud(p, foot, false, sdL[L], L) * far * sig0[L] : 0.0f;
+          float bd = 0.0f;
+          sigL[L] = act[L] == 1 ? cloud(p, foot, false, sdL[L], L, bd) * far * sig0[L] : 0.0f;
           sig += sigL[L];
+          near = near || bd > 0.0f;
         }
-        if (sig > 0.0f && !fine && armed && edgeSteps > 1.5f) {
+        // Fine steps start on reaching cloud, or (with 'edge steps') the band round it where the
+        // detail can reach: a thin, bright rim thinner than a coarse step is otherwise hit by one
+        // pixel's steps and missed by the next, a dithered fringe round the silhouette.
+        if ((sig > 0.0f || near) && !fine && armed && edgeSteps > 1.5f) {
           fine = true;
           armed = false;
           clear = 0;
@@ -1585,11 +1681,11 @@ local:
         if (fine) {
           // Back to coarse steps after a clear stretch, or four coarse steps deep: by then
           // the surface is behind, and a long path inside a deck would cost too much.
-          clear = sig > 0.0f ? 0 : clear + 1;
+          clear = sig > 0.0f || near ? 0 : clear + 1;
           fineSteps++;
-          if (float(clear) > edgeSteps || float(fineSteps) > 4.0f * edgeSteps)
+          if (float(clear) > es || float(fineSteps) > 4.0f * es)
             fine = false;
-        } else if (sig <= 0.0f) {
+        } else if (sig <= 0.0f && !near) {
           armed = true;
         }
         if (sig > 0.0f) {
@@ -1662,8 +1758,11 @@ local:
         }
         acc += float4(mx, my, 0.0f, alpha);
       } else if (output == 1) {
-        acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha);
+        float wgt = 1.0f / (1.0f + max(max(col.x, col.y), col.z));
+        acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha) * wgt;
+        wacc += wgt;
       } else {
+        float wgt = 1.0f / (1.0f + max(max(col.x, col.y), col.z));
         if (anyDeck && onGround && horizonHaze > 0.0f && hazeDistance > 0.0f) {
           // Horizon haze: a deck ends where the view meets the ground, which with no ground in
           // the plate is a dead straight line with nothing under it. So the far ground takes
@@ -1673,7 +1772,8 @@ local:
           col += ha * hazeColor;
           alpha += ha;
         }
-        acc += float4(col.x, col.y, col.z, alpha);
+        acc += float4(col.x, col.y, col.z, alpha) * wgt;
+        wacc += wgt;
       }
     }
     if (output == 2) {
@@ -1681,7 +1781,7 @@ local:
       dst() = float4(zm, zm, zm, acc.w / float(ns));
       return;
     }
-    dst() = acc / float(ns);
+    dst() = (output == 0 || output == 1) && wacc > 0.0f ? acc / wacc : acc / float(ns);
   }
 
 };

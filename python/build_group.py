@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.23.0"
+VERSION = "0.24.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -107,7 +107,7 @@ VOLUME = [
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
-             "map_amount", "map_channel"]
+             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
             "release_box", "fade_top", "fade_bottom", "fade_left", "fade_right",
@@ -644,6 +644,20 @@ def build_knobs(g):
                 "Which channel of the map this deck reads: paint each deck in its own channel to place "
                 "them separately.")
         k.clearFlag(nuke.STARTLINE)
+        k = add(g, nuke.Enumeration_Knob(p + "map_use", "map use", ["footprint", "silhouette"]),
+                "footprint: the map marks where clouds stand on the layer, seen from above (they rise "
+                "from it in heaps). silhouette: the painted shape is the cloud mass's outline as the "
+                "camera on 'map frame' sees it, so you can draw towers, a shelf or a wall of cloud "
+                "where you want it; set how far away it stands and how deep it is. Black is clear "
+                "sky, white is cloud, and the layer's noise tears the edges.")
+        k = add(g, nuke.Double_Knob(p + "sil_distance", "silhouette distance"),
+                "How far from the camera the painted mass stands, in km ('map use' silhouette).")
+        k.setRange(1, 60)
+        k.setValue(10)
+        k = add(g, nuke.Double_Knob(p + "sil_depth", "silhouette depth"),
+                "How deep the painted mass is, front to back, in km ('map use' silhouette).")
+        k.setRange(0.2, 20)
+        k.setValue(5)
         add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
         k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
                 "The volume's overall shape, before lumps and erosion break it up.")
@@ -930,6 +944,9 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
         # The coverage map, drifting with the wind since the map frame.
         one("map_amount", p + "map_amount")
         one("map_channel", p + "map_channel")
+        one("map_mode", p + "map_use")
+        one("sil_distance", "%ssil_distance * 1000" % p)
+        one("sil_depth", "%ssil_depth * 1000" % p)
         since = "(parent.time_s - parent.map_frame / max(root.fps, 1))"
         vec("map_drift", ("-%swind_speed * %s * sin(radians(%swind_deg))" % (p, since, p),
                           "%swind_speed * %s * cos(radians(%swind_deg))" % (p, since, p)))
@@ -1002,9 +1019,18 @@ def build():
         black.setInput(0, fmt)
         black = nuke.nodes.Multiply(name="WorkBlack", channels="rgba", value=0)
         black.setInput(0, nuke.toNode("WorkClear"))
-        work = nuke.nodes.Reformat(name="WorkFormat", type="scale", filter="Impulse", black_outside=True)
+        # The area to render: the format, and the bg's bbox where it is bigger (overscan), so the
+        # clouds carry on past the frame edge with the camera's view.
+        fmt_box = nuke.nodes.Crop(name="FormatBox", reformat=False, crop=True)
+        for j, e in enumerate(("0", "0", "input.width", "input.height")):
+            fmt_box["box"].setExpression(e, j)
+        fmt_box.setInput(0, black)
+        area = nuke.nodes.Merge2(name="WorkArea", operation="plus", bbox="union", output="rgba")
+        area.setInput(0, black)
+        area.setInput(1, fmt_box)
+        work = nuke.nodes.Reformat(name="WorkFormat", type="scale", filter="Impulse", black_outside=False, pbb=True)
         work["scale"].setExpression("parent.work_scale")
-        work.setInput(0, black)
+        work.setInput(0, area)
         # The map, or a black stand-in without one (the kernels need input 1 connected; use_map
         # is 0 then, so they never read it).
         nomap = nuke.nodes.Constant(name="MapNone", channels="rgba", color=0)
@@ -1020,7 +1046,7 @@ def build():
         zadd = nuke.nodes.AddChannels(name="DepthEnsure", channels="depth.Z")
         zadd.setInput(0, bg)
         zsrc.setInput(1, zadd)
-        zwork = nuke.nodes.Reformat(name="DepthWork", type="scale", filter="Impulse", black_outside=True)
+        zwork = nuke.nodes.Reformat(name="DepthWork", type="scale", filter="Impulse", black_outside=False, pbb=True)
         zwork["scale"].setExpression("parent.work_scale")
         zwork.setInput(0, zsrc)
 
@@ -1060,9 +1086,16 @@ def build():
             mvn["disable"].setExpression("%s || !parent.motion_vectors || parent.preview" % none_on)
             motion[step] = mvn
 
-        def up(name, src):
+        def up(name, src, frame=True):
+            # Back to the bg's format. A pass of the frame keeps its bbox (the overscan), cut to
+            # the work area first: a kernel's own bbox also takes in its sun map inputs.
+            if frame:
+                fit = nuke.nodes.CopyBBox(name=name + "Area")
+                fit.setInput(0, src)
+                fit.setInput(1, work)
+                src = fit
             r = nuke.nodes.Reformat(name=name, type="to box", box_fixed=True, resize="distort",
-                                    filter="Cubic", black_outside=True)
+                                    filter="Cubic", black_outside=not frame, pbb=frame)
             r["box_width"].setExpression("FormatSource.width")
             r["box_height"].setExpression("FormatSource.height")
             r.setInput(0, src)
@@ -1089,20 +1122,26 @@ def build():
             t["disable"].setExpression("parent.exposure == 0 && parent.highlight_rolloff <= 0")
             toned.append(t)
         col_up, sun_up = toned
+        dep_fit = nuke.nodes.CopyBBox(name="DepthUpArea")
+        dep_fit.setInput(0, dep)
+        dep_fit.setInput(1, work)
         dep_up = nuke.nodes.Reformat(name="DepthUp", type="to box", box_fixed=True, resize="distort",
-                                     filter="Impulse", black_outside=True)
+                                     filter="Impulse", black_outside=False, pbb=True)
         dep_up["box_width"].setExpression("FormatSource.width")
         dep_up["box_height"].setExpression("FormatSource.height")
-        dep_up.setInput(0, dep)
+        dep_up.setInput(0, dep_fit)
 
         # Motion vectors: back to full size and full-size pixels.
         mv_up = {}
         for step, nm in ((1, "Fwd"), (-1, "Bwd")):
+            mfit = nuke.nodes.CopyBBox(name="%sUpArea" % nm)
+            mfit.setInput(0, motion[step])
+            mfit.setInput(1, work)
             mr = nuke.nodes.Reformat(name="%sUp" % nm, type="to box", box_fixed=True, resize="distort",
-                                     filter="Impulse", black_outside=True)
+                                     filter="Impulse", black_outside=False, pbb=True)
             mr["box_width"].setExpression("FormatSource.width")
             mr["box_height"].setExpression("FormatSource.height")
-            mr.setInput(0, motion[step])
+            mr.setInput(0, mfit)
             mx = nuke.nodes.Multiply(name="%sScale" % nm, channels="rgb")
             mx["value"].setExpression("1 / max(parent.work_scale, 1e-6)")
             mx.setInput(0, mr)
@@ -1170,7 +1209,7 @@ def build():
         sm_all3 = nuke.nodes.Merge2(name="SunMap_All3", operation="plus")
         sm_all3.setInput(0, sm_all)
         sm_all3.setInput(1, sunmaps[2])
-        sm_up = up("SunMapUp", sm_all3)
+        sm_up = up("SunMapUp", sm_all3, frame=False)
         cm = nuke.nodes.Copy(name="Layer_CloudSunMap")
         for j, c in enumerate(("red", "green", "blue")):
             cm["from%d" % j].setValue("rgba." + c)
@@ -1226,10 +1265,10 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
     ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
     ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
-    ("Back to full size", 0x444444ff, r"(ColorUp|SunUp|DepthUp|ShadowUp|FwdUp|BwdUp|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
+    ("Back to full size", 0x444444ff, r"(ColorUp.*|SunUp.*|DepthUp.*|ShadowUp.*|FwdUp.*|BwdUp.*|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
     ("Shadows", 0x4a4a3aff, r"(Shadow_.*|SunMap_All.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),
     ("Layers", 0x6a4a4aff, r"(Layer_.*|SkyPart|BreakoutOrNot|MotionOrNot)"),

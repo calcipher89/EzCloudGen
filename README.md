@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.23.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.24.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -55,6 +55,22 @@ tighter cauliflower near its top. For photographic cumulus use 'light diffusion'
 sharpness' about 0.6, 'billow light' 1 and 'billow shrink' about 0.6.
 'map softness' (coverage map, default 0.5) frays and blurs the painted edges over part of a cloud's
 size, so a hard edge in the map comes out as cloud thinning out rather than a straight wall.
+Cleaner silhouettes: the march now takes its fine edge steps from the band where a cloud's detail
+can reach, not only once it has hit cloud, so thin bright rims are no longer stepped over in one
+pixel and caught in the next (the dithered, jagged fringe round clouds against the sky). Several
+samples per pixel are spread evenly over the pixel and over a step, and bright samples count for
+less when they are averaged, so an edge half on a blazing cloud and half on sky blends instead of
+clipping to white. The render time is about the same.
+Overscan: with a bg whose bbox is bigger than its format, the clouds (and the depth, motion vectors
+and shadow) render out to that bbox, carrying on past the frame edge as the camera would see them.
+A bbox smaller than the format still gets clouds over the whole format.
+'map use' (per deck, by 'map channel'): **footprint** (as before) marks where clouds stand on the
+layer, seen from above. **silhouette** makes the painted shape the cloud mass's outline as the
+camera on 'map frame' sees it: paint towers, a shelf or a wall of cloud where you want them (a soft
+Roto works best), and set 'silhouette distance' (km from the camera) and 'silhouette depth' (km,
+front to back). Black is clear sky. Inside the paint the deck fills its whole height with 3D heaps,
+the painted top overrides the layer's dome profile, and 3D noise frays the outline and the front and
+back, so it reads as cloud, not a cut-out. Make the layer thick enough to reach the painted top.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
 storms and thick decks so they don't go flat grey (each type sets its own; 0 turns it off).
