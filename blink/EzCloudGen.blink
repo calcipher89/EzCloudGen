@@ -1,7 +1,13 @@
-// EzCloudGen: one procedural, volumetric cloud layer, ray marched through the shot camera.
-// Ported from the prototype in reference/clouds.py.
+// EzCloudGen: up to three procedural, volumetric cloud layers, ray marched together through the
+// shot camera. Ported from the prototype in reference/clouds.py.
 //
-// Metres inside, +Y up. The layer is a shell from `base` to `base + thickness` above the
+// Layers: each layer's settings are 3-element arrays (element i is layer i + 1; layer_on says
+// which are on, layer_seed is each one's seed). One march goes through all of them: where they
+// overlap, each step samples every layer it is inside and lights each layer's share of the step
+// with that layer's own settings, so overlapping clouds interleave (a deck crossing a volume, a
+// tower through a deck) instead of being sorted whole per pixel.
+//
+// Metres inside, +Y up. A deck is a shell from `base` to `base + thickness` above the
 // ground. The ground is pinned to the world: flat by default (earthCurvature 0), or with
 // earthCurvature 1 the true curved earth, its top at the scene origin, so far decks sink behind
 // the real horizon. The camera sits at camPosition (scene units, times sceneScale for metres)
@@ -39,12 +45,12 @@
 //           for forward vectors, the previous for backward), a = opacity. The clouds' mean point
 //           along the ray moves with the wind (decks) or with the box (volumes), and is projected
 //           through the other frame's camera. No lighting, so it is cheap.
-// output 5: the sun map, for the other layers: along the ray from the ground up towards the sun
-//           (see tauAbove), r = this layer's optical depth, g and b = its first and second
-//           moments of altitude in km (sum of optical depth x km, x km^2). Maps of several
-//           layers add up. Another layer reads the sum of the others' maps as `smap`
-//           (use_sun_map) and dims its direct sun by the part of the optical depth above the
-//           point (see tauAbove), so a layer only shadows what is below it.
+// output 5: one layer's sun map (only_layer; -1 marches them all): along the ray from the ground
+//           up towards the sun (see tauAbove), r = the optical depth, g and b = its first and
+//           second moments of altitude in km (sum of optical depth x km, x km^2). Maps of
+//           several layers add up. The three layers' maps come back in as smap, smap2 and smap3
+//           (use_sun_map): each layer is dimmed by the other two's optical depth above the point
+//           (see tauAbove), so a layer only shadows what is below it.
 //
 // Occlusion: `zin` red is the bg's depth (scene units, as depthMode says). With occlude on, the
 // march stops at the bg's surface, so clouds go behind mountains and buildings. Depth of 0, or
@@ -68,6 +74,8 @@ kernel EzCloudGen : ImageComputationKernel<ePixelWise>
   Image<eRead, eAccessRandom, eEdgeClamped> cmap;
   Image<eRead, eAccessPoint, eEdgeClamped> zin;
   Image<eRead, eAccessRandom, eEdgeClamped> smap;
+  Image<eRead, eAccessRandom, eEdgeClamped> smap2;
+  Image<eRead, eAccessRandom, eEdgeClamped> smap3;
   Image<eWrite> dst;
 
 param:
@@ -96,80 +104,80 @@ param:
   float edgeSteps;
   float seed;
   float evolve;
-  float2 offset;
+  float2 offset[3];
   float gapAmount;
   float gapSize;
   // The cloud type.
-  float base;
-  float thickness;
-  float coverage;
-  float scaleKm;
-  float stretch;
-  float windDeg;
-  float edge;
-  float taper;
-  float bottomRound;
-  float topRound;
-  float detailSize;
-  float erosion;
-  float sigma;
-  float cells;
-  float cellKm;
-  float warp;
-  float forward;
-  float ambient;
-  float skyOcclusion;
-  float shadowDepth;
+  float base[3];
+  float thickness[3];
+  float coverage[3];
+  float scale_km[3];
+  float stretch[3];
+  float wind_deg[3];
+  float edge[3];
+  float taper[3];
+  float bottom_round[3];
+  float top_round[3];
+  float detail_size[3];
+  float erosion[3];
+  float sigma[3];
+  float cells[3];
+  float cell_km[3];
+  float warp[3];
+  float forward[3];
+  float ambient[3];
+  float sky_occlusion[3];
+  float shadow_depth[3];
   float sunGlow;
   float diffusion;
   float detailSharpness;
   int useSunMap;
   float sunMapSize;
-  float octaves;
-  float billow;
-  float streaks;
-  float vary;
-  float density;
+  float octaves[3];
+  float billow[3];
+  float streaks[3];
+  float vary[3];
+  float density[3];
   // Placed volume.
-  int volume;
-  int volShape;
-  float3 volCenter;
-  float3 volRotate;
-  float3 volSize;
-  float lumps;
-  float lumpSize;
-  float lumps2;
-  float skirt;
+  int volume[3];
+  int vol_shape[3];
+  float3 vol_center[3];
+  float3 vol_rotate[3];
+  float3 vol_size[3];
+  float lumps[3];
+  float lump_size[3];
+  float small_lumps[3];
+  float skirt[3];
   // Per-side fades of a volume: how far in from each face of the box (0..1 of the box) the
   // density is eaten away; the erosion noise then tears that margin up.
-  float fadeTop;
-  float fadeBottom;
-  float fadeLeft;
-  float fadeRight;
-  float fadeFront;
-  float fadeBack;
+  float fade_top[3];
+  float fade_bottom[3];
+  float fade_left[3];
+  float fade_right[3];
+  float fade_front[3];
+  float fade_back[3];
   // Erosion stack.
-  float wispSize;
-  float wispAmount;
-  float grainSize;
-  float grainAmount;
-  float swirl;
-  float swirlSize;
-  float turbulence;
-  float crumble;
-  float crumbleSize;
-  float shear;
+  float wisp_size[3];
+  float wisp_amount[3];
+  float grain_size[3];
+  float grain_amount[3];
+  float swirl[3];
+  float swirl_size[3];
+  float turbulence[3];
+  float crumble[3];
+  float crumble_size[3];
+  float shear[3];
   // Coverage map.
   int useMap;
-  float mapAmount;
-  int mapChannel;
+  float map_amount[3];
+  int map_channel[3];
   float3 mapRow0;
   float3 mapRow1;
   float3 mapRow2;
   float3 mapPosition;
   float mapFocal;
   float mapHaperture;
-  float2 mapDrift;
+  float2 map_drift[3];
   // Variations sheet.
   int tiles;
   // Occlusion by the bg depth, and ground shadows.
@@ -181,15 +189,20 @@ param:
   float3 otherPosition;
   float otherFocal;
   float otherHaperture;
-  float2 otherOffset;
-  float3 otherVolCenter;
+  float2 other_offset[3];
+  float3 other_vol_center[3];
   // A box from a 3D node: its axes in the world (unit length).
-  int volAxes;
-  float3 volAxisX;
-  float3 volAxisY;
-  float3 volAxisZ;
+  int vol_axes[3];
+  float3 vol_axis_x[3];
+  float3 vol_axis_y[3];
+  float3 vol_axis_z[3];
   int depthMode;
   float skyDepth;
+  // The layers: which are on, and each one's seed (the global seed jitters the steps). The
+  // sun map pass marches one layer only (onlyLayer), or all of them (-1).
+  int layer_on[3];
+  float layer_seed[3];
+  int onlyLayer;
 
 local:
   float R;
@@ -198,20 +211,21 @@ local:
   float pi;
   float3 sun;
   float camAlt;
-  float ca;
-  float sa;
-  float gapX;
-  float gapZ;
-  float3 vc;
-  float3 vr0;
-  float3 vr1;
-  float3 vr2;
-  float3 vh;
+  float ca[3];
+  float sa[3];
+  float gapX[3];
+  float gapZ[3];
+  float3 vc[3];
+  float3 vr0[3];
+  float3 vr1[3];
+  float3 vr2[3];
+  float3 vh[3];
   float3 mc;
 
   void define()
   {
     defineParam(output, "output", 0);
+    defineParam(onlyLayer, "only_layer", -1);
     defineParam(camRow0, "cam_row0", float3(1.0f, 0.0f, 0.0f));
     defineParam(camRow1, "cam_row1", float3(0.0f, 1.0f, 0.0f));
     defineParam(camRow2, "cam_row2", float3(0.0f, 0.0f, 1.0f));
@@ -236,74 +250,20 @@ local:
     defineParam(edgeSteps, "edge_steps", 3.0f);
     defineParam(seed, "seed", 0.0f);
     defineParam(evolve, "evolve", 0.0f);
-    defineParam(offset, "offset", float2(0.0f, 0.0f));
     defineParam(gapAmount, "gap_amount", 0.0f);
     defineParam(gapSize, "gap_size", 2000.0f);
-    defineParam(base, "base", 1400.0f);
-    defineParam(thickness, "thickness", 1300.0f);
-    defineParam(coverage, "coverage", 0.42f);
-    defineParam(scaleKm, "scale_km", 1.6f);
-    defineParam(stretch, "stretch", 1.0f);
-    defineParam(windDeg, "wind_deg", 20.0f);
-    defineParam(edge, "edge", 0.06f);
-    defineParam(taper, "taper", 0.85f);
-    defineParam(bottomRound, "bottom_round", 0.04f);
-    defineParam(topRound, "top_round", 0.15f);
-    defineParam(detailSize, "detail_size", 220.0f);
-    defineParam(erosion, "erosion", 0.45f);
-    defineParam(sigma, "sigma", 0.06f);
-    defineParam(cells, "cells", 0.0f);
-    defineParam(cellKm, "cell_km", 0.5f);
-    defineParam(warp, "warp", 1.2f);
-    defineParam(forward, "forward", 0.8f);
-    defineParam(ambient, "ambient", 1.0f);
-    defineParam(skyOcclusion, "sky_occlusion", 1.0f);
-    defineParam(shadowDepth, "shadow_depth", 0.0f);
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
-    defineParam(octaves, "octaves", 3.5f);
-    defineParam(billow, "billow", 1.0f);
-    defineParam(streaks, "streaks", 0.0f);
-    defineParam(vary, "vary", 0.0f);
-    defineParam(density, "density", 1.0f);
-    defineParam(volume, "volume", 0);
-    defineParam(volShape, "vol_shape", 1);
-    defineParam(volCenter, "vol_center", float3(0.0f, 20000.0f, -60000.0f));
-    defineParam(volRotate, "vol_rotate", float3(0.0f, 0.0f, 0.0f));
-    defineParam(volSize, "vol_size", float3(3000.0f, 1800.0f, 3000.0f));
-    defineParam(lumps, "lumps", 0.5f);
-    defineParam(lumpSize, "lump_size", 600.0f);
-    defineParam(lumps2, "small_lumps", 0.0f);
-    defineParam(skirt, "skirt", 0.0f);
-    defineParam(fadeTop, "fade_top", 0.0f);
-    defineParam(fadeBottom, "fade_bottom", 0.0f);
-    defineParam(fadeLeft, "fade_left", 0.0f);
-    defineParam(fadeRight, "fade_right", 0.0f);
-    defineParam(fadeFront, "fade_front", 0.0f);
-    defineParam(fadeBack, "fade_back", 0.0f);
-    defineParam(wispSize, "wisp_size", 60.0f);
-    defineParam(wispAmount, "wisp_amount", 0.0f);
-    defineParam(grainSize, "grain_size", 15.0f);
-    defineParam(grainAmount, "grain_amount", 0.0f);
-    defineParam(swirl, "swirl", 0.0f);
-    defineParam(swirlSize, "swirl_size", 400.0f);
-    defineParam(turbulence, "turbulence", 0.0f);
-    defineParam(crumble, "crumble", 0.0f);
-    defineParam(crumbleSize, "crumble_size", 120.0f);
-    defineParam(shear, "shear", 0.0f);
     defineParam(useMap, "use_map", 0);
-    defineParam(mapAmount, "map_amount", 1.0f);
-    defineParam(mapChannel, "map_channel", 0);
     defineParam(mapRow0, "map_row0", float3(1.0f, 0.0f, 0.0f));
     defineParam(mapRow1, "map_row1", float3(0.0f, 1.0f, 0.0f));
     defineParam(mapRow2, "map_row2", float3(0.0f, 0.0f, 1.0f));
     defineParam(mapPosition, "map_position", float3(0.0f, 3000.0f, 0.0f));
     defineParam(mapFocal, "map_focal", 24.0f);
     defineParam(mapHaperture, "map_haperture", 36.0f);
-    defineParam(mapDrift, "map_drift", float2(0.0f, 0.0f));
     defineParam(tiles, "tiles", 1);
     defineParam(occlude, "occlude", 0);
     defineParam(depthMode, "depth_mode", 0);
@@ -314,12 +274,6 @@ local:
     defineParam(otherPosition, "other_position", float3(0.0f, 3000.0f, 0.0f));
     defineParam(otherFocal, "other_focal", 24.0f);
     defineParam(otherHaperture, "other_haperture", 36.0f);
-    defineParam(otherOffset, "other_offset", float2(0.0f, 0.0f));
-    defineParam(otherVolCenter, "other_vol_center", float3(0.0f, 20000.0f, -60000.0f));
-    defineParam(volAxes, "vol_axes", 0);
-    defineParam(volAxisX, "vol_axis_x", float3(1.0f, 0.0f, 0.0f));
-    defineParam(volAxisY, "vol_axis_y", float3(0.0f, 1.0f, 0.0f));
-    defineParam(volAxisZ, "vol_axis_z", float3(0.0f, 0.0f, 1.0f));
   }
 
   void init()
@@ -337,47 +291,49 @@ local:
     float3 sd = normalize(sunDirection);
     sun = float3(sd.x * cos(r) + sd.z * sin(r), sd.y, -sd.x * sin(r) + sd.z * cos(r));
     camAlt = max((camPosition.y - groundHeight) * sceneScale, 1.0f);
-    float a = windDeg * pi / 180.0f;
-    ca = cos(a);
-    sa = sin(a);
-    // Where the line from the camera to the sun crosses the cloud base: the gap opens there.
-    float up = max(sun.y, 0.02f);
-    float rise = base + 0.5f * thickness - camAlt;
-    gapX = sun.x / up * rise;
-    gapZ = sun.z / up * rise;
+    for (int i = 0; i < 3; i++) {
+      float a = wind_deg[i] * pi / 180.0f;
+      ca[i] = cos(a);
+      sa[i] = sin(a);
+      // Where the line from the camera to the sun crosses the cloud base: the gap opens there.
+      float up = max(sun.y, 0.02f);
+      float rise = base[i] + 0.5f * thickness[i] - camAlt;
+      gapX[i] = sun.x / up * rise;
+      gapZ[i] = sun.z / up * rise;
 
-    // The volume in the kernel's frame (camera above 0, 0; metres) and its world to local
-    // rotation: R = Rz * Rx * Ry turns local into world, so its transpose turns back.
-    vc = float3((volCenter.x - camPosition.x) * sceneScale, (volCenter.y - groundHeight) * sceneScale,
-                (volCenter.z - camPosition.z) * sceneScale);
-    float ax = volRotate.x * pi / 180.0f;
-    float ay = volRotate.y * pi / 180.0f;
-    float az = volRotate.z * pi / 180.0f;
-    float cx = cos(ax);
-    float sx = sin(ax);
-    float cy = cos(ay);
-    float sy = sin(ay);
-    float cz = cos(az);
-    float sz = sin(az);
-    // Columns of R (local axes in world), as rows of R^T.
-    vr0 = float3(cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy);
-    vr1 = float3(-sz * cx, cz * cx, sx);
-    vr2 = float3(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy);
-    if (volAxes == 1) {
-      vr0 = normalize(volAxisX);
-      vr1 = normalize(volAxisY);
-      vr2 = normalize(volAxisZ);
+      // Each volume in the kernel's frame (camera above 0, 0; metres) and its world to local
+      // rotation: R = Rz * Rx * Ry turns local into world, so its transpose turns back.
+      vc[i] = float3((vol_center[i].x - camPosition.x) * sceneScale, (vol_center[i].y - groundHeight) * sceneScale,
+                  (vol_center[i].z - camPosition.z) * sceneScale);
+      float ax = vol_rotate[i].x * pi / 180.0f;
+      float ay = vol_rotate[i].y * pi / 180.0f;
+      float az = vol_rotate[i].z * pi / 180.0f;
+      float cx = cos(ax);
+      float sx = sin(ax);
+      float cy = cos(ay);
+      float sy = sin(ay);
+      float cz = cos(az);
+      float sz = sin(az);
+      // Columns of R (local axes in world), as rows of R^T.
+      vr0[i] = float3(cz * cy - sz * sx * sy, sz * cy + cz * sx * sy, -cx * sy);
+      vr1[i] = float3(-sz * cx, cz * cx, sx);
+      vr2[i] = float3(cz * sy + sz * sx * cy, sz * sy - cz * sx * cy, cx * cy);
+      if (vol_axes[i] == 1) {
+        vr0[i] = normalize(vol_axis_x[i]);
+        vr1[i] = normalize(vol_axis_y[i]);
+        vr2[i] = normalize(vol_axis_z[i]);
+      }
+      vh[i] = float3(max(vol_size[i].x, 1.0f) * 0.5f, max(vol_size[i].y, 1.0f) * 0.5f, max(vol_size[i].z, 1.0f) * 0.5f);
     }
-    vh = float3(max(volSize.x, 1.0f) * 0.5f, max(volSize.y, 1.0f) * 0.5f, max(volSize.z, 1.0f) * 0.5f);
     // The map camera in the kernel's frame.
     mc = float3((mapPosition.x - camPosition.x) * sceneScale, (mapPosition.y - groundHeight) * sceneScale,
                 (mapPosition.z - camPosition.z) * sceneScale);
   }
 
   // World (kernel frame) point or direction into the volume's unit box space.
-  float3 toLocal(float3 v)
+  float3 toLocal(float3 v, int lyr)
   {
-    return float3(dot(vr0, v) / vh.x, dot(vr1, v) / vh.y, dot(vr2, v) / vh.z);
+    return float3(dot(vr0[lyr], v) / vh[lyr].x, dot(vr1[lyr], v) / vh[lyr].y, dot(vr2[lyr], v) / vh[lyr].z);
   }
 
   // Ray vs the unit box [-1, 1]^3 in local space; t is the same as along the world ray.
@@ -532,7 +488,7 @@ local:
   }
 
   // Billowy (inverted Worley, cauliflower) mixed with wispy value noise.
-  float detail3(float x, float y, float z, float oct)
+  float detail3(float x, float y, float z, float oct, int lyr)
   {
     float s = 0.0f;
     float amp = 0.5f;
@@ -544,10 +500,10 @@ local:
         break;
       // 1 - d^2 (less 0.22 to keep the mean at 1 - d's): round caps rather than cones, so the
       // billows read as soft cauliflower instead of sand.
-      float d = billow > 0.0f ? worley3(x, y, z) : 1.0f;
-      float b = billow > 0.0f ? 0.78f - d * d : 0.0f;
-      float v = billow < 1.0f ? vnoise3(x * 1.3f, y * 1.3f, z * 1.3f) : 0.0f;
-      s += amp * w * (billow * b + (1.0f - billow) * v);
+      float d = billow[lyr] > 0.0f ? worley3(x, y, z) : 1.0f;
+      float b = billow[lyr] > 0.0f ? 0.78f - d * d : 0.0f;
+      float v = billow[lyr] < 1.0f ? vnoise3(x * 1.3f, y * 1.3f, z * 1.3f) : 0.0f;
+      s += amp * w * (billow[lyr] * b + (1.0f - billow[lyr]) * v);
       tot += amp * w;
       // 'detail sharpness' keeps more of each finer octave: crisp cauliflower, not soft lumps.
       amp *= 0.5f + 0.17f * clamp(detailSharpness, 0.0f, 1.0f);
@@ -572,9 +528,9 @@ local:
   // ---- Shape --------------------------------------------------------------------------------
 
   // The painted coverage at kernel-frame point p, 0..1, or -1 where the map can't see it.
-  float mapCoverage(float3 p)
+  float mapCoverage(float3 p, int lyr)
   {
-    float3 v = float3(p.x + mapDrift.x - mc.x, p.y - mc.y, p.z + mapDrift.y - mc.z);
+    float3 v = float3(p.x + map_drift[lyr].x - mc.x, p.y - mc.y, p.z + map_drift[lyr].y - mc.z);
     // World to the map camera: the transpose of its rotation.
     float cx = mapRow0.x * v.x + mapRow1.x * v.y + mapRow2.x * v.z;
     float cy = mapRow0.y * v.x + mapRow1.y * v.y + mapRow2.y * v.z;
@@ -589,86 +545,86 @@ local:
     float u = cx / -cz * mapFocal / hap + 0.5f;
     float t = cy / -cz * mapFocal / (hap * h / w) + 0.5f;
     float4 m = bilinear(cmap, cmap.bounds.x1 + u * w - 0.5f, cmap.bounds.y1 + t * h - 0.5f);
-    float c = mapChannel == 1 ? m.x : mapChannel == 2 ? m.y : mapChannel == 3 ? m.z : mapChannel == 4 ? m.w
+    float c = map_channel[lyr] == 1 ? m.x : map_channel[lyr] == 2 ? m.y : map_channel[lyr] == 3 ? m.z : map_channel[lyr] == 4 ? m.w
                                                                                      : 0.2126f * m.x + 0.7152f * m.y + 0.0722f * m.z;
     return clamp(c, 0.0f, 1.0f);
   }
 
   // Coverage at local point p (m, camera above 0, 0; only x, z for the noise, y for the map):
   // positive inside a cloud.
-  float weather(float3 p, float foot, float sd)
+  float weather(float3 p, float foot, float sd, int lyr)
   {
     float X = p.x;
     float Z = p.z;
-    float sc = scaleKm * 1000.0f;
-    float gx = X - gapX;
-    float gz = Z - gapZ;
+    float sc = scale_km[lyr] * 1000.0f;
+    float gx = X - gapX[lyr];
+    float gz = Z - gapZ[lyr];
     // World position plus drift.
-    X += camPosition.x * sceneScale + offset.x;
-    Z += camPosition.z * sceneScale + offset.y;
-    float u = (X * ca + Z * sa) / sc;
-    float v = (-X * sa + Z * ca) / (sc * stretch);
+    X += camPosition.x * sceneScale + offset[lyr].x;
+    Z += camPosition.z * sceneScale + offset[lyr].y;
+    float u = (X * ca[lyr] + Z * sa[lyr]) / sc;
+    float v = (-X * sa[lyr] + Z * ca[lyr]) / (sc * stretch[lyr]);
     float oct = min(6.0f, max(1.0f, lg2(max(sc / max(foot, 1.0f), 1.0f)) - 0.5f));
     float wx = fbm2(u * 0.5f + 3.1f, v * 0.5f, 3.0f, sd) - 0.5f;
     float wz = fbm2(u * 0.5f + 9.7f, v * 0.5f + 5.0f, 3.0f, sd) - 0.5f;
-    float u2 = u + wx * warp;
-    float v2 = v + wz * warp;
+    float u2 = u + wx * warp[lyr];
+    float v2 = v + wz * warp[lyr];
     float f;
-    if (streaks > 0.5f)
+    if (streaks[lyr] > 0.5f)
       f = ridged2(u2, v2, oct, sd) * (0.55f + 0.9f * fbm2(u * 0.3f + 40.0f, v * 0.3f, 3.0f, sd));
     else
       f = fbm2(u2, v2, oct, sd);
-    float cov = coverage;
-    if (useMap == 1 && mapAmount > 0.0f) {
+    float cov = coverage[lyr];
+    if (useMap == 1 && map_amount[lyr] > 0.0f) {
       // Mid grey keeps the layer's coverage, white covers (0.8, dense but still broken; 1 fills
       // the painted area as one solid mass), black clears. The lookup is warped by the cloud
       // noise at the cloud size and again at a quarter of it, so the edges billow instead of
       // taking the painted outline. The map is read at the layer's middle height for every
       // height, so it paints a footprint on the layer that the clouds rise from, rather than
       // a wedge along the camera's rays (a slab, or stacked shelves from a moved camera).
-      float ws = sc * max(warp, 0.5f) * 0.8f;
+      float ws = sc * max(warp[lyr], 0.5f) * 0.8f;
       float hs = sc * 0.8f;
       float hx = fbm2(u * 4.0f + 17.0f, v * 4.0f + 2.0f, 3.0f, sd) - 0.5f;
       float hz = fbm2(u * 4.0f + 23.0f, v * 4.0f + 11.0f, 3.0f, sd) - 0.5f;
-      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, base + 0.5f * thickness, p.z + wz * ws + hz * hs));
+      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, base[lyr] + 0.5f * thickness[lyr], p.z + wz * ws + hz * hs), lyr);
       if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
         // instead of being extruded straight up into walls.
-        float n = clamp((p.y - base) / max(thickness, 1.0f), 0.0f, 1.0f);
+        float n = clamp((p.y - base[lyr]) / max(thickness[lyr], 1.0f), 0.0f, 1.0f);
         m *= 1.0f - 0.8f * n * (1.0f - m);
-        float mc2 = m < 0.5f ? -0.3f + (coverage + 0.3f) * 2.0f * m : coverage + (0.6f - coverage) * (2.0f * m - 1.0f);
-        cov += (mc2 - cov) * min(mapAmount, 1.0f);
+        float mc2 = m < 0.5f ? -0.3f + (coverage[lyr] + 0.3f) * 2.0f * m : coverage[lyr] + (0.6f - coverage[lyr]) * (2.0f * m - 1.0f);
+        cov += (mc2 - cov) * min(map_amount[lyr], 1.0f);
       }
     }
     float c = f - (0.82f - 0.55f * cov);
-    if (cov < coverage && c > 0.0f) {
+    if (cov < coverage[lyr] && c > 0.0f) {
       // Where the map thins the layer, raising the threshold alone leaves only the low tops of
       // the noise above it: every surviving cloud is barely positive, so it renders as a thin,
       // smooth, see-through veil. Real cloud in a clearer patch is fewer, smaller clouds, each
       // as dense as anywhere else, so what is left is scaled back up to the layer's own range.
-      float t0 = 0.82f - 0.55f * coverage;
+      float t0 = 0.82f - 0.55f * coverage[lyr];
       float t1 = 0.82f - 0.55f * cov;
       c *= min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
     }
-    if (cov > coverage) {
+    if (cov > coverage[lyr]) {
       // Where the map adds coverage, the 2D noise alone would stand in straight columns all the
       // way up the layer: a 3D noise the size of the layer's thickness breaks them into heaps.
-      float L = max(thickness, 100.0f) * 0.7f;
-      float hb = min((cov - coverage) * 4.0f, 1.0f);
+      float L = max(thickness[lyr], 100.0f) * 0.7f;
+      float hb = min((cov - coverage[lyr]) * 4.0f, 1.0f);
       c += hb * 0.3f * (vnoise3(X / L + sd, p.y / L, Z / L) - 0.5f);
       // And the thick middles are eased back, so the profile and taper round their tops at
       // different heights instead of all of them reaching the layer's top as one flat lid.
       if (c > 0.0f)
         c -= hb * c * c / (c + 0.3f);
     }
-    if (cells > 0.0f) {
-      float cs = cellKm * 1000.0f;
-      float cu = (X * ca + Z * sa) / cs;
-      float cv = (-X * sa + Z * ca) / (cs * 0.6f);
+    if (cells[lyr] > 0.0f) {
+      float cs = cell_km[lyr] * 1000.0f;
+      float cu = (X * ca[lyr] + Z * sa[lyr]) / cs;
+      float cv = (-X * sa[lyr] + Z * ca[lyr]) / (cs * 0.6f);
       // The cells fade out when they get smaller than a few pixels.
       float fd = sstep(1.5f, 5.0f, cs / max(foot, 1.0f));
       float cell = worley2(cu + wx * 0.8f, cv + wz * 0.8f, sd);
-      c -= cells * fd * (cell - 0.45f) * 0.35f;
+      c -= cells[lyr] * fd * (cell - 0.45f) * 0.35f;
     }
     if (gapAmount > 0.0f)
       c -= gapAmount * 0.5f * exp(-(gx * gx + gz * gz) / (gapSize * gapSize));
@@ -676,11 +632,11 @@ local:
   }
 
   // How much the coverage shrinks at height hn (0 base, 1 top).
-  float profile(float hn)
+  float profile(float hn, int lyr)
   {
-    float k = 0.3f * (1.0f - sstep(0.0f, max(bottomRound, 1e-3f), hn));
-    k += 0.3f * sstep(1.0f - max(topRound, 1e-3f), 1.0f, hn);
-    k += taper * 0.32f * hn * sqrt(hn);
+    float k = 0.3f * (1.0f - sstep(0.0f, max(bottom_round[lyr], 1e-3f), hn));
+    k += 0.3f * sstep(1.0f - max(top_round[lyr], 1e-3f), 1.0f, hn);
+    k += taper[lyr] * 0.32f * hn * sqrt(hn);
     return k;
   }
 
@@ -696,9 +652,9 @@ local:
   }
 
   // The placed volume's coverage at p (kernel frame), positive inside; hn: 0 bottom, 1 top.
-  float volumeShape(float3 p, float &hn, float sd)
+  float volumeShape(float3 p, float &hn, float sd, int lyr)
   {
-    float3 q = toLocal(p - vc);
+    float3 q = toLocal(p - vc[lyr], lyr);
     hn = clamp(q.y * 0.5f + 0.5f, 0.0f, 1.0f);
     if (fabs(q.x) > 1.0f || fabs(q.y) > 1.0f || fabs(q.z) > 1.0f)
       return -1.0f;
@@ -709,23 +665,23 @@ local:
     float rxz = sqrt(sx * sx + sz * sz);
     float hs = min(hn * 1.18f, 1.0f);
     float dist;
-    if (volShape == 0) {
+    if (vol_shape[lyr] == 0) {
       // Ellipsoid.
       float sy = q.y * 1.25f;
       dist = sqrt(sx * sx + sy * sy + sz * sz);
-    } else if (volShape == 1) {
+    } else if (vol_shape[lyr] == 1) {
       // Dome: a flat base, rounding to the top (cumulus).
       // The base is a little narrower than the body, so the lobes overhang it.
       float r = sqrt(max(1.0f - hs * hs, 0.0f)) * (0.82f + 0.18f * sstep(0.0f, 0.3f, hs));
       dist = rxz / max(r, 1e-3f);
-      dist = max(dist, 1.0f - hn / max(bottomRound, 0.02f));
-    } else if (volShape == 2) {
+      dist = max(dist, 1.0f - hn / max(bottom_round[lyr], 0.02f));
+    } else if (vol_shape[lyr] == 2) {
       // Cumulonimbus: a broad tower with a flat base, spreading into an anvil. The anvil is a
       // lens that thins to its rim (its underside slopes up), pushed a little downwind (local
       // +x), with an overshooting dome above the tower.
       float sh = hn * 1.18f;
       float rc = 0.42f - 0.05f * sstep(0.0f, 0.6f, sh);
-      float dCol = max(rxz / rc, 1.0f - hn / max(bottomRound, 0.02f));
+      float dCol = max(rxz / rc, 1.0f - hn / max(bottom_round[lyr], 0.02f));
       dCol = max(dCol, 1.0f + (sh - 0.76f) / 0.12f);
       // Spreads further downwind (local +x) than upwind, with a ragged rim.
       float ax = (sx - 0.05f) / (sx > 0.05f ? 1.15f : 0.8f);
@@ -742,7 +698,7 @@ local:
       float dv = sh < mid ? (mid - sh) / (half * 1.5f) : (sh - mid) / half;
       float dLens = max(rr, dv);
       dist = min(dCol, dLens);
-    } else if (volShape == 4) {
+    } else if (vol_shape[lyr] == 4) {
       // Towers: a towering cumulus complex. A flat base under an uneven skyline (a few tall
       // towers standing on a lower, wider shelf), in a ragged footprint with breaks between
       // its cells. The skyline falls away to the rim, so nothing meets the box walls.
@@ -751,11 +707,11 @@ local:
       float tower = sstep(0.42f, 0.66f, n1);
       float rimF = sqrt(max(1.0f - rxz * rxz, 0.0f));
       // Breaks between the cells, where the sun gets through ('coverage' closes or opens them).
-      float body = sstep(0.34f, 0.48f, 0.6f * n2 + 0.4f * n1 + (coverage - 0.5f) * 0.6f);
+      float body = sstep(0.34f, 0.48f, 0.6f * n2 + 0.4f * n1 + (coverage[lyr] - 0.5f) * 0.6f);
       float skyline = (0.26f + 0.16f * n2 + 0.58f * tower) * (0.35f + 0.65f * rimF) * body;
       float foot = rxz / (0.8f + 0.35f * (n2 - 0.5f) + 0.2f * tower);
-      dist = max(max(hs / max(skyline, 0.03f), foot), 1.0f - hn / max(bottomRound, 0.02f));
-    } else if (volShape == 5) {
+      dist = max(max(hs / max(skyline, 0.03f), foot), 1.0f - hn / max(bottom_round[lyr], 0.02f));
+    } else if (vol_shape[lyr] == 5) {
       // Shelf: a one-sided cloud shelf, thick and low at the box's -x end, thinning and rising
       // towards +x, with a flat-ish top, a streaky, ragged underside and a torn outline. Turn
       // the box (rotate y) to point it; its +x end is the thin, trailing edge.
@@ -773,7 +729,7 @@ local:
       float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
       dist = pow(pow(a.x, 6.0f) + pow(a.y, 6.0f) + pow(a.z, 6.0f), 1.0f / 6.0f);
     }
-    float c = (1.0f - dist) * 0.3f + (coverage - 0.5f) * 0.3f;
+    float c = (1.0f - dist) * 0.3f + (coverage[lyr] - 0.5f) * 0.3f;
     // Fade out before the walls, so nothing is cut off flat by them.
     // Round across (so the corners never show) and over the top and base.
     float wall = max(sqrt(q.x * q.x + q.z * q.z), fabs(q.y));
@@ -782,12 +738,12 @@ local:
     // +z front), so fog can sit on the ground and tear away above, or thin out towards the
     // camera.
     float f = 0.0f;
-    f = max(f, fadeTop > 0.0f ? 1.0f - sstep(0.0f, fadeTop, (1.0f - q.y) * 0.5f) : 0.0f);
-    f = max(f, fadeBottom > 0.0f ? 1.0f - sstep(0.0f, fadeBottom, (1.0f + q.y) * 0.5f) : 0.0f);
-    f = max(f, fadeRight > 0.0f ? 1.0f - sstep(0.0f, fadeRight, (1.0f - q.x) * 0.5f) : 0.0f);
-    f = max(f, fadeLeft > 0.0f ? 1.0f - sstep(0.0f, fadeLeft, (1.0f + q.x) * 0.5f) : 0.0f);
-    f = max(f, fadeFront > 0.0f ? 1.0f - sstep(0.0f, fadeFront, (1.0f - q.z) * 0.5f) : 0.0f);
-    f = max(f, fadeBack > 0.0f ? 1.0f - sstep(0.0f, fadeBack, (1.0f + q.z) * 0.5f) : 0.0f);
+    f = max(f, fade_top[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_top[lyr], (1.0f - q.y) * 0.5f) : 0.0f);
+    f = max(f, fade_bottom[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_bottom[lyr], (1.0f + q.y) * 0.5f) : 0.0f);
+    f = max(f, fade_right[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_right[lyr], (1.0f - q.x) * 0.5f) : 0.0f);
+    f = max(f, fade_left[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_left[lyr], (1.0f + q.x) * 0.5f) : 0.0f);
+    f = max(f, fade_front[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_front[lyr], (1.0f - q.z) * 0.5f) : 0.0f);
+    f = max(f, fade_back[lyr] > 0.0f ? 1.0f - sstep(0.0f, fade_back[lyr], (1.0f + q.z) * 0.5f) : 0.0f);
     c -= 0.45f * f;
     return c;
   }
@@ -819,55 +775,55 @@ local:
   }
 
   // Cloud density 0..1. cheap: no detail noise (for the light march).
-  float cloud(float3 p, float foot, bool cheap, float sd)
+  float cloud(float3 p, float foot, bool cheap, float sd, int lyr)
   {
     float hn = 0.0f;
     float c = 0.0f;
     float alt = 0.0f;
-    float height = thickness;
+    float height = thickness[lyr];
     float lx = 0.0f;
     float ly = 0.0f;
     float lz = 0.0f;
     // The most the lobes can add (see below).
-    float lreach = lumps * (0.2f + 0.09f * lumps2);
-    if (volume == 1) {
-      c = volumeShape(p, hn, sd);
+    float lreach = lumps[lyr] * (0.2f + 0.09f * small_lumps[lyr]);
+    if (volume[lyr] == 1) {
+      c = volumeShape(p, hn, sd, lyr);
       if (c <= -0.15f - lreach)
         return 0.0f;
       alt = p.y;
-      height = volSize.y;
+      height = vol_size[lyr].y;
       // In the box's own frame (metres), so the cloud moves and turns with the box.
-      float3 lq = toLocal(p - vc);
-      lx = lq.x * vh.x + offset.x;
-      ly = lq.y * vh.y;
-      lz = lq.z * vh.z + offset.y;
+      float3 lq = toLocal(p - vc[lyr], lyr);
+      lx = lq.x * vh[lyr].x + offset[lyr].x;
+      ly = lq.y * vh[lyr].y;
+      lz = lq.z * vh[lyr].z + offset[lyr].y;
     } else {
       alt = altitude(p);
-      float b = base;
-      c = weather(p, foot, sd);
+      float b = base[lyr];
+      c = weather(p, foot, sd, lyr);
       // (A deck's lobes add nothing out in the clear.)
       if (c <= -0.12f)
         return 0.0f;
-      if (vary > 0.0f) {
-        float sv = scaleKm * 2500.0f;
-        float vx = p.x + camPosition.x * sceneScale + offset.x;
-        float vz = p.z + camPosition.z * sceneScale + offset.y;
-        b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary * thickness;
+      if (vary[lyr] > 0.0f) {
+        float sv = scale_km[lyr] * 2500.0f;
+        float vx = p.x + camPosition.x * sceneScale + offset[lyr].x;
+        float vz = p.z + camPosition.z * sceneScale + offset[lyr].y;
+        b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary[lyr] * thickness[lyr];
         // And a finer ripple, so a base seen at eye level is a ragged edge, not a ruled line.
-        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary * thickness * 0.8f;
+        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary[lyr] * thickness[lyr] * 0.8f;
       }
-      hn = (alt - b) / thickness;
+      hn = (alt - b) / thickness[lyr];
       if (hn <= 0.0f || hn >= 1.0f)
         return 0.0f;
-      c -= profile(hn);
-      lx = p.x + camPosition.x * sceneScale + offset.x;
-      ly = alt - b - 0.5f * thickness;
-      lz = p.z + camPosition.z * sceneScale + offset.y;
+      c -= profile(hn, lyr);
+      lx = p.x + camPosition.x * sceneScale + offset[lyr].x;
+      ly = alt - b - 0.5f * thickness[lyr];
+      lz = p.z + camPosition.z * sceneScale + offset[lyr].y;
     }
     // Skirt: real cumulus are smooth, firm billows on top and soft, torn wisps around the base.
     // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
-    float sk = skirt * (1.0f - sstep(0.1f, 0.55f, hn));
-    float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk) * (1.0f - 0.5f * clamp(detailSharpness, 0.0f, 1.0f));
+    float sk = skirt[lyr] * (1.0f - sstep(0.1f, 0.55f, hn));
+    float e = max(edge[lyr], 1e-3f) * (1.0f + 2.0f * sk) * (1.0f - 0.5f * clamp(detailSharpness, 0.0f, 1.0f));
     // Far away the edge softens with the pixel's footprint: a hard edge on detail a few pixels
     // across is speckle. The edge widens about its middle (soften) and by no more than 0.12, so
     // a thin, already soft sheet keeps its density.
@@ -876,73 +832,73 @@ local:
     float soften = 0.5f * (e - e1);
     // The light march sees no small lumps, and skips the lobes deep inside the cloud, where
     // they can't open it up (they take at most 0.31 * lumps away).
-    bool core = cheap && (c - 0.31f * lumps + 0.03f) >= e + 0.12f;
-    if (lumps > 0.0f && !core) {
+    bool core = cheap && (c - 0.31f * lumps[lyr] + 0.03f) >= e + 0.12f;
+    if (lumps[lyr] > 0.0f && !core) {
       // Lobes: rounded caps (inverted Worley, 1 - d^2) on a smooth swell, with a second, smaller
       // set riding on them ('small lumps'): cauliflower turrets. An anvil's top keeps few, so
       // it stays a smooth sheet. Cumulus (domes and decks) have flat bases: their lobes run
       // straight down from a fifth of the way up (on decks, from 0.8 of a lobe size up), so the base has the body's
       // scalloped outline rather than being a round plate under it, and the lowest 250 m or so
       // is thinned, so the base is ragged.
-      bool flatBase = volume == 0 || volShape == 1;
-      float ls = max(lumpSize, 10.0f);
-      float lyl = flatBase ? max(ly, (volume == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
+      bool flatBase = volume[lyr] == 0 || vol_shape[lyr] == 1;
+      float ls = max(lump_size[lyr], 10.0f);
+      float lyl = flatBase ? max(ly, (volume[lyr] == 1 ? -0.3f : clamp(0.8f * ls / max(height, 1.0f), 0.1f, 0.35f) - 0.5f) * height) : ly;
       float lob = 0.0f;
       float lamp = 1.0f;
       float lf = 1.0f;
       for (int lo = 0; lo < 2; lo++) {
         float ld = worley3(lx / ls * lf + sd * 3.1f + 13.7f * float(lo), lyl / ls * lf, lz / ls * lf);
         lob += lamp * (0.78f - ld * ld - (lo > 0 ? 0.48f : 0.0f));
-        lamp *= cheap ? 0.0f : lumps2;
+        lamp *= cheap ? 0.0f : small_lumps[lyr];
         lf *= 2.3f;
         if (lamp <= 0.0f)
           break;
       }
       float sw = fbm2(lx / ls + 5.3f, lz / ls, 2.0f, sd);
-      float la = lumps * (volume == 1 && volShape == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
+      float la = lumps[lyr] * (volume[lyr] == 1 && vol_shape[lyr] == 2 ? 1.0f - 0.4f * sstep(0.68f, 0.8f, hn) : 1.0f);
       // A skirt's base is soft and even: the lobes die away into it, or from below their cells
       // show as a regular dimpled pattern.
-      la *= 1.0f - 0.8f * min(skirt, 1.0f) * (1.0f - sstep(0.0f, 0.3f, hn));
+      la *= 1.0f - 0.8f * min(skirt[lyr], 1.0f) * (1.0f - sstep(0.0f, 0.3f, hn));
       float add = la * (sw * 0.4f + lob * 0.6f - 0.48f) * 0.5f;
       // On a deck the lobes only swell cloud that is already there: out in the clear air
       // between the clouds they would make loose floating balls.
-      if (volume == 0 && add > 0.0f)
+      if (volume[lyr] == 0 && add > 0.0f)
         add *= clamp((c + 0.06f) / 0.12f, 0.0f, 1.0f);
       c += add;
       if (flatBase)
-        c -= 0.1f * min(lumps, 1.0f) * (1.0f - sstep(0.0f, min(0.14f, 250.0f / max(height, 1.0f)), hn));
+        c -= 0.1f * min(lumps[lyr], 1.0f) * (1.0f - sstep(0.0f, min(0.14f, 250.0f / max(height, 1.0f)), hn));
     }
     if (cheap) {
       // The light march sees a softer shape (it has no detail to break the edges up): a hard
       // one makes its few coarse steps band the shading into flat patches.
       return clamp((c + 0.03f) / (e + 0.12f), 0.0f, 1.0f);
     }
-    float wispAmt = wispAmount * (1.0f + 2.0f * sk);
-    float reach = 0.12f * (erosion + wispAmt + grainAmount);
+    float wispAmt = wisp_amount[lyr] * (1.0f + 2.0f * sk);
+    float reach = 0.12f * (erosion[lyr] + wispAmt + grain_amount[lyr]);
     if (c < -reach - soften)
       return 0.0f;
     // The detail's coordinates: world metres, rising slowly (boil) with evolve.
-    float wx = p.x + camPosition.x * sceneScale + offset.x;
+    float wx = p.x + camPosition.x * sceneScale + offset[lyr].x;
     float wy = alt - evolve;
-    float wz = p.z + camPosition.z * sceneScale + offset.y;
-    if (volume == 1) {
+    float wz = p.z + camPosition.z * sceneScale + offset[lyr].y;
+    if (volume[lyr] == 1) {
       // A placed volume's detail lives in the box's frame (metres), so it travels with the box.
-      float3 lq = toLocal(p - vc);
-      wx = lq.x * vh.x + offset.x;
-      wy = lq.y * vh.y - evolve;
-      wz = lq.z * vh.z + offset.y;
+      float3 lq = toLocal(p - vc[lyr], lyr);
+      wx = lq.x * vh[lyr].x + offset[lyr].x;
+      wy = lq.y * vh[lyr].y - evolve;
+      wz = lq.z * vh[lyr].z + offset[lyr].y;
     }
-    if (shear != 0.0f) {
+    if (shear[lyr] != 0.0f) {
       // Lean the tops downwind.
-      float lean = shear * hn * height;
-      wx -= lean * sa;
-      wz += lean * ca;
+      float lean = shear[lyr] * hn * height;
+      wx -= lean * sa[lyr];
+      wz += lean * ca[lyr];
     }
     // Swirl curls the detail around; turbulence adds a second, finer octave of it (a third the
     // size) so the edges roll and churn as evolve boils them.
     for (int so = 0; so < 2; so++) {
-      float amt = so == 0 ? swirl : turbulence;
-      float ss = max(swirlSize, 1.0f) * (so == 0 ? 1.0f : 0.33f);
+      float amt = so == 0 ? swirl[lyr] : turbulence[lyr];
+      float ss = max(swirl_size[lyr], 1.0f) * (so == 0 ? 1.0f : 0.33f);
       if (amt <= 0.0f || lod(ss, foot, 1.0f) <= 0.0f)
         continue;
       float sw = amt * ss;
@@ -954,30 +910,30 @@ local:
       wz += uz * sw * 2.0f;
     }
     // An anvil's top is a smooth, spreading ice sheet: fewer billows there.
-    float er = erosion * (volume == 1 && volShape == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f)
-               * (1.0f - 0.7f * skirt * sstep(0.3f, 0.7f, hn));
+    float er = erosion[lyr] * (volume[lyr] == 1 && vol_shape[lyr] == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f)
+               * (1.0f - 0.7f * skirt[lyr] * sstep(0.3f, 0.7f, hn));
     if (er > 0.0f) {
-      float oct = lod(detailSize, foot, octaves);
+      float oct = lod(detail_size[lyr], foot, octaves[lyr]);
       if (oct > 0.0f)
-        c += er * (detail3(wx / detailSize, wy / detailSize, wz / detailSize, oct) - 0.5f) * 0.24f;
+        c += er * (detail3(wx / detail_size[lyr], wy / detail_size[lyr], wz / detail_size[lyr], oct, lyr) - 0.5f) * 0.24f;
     }
     // Wisps and grain eat the thin edges more than the cores.
-    float thin = 1.0f - clamp(c / (3.0f * max(edge, 1e-3f)), 0.0f, 1.0f);
+    float thin = 1.0f - clamp(c / (3.0f * max(edge[lyr], 1e-3f)), 0.0f, 1.0f);
     if (wispAmt > 0.0f) {
-      float ws = max(wispSize, 1.0f);
+      float ws = max(wisp_size[lyr], 1.0f);
       float oct = lod(ws, foot, 2.0f);
       if (oct > 0.0f)
         c += wispAmt * (vfbm3(wx / ws, wy / ws * 1.6f, wz / ws, oct) - 0.55f) * 0.2f * (0.4f * (1.0f - min(sk, 1.0f)) + (0.6f + 0.4f * min(sk, 1.0f)) * thin);
     }
-    if (grainAmount > 0.0f) {
-      float gs = max(grainSize, 1.0f);
+    if (grain_amount[lyr] > 0.0f) {
+      float gs = max(grain_size[lyr], 1.0f);
       float oct = lod(gs, foot, 1.0f);
       if (oct > 0.0f)
-        c += grainAmount * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
+        c += grain_amount[lyr] * (vnoise3(wx / gs, wy / gs, wz / gs) - 0.55f) * 0.12f * oct * (0.3f + 0.7f * thin);
     }
-    if (crumble > 0.0f) {
+    if (crumble[lyr] > 0.0f) {
       // Crumble: chunks bitten out of the thin margins (torn edges), two octaves.
-      float cs = max(crumbleSize, 1.0f);
+      float cs = max(crumble_size[lyr], 1.0f);
       float oct = lod(cs, foot, 1.0f);
       if (oct > 0.0f) {
         float n = 0.0f;
@@ -985,7 +941,7 @@ local:
           float k = co == 0 ? 1.0f : 2.3f;
           n += (co == 0 ? 0.65f : 0.35f) * vnoise3(wx / cs * k + 17.0f * float(co), wy / cs * k, wz / cs * k);
         }
-        c -= crumble * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
+        c -= crumble[lyr] * 0.3f * oct * sstep(0.5f, 0.72f, n) * (0.25f + 0.75f * thin);
       }
     }
     return clamp((c + soften) / e, 0.0f, 1.0f);
@@ -1002,11 +958,14 @@ local:
   // The texel holds the optical depth along the sun ray and its altitude moments; the occluder
   // is taken as a uniform slab (mean +- sqrt(3) sd), and only the part above altKm counts.
   // Also gives the occluder's mean altitude (km), or -1 where there is none.
-  float sunMapTau(float2 g, float altKm, float w, float h, float &meanKm)
+  float sunMapTau(float2 g, float altKm, float w, float h, float &meanKm, int which)
   {
     float k = 1.0f / (sqrt(g.x * g.x + g.y * g.y) + sunMapSize);
-    float4 m = bilinear(smap, smap.bounds.x1 + (g.x * k * 0.5f + 0.5f) * w - 0.5f,
-                        smap.bounds.y1 + (g.y * k * 0.5f + 0.5f) * h - 0.5f);
+    float mx = (g.x * k * 0.5f + 0.5f) * w - 0.5f;
+    float my = (g.y * k * 0.5f + 0.5f) * h - 0.5f;
+    float4 m = which == 0 ? bilinear(smap, smap.bounds.x1 + mx, smap.bounds.y1 + my)
+             : which == 1 ? bilinear(smap2, smap2.bounds.x1 + mx, smap2.bounds.y1 + my)
+                          : bilinear(smap3, smap3.bounds.x1 + mx, smap3.bounds.y1 + my);
     float tau = m.x;
     meanKm = -1.0f;
     if (tau < 1e-4f)
@@ -1023,7 +982,7 @@ local:
   // sun to a soft glow instead of black. Light through a cloud layer is mostly scattered
   // forwards a few degrees, so its shadow blurs with the gap below it: five taps spread about
   // 0.12 m per metre of gap (and at least a texel), instead of streaks of hard shadow columns.
-  float tauAbove(float3 p)
+  float tauAbove(float3 p, int lyr)
   {
     // With the sun within ~1 degree of the horizon the ground point runs off to the map's
     // coarse rim, so the shadows fade out there instead.
@@ -1036,17 +995,25 @@ local:
     // The true sun ray, as the sun map pass marches it.
     float2 g = float2(p.x - sun.x / sun.y * p.y, p.z - sun.z / sun.y * p.y);
     float altKm = altitude(p) * 0.001f;
-    float meanKm = -1.0f;
-    float tau = sunMapTau(g, altKm, w, h, meanKm);
-    float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
     float rg = sqrt(g.x * g.x + g.y * g.y) + sunMapSize;
     float texel = 2.0f * rg * rg / (sunMapSize * w);
-    float r = max(120.0f * gapKm, texel);
-    float mk = 0.0f;
-    tau += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk);
-    tau += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk);
-    tau += sunMapTau(float2(g.x, g.y + r), altKm, w, h, mk);
-    tau += sunMapTau(float2(g.x, g.y - r), altKm, w, h, mk);
+    float tau = 0.0f;
+    // The other layers' maps (input smap is layer 1's, smap2 layer 2's, smap3 layer 3's; a
+    // layer that is off has a black map).
+    for (int j = 0; j < 3; j++) {
+      if (j == lyr)
+        continue;
+      float meanKm = -1.0f;
+      float t = sunMapTau(g, altKm, w, h, meanKm, j);
+      float gapKm = meanKm >= 0.0f ? max(meanKm - altKm, 0.0f) : 1.0f;
+      float r = max(120.0f * gapKm, texel);
+      float mk = 0.0f;
+      t += sunMapTau(float2(g.x + r, g.y), altKm, w, h, mk, j);
+      t += sunMapTau(float2(g.x - r, g.y), altKm, w, h, mk, j);
+      t += sunMapTau(float2(g.x, g.y + r), altKm, w, h, mk, j);
+      t += sunMapTau(float2(g.x, g.y - r), altKm, w, h, mk, j);
+      tau += t;
+    }
     return tau * 0.2f * clamp((sun.y - 0.01f) / 0.02f, 0.0f, 1.0f);
   }
 
@@ -1083,19 +1050,19 @@ local:
   // probes straight up, h1 and h2 above p, and returns their density times length in occ (sky
   // occlusion). They share the loop's one cloud() call: Blink inlines cloud() at every call
   // site, and a separate call made the kernel take minutes to compile on the CPU.
-  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ)
+  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, int lyr)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
     float far = 0.0f;
-    if (volume == 1) {
-      if (boxHit(toLocal(p - vc), toLocal(sun), t0, t1))
+    if (volume[lyr] == 1) {
+      if (boxHit(toLocal(p - vc[lyr], lyr), toLocal(sun, lyr), t0, t1))
         far = max(t1, 0.0f);
       far = min(far, 12000.0f);
     } else {
-      if (sphere(p, sun, base + thickness * (1.0f + vary), t0, t1))
+      if (sphere(p, sun, base[lyr] + thickness[lyr] * (1.0f + vary[lyr]), t0, t1))
         far = max(t1, 0.0f);
-      far = min(far, min(6.0f * thickness / max(sun.y, 0.08f), 12000.0f));
+      far = min(far, min(6.0f * thickness[lyr] / max(sun.y, 0.08f), 12000.0f));
     }
     int steps = max(int(10.0f * quality), 2);
     float od = 0.0f;
@@ -1118,7 +1085,7 @@ local:
         q = p + float3(0.0f, h, 0.0f);
         fq = foot + h * 0.05f;
       }
-      float dn = cloud(q, fq, i > 1, sd) * len;
+      float dn = cloud(q, fq, i > 1, sd, lyr) * len;
       if (i < steps)
         od += dn;
       else
@@ -1128,27 +1095,27 @@ local:
   }
 
   // How much of the sun this layer blocks at p (on the bg's surface): 0 lit .. 1 shaded.
-  float groundShadow(float3 p, float jit, float sd)
+  float groundShadow(float3 p, float jit, float sd, int lyr)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
     float s0 = 0.0f;
     float s1 = 0.0f;
-    if (volume == 1) {
-      if (!boxHit(toLocal(p - vc), toLocal(sun), t0, t1))
+    if (volume[lyr] == 1) {
+      if (!boxHit(toLocal(p - vc[lyr], lyr), toLocal(sun, lyr), t0, t1))
         return 0.0f;
       s0 = max(t0, 0.0f);
       s1 = t1;
     } else {
-      float hb = base - thickness * vary;
-      float ht = base + thickness * (1.0f + vary);
+      float hb = base[lyr] - thickness[lyr] * vary[lyr];
+      float ht = base[lyr] + thickness[lyr] * (1.0f + vary[lyr]);
       if (!sphere(p, sun, ht, t0, t1) || t1 <= 0.0f)
         return 0.0f;
       s1 = t1;
       // Below the layer: start where the sun ray leaves the base.
       if (sphere(p, sun, hb, t0, t1) && t0 <= 0.0f && t1 > 0.0f)
         s0 = t1;
-      s1 = min(s1, s0 + min(6.0f * thickness / max(sun.y, 0.08f), 40000.0f));
+      s1 = min(s1, s0 + min(6.0f * thickness[lyr] / max(sun.y, 0.08f), 40000.0f));
     }
     if (s1 <= s0)
       return 0.0f;
@@ -1158,9 +1125,157 @@ local:
     for (int i = 0; i < steps; i++) {
       float t = s0 + (float(i) + jit) * dt;
       // A wide footprint: soft shadows, and no fine noise to pay for.
-      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd) * dt;
+      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd, lyr) * dt;
     }
-    return 1.0f - exp(-od * sigma * density);
+    return 1.0f - exp(-od * sigma[lyr] * density[lyr]);
+  }
+
+  // Where the ray from o along d is inside layer lyr, before tmax: up to two stretches
+  // [s0, e0] and [s1, e1] (a deck's shell less the sphere under its base). Returns how many.
+  int spans(float3 o, float3 d, float tmax, int lyr, float &s0, float &e0, float &s1, float &e1)
+  {
+    float a0 = 0.0f;
+    float a1 = 0.0f;
+    float b0 = 0.0f;
+    float b1 = 0.0f;
+    int n = 0;
+    s0 = 0.0f;
+    e0 = 0.0f;
+    s1 = 0.0f;
+    e1 = 0.0f;
+    float hb = base[lyr] - thickness[lyr] * vary[lyr];
+    float ht = base[lyr] + thickness[lyr] * (1.0f + vary[lyr]);
+    if (volume[lyr] == 1) {
+      if (boxHit(toLocal(o - vc[lyr], lyr), toLocal(d, lyr), a0, a1) && min(a1, tmax) > max(a0, 0.0f)) {
+        s0 = max(a0, 0.0f);
+        e0 = min(a1, tmax);
+        n = 1;
+      }
+    } else if (sphere(o, d, ht, a0, a1) && a1 > 0.0f) {
+      float r0 = max(a0, 0.0f);
+      float r1 = min(a1, tmax);
+      if (!sphere(o, d, hb, b0, b1)) {
+        if (r1 > r0) {
+          s0 = r0;
+          e0 = r1;
+          n = 1;
+        }
+      } else {
+        if (min(b0, r1) > r0) {
+          s0 = r0;
+          e0 = min(b0, r1);
+          n = 1;
+        }
+        if (r1 > max(b1, r0)) {
+          if (n == 0) {
+            s0 = max(b1, r0);
+            e0 = r1;
+          } else {
+            s1 = max(b1, r0);
+            e1 = r1;
+          }
+          n += 1;
+        }
+      }
+    }
+    return n;
+  }
+
+  // Layer lyr's light at p, where its own extinction is sig: sun (multiple scattering, powder,
+  // diffusion; dimmed by the other layers' sun maps) plus sky and ground light. direct: the sun
+  // part alone.
+  float3 shade(float3 p, float sig, float foot, float sd, float cosT, int lyr, float3 &direct)
+  {
+    float sig0 = sigma[lyr] * density[lyr];
+    float layerH = volume[lyr] == 1 ? min(min(vol_size[lyr].x, vol_size[lyr].y), vol_size[lyr].z) : thickness[lyr];
+    float h1 = min(layerH, 3000.0f) * 0.05f;
+    float h2 = min(layerH, 3000.0f) * 0.2f;
+    float occU = 0.0f;
+    float od = sunDepth(p, foot, sd, h1, h2, occU, lyr) * sig0 + tauAbove(p, lyr);
+    // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
+    // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
+    // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
+    float ms = 0.0f;
+    float oaK = 0.3f + 0.3f * clamp(shadow_depth[lyr], 0.0f, 1.0f);
+    float oa = 1.0f;
+    float ob = 1.0f;
+    float oc = 1.0f;
+    for (int o = 0; o < 4; o++) {
+      // 'sun glow' adds the narrow forward peak of real cloud droplets: thin cloud in front
+      // of the sun blazes, and backlit edges get a hot silver lining (0: as before).
+      float ph = 0.75f * hg(forward[lyr] * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT)
+                 + sunGlow * hg(0.93f * oc, cosT);
+      ms += ob * exp(-od * oa) * ph;
+      oa *= oaK;
+      ob *= 0.6f;
+      oc *= 0.5f;
+    }
+    // Powder: thin edges facing away from the sun are darker. Looking towards the
+    // sun it fades, so backlit edges keep their silver lining.
+    float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
+    powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
+    direct = sunColor * (ms * powder);
+    if (diffusion > 0.0f) {
+      // Light diffusion: what a thick cloud really does with sunlight. Single
+      // scattering keeps the forward peak (the silver lining), and the many times
+      // scattered light follows diffusion theory: it falls off as 1 / (1 + k tau),
+      // not exponentially, so the sunlit side is bright white, billows shade off
+      // gradually round their sides, and even the far side of a tower still glows.
+      float single = exp(-od) * (0.75f * hg(forward[lyr], cosT) + 0.25f * hg(-0.25f, cosT)
+                                 + sunGlow * hg(0.93f, cosT));
+      float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward[lyr]) * od);
+      float3 soft = sunColor * (single + many);
+      direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
+    }
+    // Sky light from above, ground bounce from below.
+    float hn = 0.0f;
+    if (volume[lyr] == 1)
+      volumeShape(p, hn, sd, lyr);
+    else
+      hn = clamp((altitude(p) - base[lyr]) / thickness[lyr], 0.0f, 1.0f);
+    float th = min(layerH, 1500.0f) * 0.12f;
+    // Sky occlusion (the two probes above, from sunDepth): folds and undersides
+    // darken by the cloud overhead instead of all taking one flat sky tint.
+    // The layer's 'sky occlusion' scales both the strength and the soft cap's ceiling
+    // (3x it): cumulus folds want it strong (1: at least ~5% sky light), while tall
+    // storms and thick overcast decks go flat grey under their own mass, so their
+    // presets lower it.
+    float occK = 3.0f * sky_occlusion[lyr];
+    occU = occK > 1e-4f ? occK * (1.0f - exp(-occU * sig0 * 1.25f * sky_occlusion[lyr] / occK)) : 0.0f;
+    float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
+    float dnl = exp(-sig * hn * th) * 0.35f;
+    float3 amb = (skyColor * up + groundColor * dnl) * ambient[lyr];
+    return direct + amb;
+  }
+
+  // The motion vector (pixels) of layer lyr's cloud at p to the other frame, from (u, v).
+  float2 motionOf(float3 p, float u, float v, int lyr)
+  {
+    // Where that bit of cloud is on the other frame (in this frame's kernel space).
+    if (volume[lyr] == 1) {
+      p += float3((other_vol_center[lyr].x - vol_center[lyr].x) * sceneScale,
+                  (other_vol_center[lyr].y - vol_center[lyr].y) * sceneScale,
+                  (other_vol_center[lyr].z - vol_center[lyr].z) * sceneScale);
+    } else {
+      // The field is sampled at x + offset, so the clouds move by minus its change.
+      p.x -= other_offset[lyr].x - offset[lyr].x;
+      p.z -= other_offset[lyr].y - offset[lyr].y;
+    }
+    float3 oc = float3((otherPosition.x - camPosition.x) * sceneScale,
+                       (otherPosition.y - groundHeight) * sceneScale,
+                       (otherPosition.z - camPosition.z) * sceneScale);
+    float3 rel = p - oc;
+    // Into the other camera: the transpose of its rotation.
+    float cx = otherRow0.x * rel.x + otherRow1.x * rel.y + otherRow2.x * rel.z;
+    float cy = otherRow0.y * rel.x + otherRow1.y * rel.y + otherRow2.y * rel.z;
+    float cz = otherRow0.z * rel.x + otherRow1.z * rel.y + otherRow2.z * rel.z;
+    if (cz >= -1.0f)
+      return float2(0.0f, 0.0f);
+    float ohap = otherHaperture;
+    float ovap = otherHaperture * frameSize.y / frameSize.x;
+    float ou = cx / -cz * otherFocal / ohap + 0.5f;
+    float ov = cy / -cz * otherFocal / ovap + 0.5f;
+    return float2((ou - u) * frameSize.x, (ov - v) * frameSize.y);
   }
 
   void process(int2 pos)
@@ -1172,7 +1287,7 @@ local:
     // outlines: a footprint of 6 m per km along the sun ray, and steps to match.
     float pixAng = output == 5 ? 0.006f : hap / focal / frameSize.x;
     // A variations sheet: which tile, where in it, and its seed.
-    float sd = seed;
+    float tileSeed = 0.0f;
     float px = float(pos.x);
     float py = float(pos.y);
     float tf = 1.0f;
@@ -1192,12 +1307,27 @@ local:
       px = lx * tf;
       py = ly * tf;
       pixAng *= tf;
-      sd = seed + float((tiles - 1 - ty) * tiles + tx);
+      tileSeed = float((tiles - 1 - ty) * tiles + tx);
     }
-    float sig0 = sigma * density;
-    // The layer's shell, with room for `vary`.
-    float hb = base - thickness * vary;
-    float ht = base + thickness * (1.0f + vary);
+    // The layers marched (all that are on, or the sun map's one), each one's seed, extinction
+    // and smallest step; and the top of the highest deck (for the horizon haze).
+    int use[3];
+    float sdL[3];
+    float sig0[3];
+    float minStepL[3];
+    bool anyDeck = false;
+    float deckTop = -1e9f;
+    for (int L = 0; L < 3; L++) {
+      use[L] = layer_on[L] == 1 && (onlyLayer < 0 || onlyLayer == L) ? 1 : 0;
+      sdL[L] = layer_seed[L] + tileSeed;
+      sig0[L] = sigma[L] * density[L];
+      float layerH = volume[L] == 1 ? min(min(vol_size[L].x, vol_size[L].y), vol_size[L].z) : thickness[L];
+      minStepL[L] = max(min(layerH / 24.0f, detail_size[L] * 0.35f) / quality, 8.0f);
+      if (use[L] == 1 && volume[L] != 1) {
+        anyDeck = true;
+        deckTop = max(deckTop, base[L] + thickness[L] * (1.0f + vary[L]));
+      }
+    }
 
     float4 acc = float4(0.0f);
     int ns = max(samples, 1);
@@ -1230,8 +1360,6 @@ local:
       }
       float cosT = dot(d, sun);
 
-      // Where the ray is inside the shell: [a0, a1] (outer) minus (b0, b1) (inner), before
-      // the ground and maxDistance.
       float tmax = maxDistance;
       // The bg's surface along this ray, from its depth (sceneT < 0: sky, or no depth).
       float sceneT = -1.0f;
@@ -1243,10 +1371,15 @@ local:
           sceneT = depthMode == 2 ? z * sceneScale : z * sceneScale / zPer;
       }
       if (output == 3) {
+        // Ground shadow: each layer lets exp(-its optical depth) of the sun through.
         if (sceneT > 0.0f) {
           float jit = hash3(pos.x * 1.3f, pos.y * 1.9f, float(s) + seed);
-          float sh = groundShadow(o + d * sceneT, jit, sd);
-          acc += float4(sh, sh, sh, 1.0f);
+          float lit = 1.0f;
+          for (int L = 0; L < 3; L++) {
+            if (use[L] == 1)
+              lit *= 1.0f - groundShadow(o + d * sceneT, jit, sdL[L], L);
+          }
+          acc += float4(1.0f - lit, 1.0f - lit, 1.0f - lit, 1.0f);
         }
         continue;
       }
@@ -1260,52 +1393,33 @@ local:
         onGround = g0 < tmax;
         tmax = min(tmax, g0);
       }
-      // On flat ground a ray just above the horizon never lands, and the deck fades out at
-      // maxDistance: count it as the far ground too while it is still in the deck's heights
+      // On flat ground a ray just above the horizon never lands, and a deck fades out at
+      // maxDistance: count it as the far ground too while it is still in the decks' heights
       // there, or a sliver of bare sky shows between the deck and the hazy ground.
-      if (!onGround && tmax >= maxDistance && altitude(o + d * maxDistance) < ht)
+      if (anyDeck && !onGround && tmax >= maxDistance && altitude(o + d * maxDistance) < deckTop)
         onGround = true;
-      float a0 = 0.0f;
-      float a1 = 0.0f;
-      float b0 = 0.0f;
-      float b1 = 0.0f;
-      float i0s = 0.0f;
-      float i0e = 0.0f;
-      float i1s = 0.0f;
-      float i1e = 0.0f;
-      int n = 0;
-      if (volume == 1) {
-        if (boxHit(toLocal(o - vc), toLocal(d), a0, a1) && min(a1, tmax) > max(a0, 0.0f)) {
-          i0s = max(a0, 0.0f);
-          i0e = min(a1, tmax);
-          n = 1;
+
+      // Every layer's stretches of the ray: 2 per layer (empty where end <= start).
+      float iS[6];
+      float iE[6];
+      int nI = 0;
+      float tFirst = 1e30f;
+      float tLast = 0.0f;
+      for (int L = 0; L < 3; L++) {
+        float s0 = 0.0f;
+        float e0 = 0.0f;
+        float s1 = 0.0f;
+        float e1 = 0.0f;
+        int n = use[L] == 1 ? spans(o, d, tmax, L, s0, e0, s1, e1) : 0;
+        iS[2 * L] = s0;
+        iE[2 * L] = n > 0 ? e0 : -1.0f;
+        iS[2 * L + 1] = s1;
+        iE[2 * L + 1] = n > 1 ? e1 : -1.0f;
+        if (n > 0) {
+          tFirst = min(tFirst, s0);
+          tLast = max(tLast, n > 1 ? e1 : e0);
         }
-      } else if (sphere(o, d, ht, a0, a1) && a1 > 0.0f) {
-        float s0 = max(a0, 0.0f);
-        float s1 = min(a1, tmax);
-        if (!sphere(o, d, hb, b0, b1)) {
-          if (s1 > s0) {
-            i0s = s0;
-            i0e = s1;
-            n = 1;
-          }
-        } else {
-          if (min(b0, s1) > s0) {
-            i0s = s0;
-            i0e = min(b0, s1);
-            n = 1;
-          }
-          if (s1 > max(b1, s0)) {
-            if (n == 0) {
-              i0s = max(b1, s0);
-              i0e = s1;
-            } else {
-              i1s = max(b1, s0);
-              i1e = s1;
-            }
-            n += 1;
-          }
-        }
+        nI += n;
       }
 
       float T = 1.0f;
@@ -1318,138 +1432,157 @@ local:
       float3 col = float3(0.0f);
       float3 sunPart = float3(0.0f);
       float dep = 0.0f;
-      float layerH = volume == 1 ? min(min(volSize.x, volSize.y), volSize.z) : thickness;
-      float minStep = max(min(layerH / 24.0f, detailSize * 0.35f) / quality, 8.0f);
-      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(edgeSteps, 1.0f));
-      for (int k = 0; k < n; k++) {
-        float t = k == 0 ? i0s : i1s;
-        float tEnd = k == 0 ? i0e : i1e;
-        bool first = true;
-        // Coarse steps through clear air; on meeting cloud, go back a step and take fine ones
-        // (edgeSteps to a coarse step), so the surface is found to a fraction of a step and
-        // thick cloud isn't lit from one random point per step (which shows as grain).
-        bool fine = false;
-        bool armed = true;
-        int clear = 0;
-        int fineSteps = 0;
-        int steps = 0;
-        while (t < tEnd && T > tStop && steps < maxSteps) {
-          steps++;
-          float foot = max(t * pixAng, footMin);
-          float dt = max(minStep, t * (output == 5 ? 0.005f : 0.012f) / quality);
-          if (fine) {
-            // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
-            dt = min(dt / edgeSteps, max(1.5f / max(sig0, 1e-6f), 4.0f));
-          }
-          if (first) {
-            // Jitter the first step per pixel, so the steps don't band: interleaved gradient
-            // noise, which spreads the error evenly between neighbours, shifted per sample.
-            // Each sample has its own lattice, so two or more samples average the weave away.
-            float io = 5.588238f * float(s);
-            float ign = fr(52.9829189f * fr(0.06711056f * (pos.x + io) + 0.00583715f * (pos.y + io)));
-            dt *= fr(ign + 0.618034f * float(5 * k) + seed * 0.37f) + 0.02f;
-            first = false;
-          }
-          dt = min(dt, tEnd - t + 1e-3f);
-          float tm = t + 0.5f * dt;
-          float3 p = o + d * tm;
-          float dn = cloud(p, foot, false, sd);
-          // Fade out over the last quarter of maxDistance, so the cap never cuts the deck hard.
-          dn *= clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
-          if (dn > 0.0f && !fine && armed && edgeSteps > 1.5f) {
-            fine = true;
-            armed = false;
-            clear = 0;
-            fineSteps = 0;
+      // Per layer: its share of the opacity, and of the depth (for motion vectors).
+      float wL[3];
+      float dL[3];
+      for (int L = 0; L < 3; L++) {
+        wL[L] = 0.0f;
+        dL[L] = 0.0f;
+      }
+      int maxSteps = int((output == 5 ? 500.0f : 220.0f) * quality * max(edgeSteps, 1.0f)) * max(nI, 1);
+      // One march through all the layers together: where they overlap, each step samples
+      // every layer it is inside, so their clouds interleave instead of being sorted whole.
+      // Coarse steps through clear air; on meeting cloud, go back a step and take fine ones
+      // (edgeSteps to a coarse step), so the surface is found to a fraction of a step and
+      // thick cloud isn't lit from one random point per step (which shows as grain). Gaps
+      // between the layers are skipped.
+      float t = tFirst;
+      bool jump = true;
+      int jumps = 0;
+      bool fine = false;
+      bool armed = true;
+      int clear = 0;
+      int fineSteps = 0;
+      int steps = 0;
+      int act[3];
+      float sigL[3];
+      while (nI > 0 && t < tLast && T > tStop && steps < maxSteps) {
+        // The layers t is inside, the next boundary ahead, and the next start.
+        float nextEnd = tLast + 1.0f;
+        float nextStart = 1e30f;
+        bool any = false;
+        float mStep = 1e30f;
+        float sigMax = 0.0f;
+        for (int L = 0; L < 3; L++)
+          act[L] = 0;
+        for (int j = 0; j < 6; j++) {
+          if (iE[j] <= iS[j])
             continue;
+          int L = j / 2;
+          if (t >= iS[j] && t < iE[j]) {
+            act[L] = 1;
+            nextEnd = min(nextEnd, iE[j]);
+          } else if (iS[j] > t) {
+            nextStart = min(nextStart, iS[j]);
           }
-          if (fine) {
-            // Back to coarse steps after a clear stretch, or four coarse steps deep: by then
-            // the surface is behind, and a long path inside a deck would cost too much.
-            clear = dn > 0.0f ? 0 : clear + 1;
-            fineSteps++;
-            if (float(clear) > edgeSteps || float(fineSteps) > 4.0f * edgeSteps)
-              fine = false;
-          } else if (dn <= 0.0f) {
-            armed = true;
-          }
-          if (dn > 0.0f) {
-            float sig = dn * sig0;
-            float ext = exp(-sig * dt);
-            float w = T * (1.0f - ext);
-            dep += w * tm;
-            if (output == 5) {
-              float km = altitude(p) * 0.001f;
-              tau += sig * dt;
-              tm1 += sig * dt * km;
-              tm2 += sig * dt * km * km;
-            }
-            if (output != 2 && output != 4 && output != 5) {
-              float h1 = min(layerH, 3000.0f) * 0.05f;
-              float h2 = min(layerH, 3000.0f) * 0.2f;
-              float occU = 0.0f;
-              float od = sunDepth(p, foot, sd, h1, h2, occU) * sig0 + tauAbove(p);
-              // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
-              // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
-              // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
-              float ms = 0.0f;
-              float oaK = 0.3f + 0.3f * clamp(shadowDepth, 0.0f, 1.0f);
-              float oa = 1.0f;
-              float ob = 1.0f;
-              float oc = 1.0f;
-              for (int o = 0; o < 4; o++) {
-                // 'sun glow' adds the narrow forward peak of real cloud droplets: thin cloud in front
-                // of the sun blazes, and backlit edges get a hot silver lining (0: as before).
-                float ph = 0.75f * hg(forward * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT)
-                           + sunGlow * hg(0.93f * oc, cosT);
-                ms += ob * exp(-od * oa) * ph;
-                oa *= oaK;
-                ob *= 0.6f;
-                oc *= 0.5f;
-              }
-              // Powder: thin edges facing away from the sun are darker. Looking towards the
-              // sun it fades, so backlit edges keep their silver lining.
-              float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
-              powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
-              float3 direct = sunColor * (ms * powder);
-              if (diffusion > 0.0f) {
-                // Light diffusion: what a thick cloud really does with sunlight. Single
-                // scattering keeps the forward peak (the silver lining), and the many times
-                // scattered light follows diffusion theory: it falls off as 1 / (1 + k tau),
-                // not exponentially, so the sunlit side is bright white, billows shade off
-                // gradually round their sides, and even the far side of a tower still glows.
-                float single = exp(-od) * (0.75f * hg(forward, cosT) + 0.25f * hg(-0.25f, cosT)
-                                           + sunGlow * hg(0.93f, cosT));
-                float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward) * od);
-                float3 soft = sunColor * (single + many);
-                direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
-              }
-              // Sky light from above, ground bounce from below.
-              float hn = 0.0f;
-              if (volume == 1)
-                volumeShape(p, hn, sd);
-              else
-                hn = clamp((altitude(p) - base) / thickness, 0.0f, 1.0f);
-              float th = min(layerH, 1500.0f) * 0.12f;
-              // Sky occlusion (the two probes above, from sunDepth): folds and undersides
-              // darken by the cloud overhead instead of all taking one flat sky tint.
-              // The layer's 'sky occlusion' scales both the strength and the soft cap's ceiling
-              // (3x it): cumulus folds want it strong (1: at least ~5% sky light), while tall
-              // storms and thick overcast decks go flat grey under their own mass, so their
-              // presets lower it.
-              float occK = 3.0f * skyOcclusion;
-              occU = occK > 1e-4f ? occK * (1.0f - exp(-occU * sig0 * 1.25f * skyOcclusion / occK)) : 0.0f;
-              float up = exp(-sig * (1.0f - hn) * th * 0.5f - occU);
-              float dnl = exp(-sig * hn * th) * 0.35f;
-              float3 amb = (skyColor * up + groundColor * dnl) * ambient;
-              float hz = hazeDistance > 0.0f ? exp(-tm / hazeDistance) : 1.0f;
-              col += w * (hz * (direct + amb) + (1.0f - hz) * hazeColor);
-              sunPart += w * hz * direct;
-            }
-            T *= ext;
-          }
-          t += dt;
         }
+        float nb = min(nextEnd, nextStart);
+        for (int L = 0; L < 3; L++) {
+          if (act[L] == 1) {
+            any = true;
+            mStep = min(mStep, minStepL[L]);
+            sigMax = max(sigMax, sig0[L]);
+          }
+        }
+        if (!any) {
+          if (nextStart >= tLast)
+            break;
+          t = nextStart;
+          jump = true;
+          fine = false;
+          armed = true;
+          continue;
+        }
+        steps++;
+        float foot = max(t * pixAng, footMin);
+        float dt = max(mStep, t * (output == 5 ? 0.005f : 0.012f) / quality);
+        if (fine) {
+          // Fine steps are also no thicker than 1.5 optical depths of solid cloud.
+          dt = min(dt / edgeSteps, max(1.5f / max(sigMax, 1e-6f), 4.0f));
+        }
+        if (jump) {
+          // Jitter the first step into each stretch per pixel, so the steps don't band:
+          // interleaved gradient noise, which spreads the error evenly between neighbours,
+          // shifted per sample. Each sample has its own lattice, so two or more samples
+          // average the weave away.
+          float io = 5.588238f * float(s);
+          float ign = fr(52.9829189f * fr(0.06711056f * (pos.x + io) + 0.00583715f * (pos.y + io)));
+          // After the first two (a layer's own stretches), plain hash noise: the gradient noise
+          // offset again and again lines up into diagonal streaks.
+          float jit = jumps < 2 ? fr(ign + 0.618034f * float(5 * jumps) + seed * 0.37f)
+                                : hash3(pos.x + io, pos.y - io, float(jumps) * 13.1f + seed);
+          dt *= jit + 0.02f;
+          jump = false;
+          jumps++;
+        }
+        // Across a boundary (into or out of a layer while inside another): jitter the first step
+        // after it too, or the steps restart on that boundary in every pixel and band along it.
+        bool enter = false;
+        if (nb - t + 1e-3f < dt) {
+          dt = nb - t + 1e-3f;
+          enter = true;
+        }
+        float tm = t + 0.5f * dt;
+        float3 p = o + d * tm;
+        // Fade out over the last quarter of maxDistance, so the cap never cuts the deck hard.
+        float far = clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
+        float sig = 0.0f;
+        for (int L = 0; L < 3; L++) {
+          sigL[L] = act[L] == 1 ? cloud(p, foot, false, sdL[L], L) * far * sig0[L] : 0.0f;
+          sig += sigL[L];
+        }
+        if (sig > 0.0f && !fine && armed && edgeSteps > 1.5f) {
+          fine = true;
+          armed = false;
+          clear = 0;
+          fineSteps = 0;
+          continue;
+        }
+        if (fine) {
+          // Back to coarse steps after a clear stretch, or four coarse steps deep: by then
+          // the surface is behind, and a long path inside a deck would cost too much.
+          clear = sig > 0.0f ? 0 : clear + 1;
+          fineSteps++;
+          if (float(clear) > edgeSteps || float(fineSteps) > 4.0f * edgeSteps)
+            fine = false;
+        } else if (sig <= 0.0f) {
+          armed = true;
+        }
+        if (sig > 0.0f) {
+          float ext = exp(-sig * dt);
+          float w = T * (1.0f - ext);
+          dep += w * tm;
+          if (output == 5) {
+            float km = altitude(p) * 0.001f;
+            tau += sig * dt;
+            tm1 += sig * dt * km;
+            tm2 += sig * dt * km * km;
+          } else if (output == 4) {
+            for (int L = 0; L < 3; L++) {
+              wL[L] += w * sigL[L] / sig;
+              dL[L] += w * sigL[L] / sig * tm;
+            }
+          } else if (output != 2) {
+            // Each layer lights its own share of the step.
+            float3 lit = float3(0.0f);
+            float3 sunLit = float3(0.0f);
+            for (int L = 0; L < 3; L++) {
+              if (sigL[L] > 0.0f) {
+                float3 direct = float3(0.0f);
+                float3 c = shade(p, sigL[L], foot, sdL[L], cosT, L, direct);
+                lit += c * (sigL[L] / sig);
+                sunLit += direct * (sigL[L] / sig);
+              }
+            }
+            float hz = hazeDistance > 0.0f ? exp(-tm / hazeDistance) : 1.0f;
+            col += w * (hz * lit + (1.0f - hz) * hazeColor);
+            sunPart += w * hz * sunLit;
+          }
+          T *= ext;
+        }
+        t += dt;
+        if (enter)
+          jump = true;
       }
       // The march stops once 1% of the light is left: call that opaque. Left as 0.99 it lets
       // a hundredth of what is behind through, and a sun or a blazing cloud rim behind a dark
@@ -1461,44 +1594,33 @@ local:
         acc += float4(tau, tm1, tm2, 1.0f);
       } else if (output == 2) {
         // Weighted by the sample's opacity (and divided out below): a plain mean over the
-        // samples would halve the depth of an edge pixel that one of two samples misses, and
-        // the layer stack would then draw that edge in front of everything.
+        // samples would halve the depth of an edge pixel that one of two samples misses.
         float z = alpha > 1e-5f ? dep * zPer / sceneScale : 0.0f;
         acc += float4(z, z, z, alpha);
       } else if (output == 4) {
-        float2 mv = float2(0.0f, 0.0f);
+        // Each layer's cloud moves its own way (wind or box): their vectors, by opacity.
+        float mx = 0.0f;
+        float my = 0.0f;
+        float wsum = 0.0f;
         if (alpha > 1e-5f && tiles <= 1) {
-          float3 p = o + d * (dep / alpha);
-          // Where that bit of cloud is on the other frame (in this frame's kernel space).
-          if (volume == 1) {
-            p += float3((otherVolCenter.x - volCenter.x) * sceneScale, (otherVolCenter.y - volCenter.y) * sceneScale,
-                        (otherVolCenter.z - volCenter.z) * sceneScale);
-          } else {
-            // The field is sampled at x + offset, so the clouds move by minus its change.
-            p.x -= otherOffset.x - offset.x;
-            p.z -= otherOffset.y - offset.y;
+          for (int L = 0; L < 3; L++) {
+            if (wL[L] > 1e-6f) {
+              float2 m = motionOf(o + d * (dL[L] / wL[L]), u, v, L);
+              mx += wL[L] * m.x;
+              my += wL[L] * m.y;
+              wsum += wL[L];
+            }
           }
-          float3 oc = float3((otherPosition.x - camPosition.x) * sceneScale,
-                             (otherPosition.y - groundHeight) * sceneScale,
-                             (otherPosition.z - camPosition.z) * sceneScale);
-          float3 rel = p - oc;
-          // Into the other camera: the transpose of its rotation.
-          float cx = otherRow0.x * rel.x + otherRow1.x * rel.y + otherRow2.x * rel.z;
-          float cy = otherRow0.y * rel.x + otherRow1.y * rel.y + otherRow2.y * rel.z;
-          float cz = otherRow0.z * rel.x + otherRow1.z * rel.y + otherRow2.z * rel.z;
-          if (cz < -1.0f) {
-            float ohap = otherHaperture;
-            float ovap = otherHaperture * frameSize.y / frameSize.x;
-            float ou = cx / -cz * otherFocal / ohap + 0.5f;
-            float ov = cy / -cz * otherFocal / ovap + 0.5f;
-            mv = float2((ou - u) * frameSize.x, (ov - v) * frameSize.y);
+          if (wsum > 0.0f) {
+            mx /= wsum;
+            my /= wsum;
           }
         }
-        acc += float4(mv.x, mv.y, 0.0f, alpha);
+        acc += float4(mx, my, 0.0f, alpha);
       } else if (output == 1) {
         acc += float4(sunPart.x, sunPart.y, sunPart.z, alpha);
       } else {
-        if (volume == 0 && onGround && horizonHaze > 0.0f && hazeDistance > 0.0f) {
+        if (anyDeck && onGround && horizonHaze > 0.0f && hazeDistance > 0.0f) {
           // Horizon haze: a deck ends where the view meets the ground, which with no ground in
           // the plate is a dead straight line with nothing under it. So the far ground takes
           // the haze too, thick at the horizon and thinning towards the camera, and the deck
@@ -1517,4 +1639,5 @@ local:
     }
     dst() = acc / float(ns);
   }
+
 };
