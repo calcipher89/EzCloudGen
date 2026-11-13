@@ -131,6 +131,9 @@ param:
   float sunGlow;
   float diffusion;
   float detailSharpness;
+  float billowLight;
+  float billowShrink;
+  float mapSoftness;
   int useSunMap;
   float sunMapSize;
   float octaves[3];
@@ -255,6 +258,9 @@ local:
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
+    defineParam(billowLight, "billow_light", 0.0f);
+    defineParam(billowShrink, "billow_shrink", 0.0f);
+    defineParam(mapSoftness, "map_softness", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(useMap, "use_map", 0);
@@ -586,7 +592,32 @@ local:
       float hs = sc * 0.8f;
       float hx = fbm2(u * 4.0f + 17.0f, v * 4.0f + 2.0f, 3.0f, sd) - 0.5f;
       float hz = fbm2(u * 4.0f + 23.0f, v * 4.0f + 11.0f, 3.0f, sd) - 0.5f;
-      float m = mapCoverage(float3(p.x + wx * ws + hx * hs, base[lyr] + 0.5f * thickness[lyr], p.z + wz * ws + hz * hs), lyr);
+      // 'map softness' frays the paint's edges over a share of the cloud size: the lookup is
+      // pushed about by a noise of its own (so an edge billows instead of running straight), and
+      // averaged over a small cross of taps (so it slopes instead of stepping). A hard edge in the
+      // map then comes out as cloud thinning out, not a wall through a tall deck.
+      float mr = clamp(mapSoftness, 0.0f, 2.0f) * sc * 0.6f;
+      float fx = 0.0f;
+      float fz = 0.0f;
+      if (mr > 0.0f) {
+        fx = (fbm2(u * 1.7f + 31.0f, v * 1.7f + 7.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
+        fz = (fbm2(u * 1.7f + 5.0f, v * 1.7f + 43.0f, 3.0f, sd) - 0.5f) * 4.0f * mr;
+      }
+      float m = 0.0f;
+      float mn = 0.0f;
+      for (int mt = 0; mt < 5; mt++) {
+        float ox = fx + (mt == 1 ? 0.5f * mr : mt == 2 ? -0.5f * mr : 0.0f);
+        float oz = fz + (mt == 3 ? 0.5f * mr : mt == 4 ? -0.5f * mr : 0.0f);
+        if (mt > 0 && mr <= 0.0f)
+          break;
+        float mv = mapCoverage(float3(p.x + wx * ws + hx * hs + ox, base[lyr] + 0.5f * thickness[lyr],
+                                      p.z + wz * ws + hz * hs + oz), lyr);
+        if (mv >= 0.0f) {
+          m += mv;
+          mn += 1.0f;
+        }
+      }
+      m = mn > 0.0f ? m / mn : -1.0f;
       if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
         // instead of being extruded straight up into walls.
@@ -913,9 +944,11 @@ local:
     float er = erosion[lyr] * (volume[lyr] == 1 && vol_shape[lyr] == 2 ? 1.0f - 0.3f * sstep(0.62f, 0.72f, hn) : 1.0f)
                * (1.0f - 0.7f * skirt[lyr] * sstep(0.3f, 0.7f, hn));
     if (er > 0.0f) {
-      float oct = lod(detail_size[lyr], foot, octaves[lyr]);
+      // 'billow shrink': big soft lobes low in the cloud, smaller, tighter cauliflower near the top.
+      float dsz = detail_size[lyr] * (1.0f + clamp(billowShrink, 0.0f, 1.0f) * (0.35f - 0.7f * hn));
+      float oct = lod(dsz, foot, octaves[lyr]);
       if (oct > 0.0f)
-        c += er * (detail3(wx / detail_size[lyr], wy / detail_size[lyr], wz / detail_size[lyr], oct, lyr) - 0.5f) * 0.24f;
+        c += er * (detail3(wx / dsz, wy / dsz, wz / dsz, oct, lyr) - 0.5f) * 0.24f;
     }
     // Wisps and grain eat the thin edges more than the cores.
     float thin = 1.0f - clamp(c / (3.0f * max(edge[lyr], 1e-3f)), 0.0f, 1.0f);
@@ -1068,6 +1101,11 @@ local:
     float od = 0.0f;
     float prev = 0.0f;
     occ = 0.0f;
+    // 'billow light': the first two sun samples go a quarter and one billow out, with all the
+    // detail, so each billow shadows its own far side and the creases behind it (the sun march
+    // otherwise sees the billows only by chance, and they light flat).
+    float bl = clamp(billowLight, 0.0f, 1.0f);
+    float ds = detail_size[lyr];
     for (int i = 0; i < steps + 2; i++) {
       float3 q;
       float fq;
@@ -1075,8 +1113,10 @@ local:
       if (i < steps) {
         float f = (float(i) + 0.5f) / float(steps);
         float t = far * f * f;
-        len = t - prev;
-        prev = t;
+        if (i < 2)
+          t += (min(i == 0 ? 0.25f * ds : ds, far) - t) * bl;
+        len = max(t - prev, 0.0f);
+        prev = max(prev, t);
         q = p + sun * t;
         fq = foot + t * 0.02f;
       } else {
@@ -1085,7 +1125,8 @@ local:
         q = p + float3(0.0f, h, 0.0f);
         fq = foot + h * 0.05f;
       }
-      float dn = cloud(q, fq, i > 1, sd, lyr) * len;
+      // The first sky probe sees the detail too with billow light on: creases go dark.
+      float dn = cloud(q, fq, i > 1 && !(i == steps && bl > 0.0f), sd, lyr) * len;
       if (i < steps)
         od += dn;
       else
@@ -1189,7 +1230,10 @@ local:
     float sig0 = sigma[lyr] * density[lyr];
     float layerH = volume[lyr] == 1 ? min(min(vol_size[lyr].x, vol_size[lyr].y), vol_size[lyr].z) : thickness[lyr];
     float h1 = min(layerH, 3000.0f) * 0.05f;
-    float h2 = min(layerH, 3000.0f) * 0.2f;
+    // With billow light the first sky probe is about half a billow up, so it finds the billows
+    // overhanging a crease.
+    h1 += (0.6f * detail_size[lyr] - h1) * clamp(billowLight, 0.0f, 1.0f);
+    float h2 = max(min(layerH, 3000.0f) * 0.2f, 2.0f * h1);
     float occU = 0.0f;
     float od = sunDepth(p, foot, sd, h1, h2, occU, lyr) * sig0 + tauAbove(p, lyr);
     // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
