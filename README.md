@@ -76,6 +76,8 @@ edges were drawn in front of nearer cloud); a thick cloud stopped at 99% opaque,
 blazing rim behind it leaked through as an outline; and two layers at about the same depth flipped
 order from pixel to pixel (the order now fades between them). 'highlight rolloff' also has a
 gentler shoulder, so bright cloud keeps its shading instead of going to a flat white.
+Cumulus and Cumulus Congestus decks have rounder bases ('base rounding' 0.1, was 0.04 and 0.02): a
+near-flat base showed as banded, terraced undersides when seen from close below.
 The Towering Cumulus type (shape Towers) is a cumulus complex: a few tall towers on a wider,
 flat-based shelf with a ragged footprint, made to stand in front of the sun.
 With an EzAtmosScatter that is self-lit (no HDRI), 'light from' Auto takes the sky light from the
