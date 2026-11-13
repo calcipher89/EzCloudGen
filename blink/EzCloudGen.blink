@@ -665,7 +665,11 @@ local:
         // the ends wander with the noise so the mass isn't a flat-faced slab). Clear elsewhere.
         float dist = length(float3(p.x, p.y, p.z) - mc) + (s3a + s3b + 0.5f * s3c) * sil_depth[lyr] * 0.6f;
         float half = max(sil_depth[lyr], 100.0f) * 0.5f;
-        float win = 1.0f - sstep(half * 0.6f, half, fabs(dist - sil_distance[lyr]));
+        // A long, gentle fall-off at the front and back. A short one is far steeper than the
+        // cloud field's own slopes, so the billow detail could only dent it by a few tens of
+        // metres and those faces came out smooth; over this length the mass thins into separate
+        // heaps and the detail bites as deep as it does on a deck's own clouds.
+        float win = 1.0f - sstep(half * 0.15f, half * 1.5f, fabs(dist - sil_distance[lyr]));
         m = max(m, 0.0f) * win;
       } else if (m >= 0.0f) {
         // The painted edge pulls in with height, so a patch rises as a heap with sloping sides
@@ -694,9 +698,7 @@ local:
       // as dense as anywhere else, so what is left is scaled back up to the layer's own range.
       float t0 = 0.82f - 0.55f * coverage[lyr];
       float t1 = 0.82f - 0.55f * cov;
-      // (Not over a silhouette's soft edge and its front and back: there the boost turned the
-      // smooth fields' contours into hard, faceted faces.)
-      c *= silOn ? 1.0f : min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
+      c *= min((0.8f - t0) / max(0.8f - t1, 0.05f), 4.0f);
     }
     if (cov > coverage[lyr]) {
       // Where the map adds coverage, the 2D noise alone would stand in straight columns all the
