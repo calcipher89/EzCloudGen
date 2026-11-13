@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.28.0"
+VERSION = "0.29.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -564,6 +564,11 @@ def build_knobs(g):
         "Big, soft lobes low in the cloud and smaller, tighter cauliflower towards the top, as real cumulus "
         "grow. 0: the same billow size all the way up (as before).").setValue(0)
     g["billow_shrink"].setRange(0, 1)
+    add(g, nuke.Boolean_Knob("light_grid", "light grid"),
+        "Bakes every layer's shadow from the sun once, on a grid fitted to the camera's view, and lights the "
+        "clouds from it: smooth, noise-free self-shadowing through the whole mass and between the layers. "
+        "The fine detail still shades itself close up. Off: each sample marches towards the sun on its own "
+        "(as before).").setValue(True)
     add(g, nuke.Double_Knob("even_detail", "even detail"),
         "Makes the billows, wisps and edges the same depth all over a cloud: they are scaled by how steeply "
         "the cloud's shape rises at each point, so the shape acts as a distance to its surface. Without it, "
@@ -834,6 +839,9 @@ def build_knobs(g):
 SUN_MAP_RES = 1536
 SUN_MAP_SIZE = 10000.0
 
+# The light grid: GRID_W x GRID_H cells across the view, GRID_T x GRID_T slices in distance.
+GRID_W, GRID_H, GRID_T = 192, 108, 8
+
 # A layer is off when disabled, and in the Variations view unless it is the one shown.
 DISABLE = "!parent.l%d_enable || (parent.view==4 && parent.variations_of!=%d)"
 
@@ -843,7 +851,7 @@ def layer_on(layer):
     return "!(%s)" % (DISABLE % (layer, layer - 1))
 
 
-def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
+def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgrid=None):
     """One kernel for all three layers (their settings are 3-element arrays): it marches them
     together, so overlapping layers interleave. smaps: the three layers' sun maps (each layer is
     shadowed by the other two's). only: the sun map pass marches that layer (0..2) alone."""
@@ -853,6 +861,8 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
     n.setInput(2, zin)
     for j, sm in enumerate(smaps):
         n.setInput(3 + j, sm)
+    # The light grid (only the colour and sun passes read it; the others get a stand-in).
+    n.setInput(6, lgrid if lgrid is not None else smaps[0])
     k = KERNEL + "_"
     n[k + "output"].setValue(output)
     n[k + "only_layer"].setValue(only)
@@ -920,6 +930,12 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1):
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n[k + "billow_light"].setExpression("parent.billow_light")
     n[k + "billow_shrink"].setExpression("parent.billow_shrink")
+    n[k + "use_grid"].setExpression("parent.light_grid && %d < 2" % output if lgrid is not None else "0")
+    n[k + "grid_w"].setValue(GRID_W)
+    n[k + "grid_h"].setValue(GRID_H)
+    n[k + "grid_tx"].setValue(GRID_T)
+    n[k + "grid_ty"].setValue(GRID_T)
+    n[k + "grid_far"].setExpression("min(parent.max_distance * 1000, 80000)")
     n[k + "even_detail"].setExpression("parent.even_detail")
     n[k + "sky_shading"].setExpression("parent.sky_shading")
     n[k + "round_lobes"].setExpression("parent.round_lobes")
@@ -1091,8 +1107,22 @@ def build():
         # The passes: one kernel each, marching all the layers together (each is shadowed by the
         # other layers' sun maps).
         none_on = "!(%s)" % " || ".join(layer_on(j) for j in (1, 2, 3))
-        col = blink("Clouds_Color", 0, work, mp, zwork, sunmaps, source)
-        sunm = blink("Clouds_Sun", 1, work, mp, zwork, sunmaps, source)
+        # The light grid: every layer's optical depth towards the sun, baked once over the view
+        # and read back by the colour and sun passes (smooth, noise-free self-shadowing).
+        gridfmt = nuke.nodes.Reformat(name="LightGridFormat", type="to box", box_fixed=True, resize="distort",
+                                      filter="Impulse", black_outside=True)
+        gridfmt["box_width"].setValue(GRID_W * GRID_T)
+        gridfmt["box_height"].setValue(GRID_H * GRID_T)
+        gridfmt.setInput(0, nuke.toNode("WorkBlack"))
+        lgrid = blink("Clouds_LightGrid", 6, gridfmt, mp, gridfmt, sunmaps, source)
+        lgrid[KERNEL + "_samples"].setExpression("1")
+        lgrid[KERNEL + "_tiles"].setExpression("1")
+        # The grid is laid out over the camera's frame, not its own image's.
+        lgrid[KERNEL + "_frame_size"].setExpression("WorkFormat.width", 0)
+        lgrid[KERNEL + "_frame_size"].setExpression("WorkFormat.height", 1)
+        lgrid["disable"].setExpression("%s || !parent.light_grid" % none_on)
+        col = blink("Clouds_Color", 0, work, mp, zwork, sunmaps, source, lgrid=lgrid)
+        sunm = blink("Clouds_Sun", 1, work, mp, zwork, sunmaps, source, lgrid=lgrid)
         sunm["disable"].setExpression("%s || !((parent.breakout && !parent.preview) || parent.view==2)" % none_on)
         shadow = blink("Clouds_Shadow", 3, work, mp, zwork, [smfmt] * 3, source)
         shadow["disable"].setExpression("%s || !(parent.occlude && parent.bg_found) || "
@@ -1284,7 +1314,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat|LightGridFormat)"),
     ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
     ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
     ("Back to full size", 0x444444ff, r"(ColorUp.*|SunUp.*|DepthUp.*|ShadowUp.*|FwdUp.*|BwdUp.*|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
