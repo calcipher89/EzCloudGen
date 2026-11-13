@@ -122,6 +122,7 @@ param:
   float shadowDepth;
   float sunGlow;
   float diffusion;
+  float detailSharpness;
   int useSunMap;
   float sunMapSize;
   float octaves;
@@ -260,6 +261,7 @@ local:
     defineParam(shadowDepth, "shadow_depth", 0.0f);
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(diffusion, "diffusion", 0.0f);
+    defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(useSunMap, "use_sun_map", 0);
     defineParam(sunMapSize, "sun_map_size", 10000.0f);
     defineParam(octaves, "octaves", 3.5f);
@@ -547,7 +549,8 @@ local:
       float v = billow < 1.0f ? vnoise3(x * 1.3f, y * 1.3f, z * 1.3f) : 0.0f;
       s += amp * w * (billow * b + (1.0f - billow) * v);
       tot += amp * w;
-      amp *= 0.5f;
+      // 'detail sharpness' keeps more of each finer octave: crisp cauliflower, not soft lumps.
+      amp *= 0.5f + 0.17f * clamp(detailSharpness, 0.0f, 1.0f);
       x = x * 2.03f + 1.7f;
       y = y * 2.03f + 3.1f;
       z = z * 2.03f + 5.3f;
@@ -752,6 +755,19 @@ local:
       float skyline = (0.26f + 0.16f * n2 + 0.58f * tower) * (0.35f + 0.65f * rimF) * body;
       float foot = rxz / (0.8f + 0.35f * (n2 - 0.5f) + 0.2f * tower);
       dist = max(max(hs / max(skyline, 0.03f), foot), 1.0f - hn / max(bottomRound, 0.02f));
+    } else if (volShape == 5) {
+      // Shelf: a one-sided cloud shelf, thick and low at the box's -x end, thinning and rising
+      // towards +x, with a flat-ish top, a streaky, ragged underside and a torn outline. Turn
+      // the box (rotate y) to point it; its +x end is the thin, trailing edge.
+      float xn = clamp(q.x * 0.5f + 0.5f, 0.0f, 1.0f);
+      float thick = 0.55f + (0.12f - 0.55f) * xn;
+      float mid = 0.42f + (0.64f - 0.42f) * xn;
+      float streak = fbm2(sx * 1.1f + 7.0f + sd * 2.3f, sz * 7.0f, 2.0f, sd) - 0.5f;
+      float dv = hs < mid ? (mid - hs + 0.25f * thick * streak) / max(thick * 0.6f, 1e-3f)
+                          : (hs - mid) / max(thick * 0.4f, 1e-3f);
+      float rim = 1.0f + 0.45f * (fbm2(sx * 1.8f + 31.0f + sd, sz * 1.8f, 3.0f, sd) - 0.5f);
+      float rr = sqrt(sx * sx + 1.6f * sz * sz) / (0.95f * rim);
+      dist = max(dv, rr);
     } else {
       // Box with soft corners.
       float3 a = float3(fabs(sx), fabs(q.y * 1.25f), fabs(sz));
@@ -851,7 +867,7 @@ local:
     // Skirt: real cumulus are smooth, firm billows on top and soft, torn wisps around the base.
     // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
     float sk = skirt * (1.0f - sstep(0.1f, 0.55f, hn));
-    float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk);
+    float e = max(edge, 1e-3f) * (1.0f + 2.0f * sk) * (1.0f - 0.5f * clamp(detailSharpness, 0.0f, 1.0f));
     // Far away the edge softens with the pixel's footprint: a hard edge on detail a few pixels
     // across is speckle. The edge widens about its middle (soften) and by no more than 0.12, so
     // a thin, already soft sheet keeps its density.

@@ -104,7 +104,7 @@ VOLUME = [
     ("fade_front", "fade front", "The same towards the box's front (local +Z).", 0, 1),
     ("fade_back", "fade back", "The same towards the box's back (local -Z).", 0, 1),
 ]
-VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers"]
+VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
              "map_amount", "map_channel"]
@@ -161,7 +161,7 @@ def atmos_light(pixel, channel, fallback):
               "        hk = a['camera_height'].value() / 1000.0\n"
               "        tr = a['rayleigh_coefficients'].getValueAt(nuke.frame(), %d) * a['sky_amount'].value() * a['rayleigh_scale_height'].value() * math.exp(-hk / a['rayleigh_scale_height'].value())\n"
               "        tm = a['mie_coefficient'].value() / 0.9 * a['haze_amount'].value() * a['haze_height'].value() * math.exp(-hk / max(a['haze_height'].value(), 1e-3))\n"
-              "        ck = a['sun_color']\n"
+              "        ck = a['sun_color_in_use'] if a.knob('sun_color_in_use') else a['sun_color']\n"
               "        tint = ck.getValueAt(nuke.frame(), %d) if ck.arraySize() > 1 and not ck.singleValue() else ck.getValueAt(nuke.frame(), 0)\n"
               "        ret = tint * a['manual_sun_brightness'].value() * a['sun_strength'].value() * math.exp(-(tr + tm) * am) if el > -1 else 0.0\n"
               % (fallback, pixel, pixel, channel, pixel + 0.5, i, i))
@@ -549,6 +549,11 @@ def build_knobs(g):
         "billows shade off gradually round their sides and cores stay luminous grey instead of dead. "
         "Use 'highlight rolloff' with it.").setValue(0)
     g["diffusion"].setRange(0, 1)
+    add(g, nuke.Double_Knob("detail_sharpness", "detail sharpness"),
+        "Crisper billows: keeps more of the finer detail octaves and hardens the cloud's surface, for the "
+        "sharp cauliflower edges of a sunlit cumulus. 0: as before (softer). Raise 'quality' or 'edge steps' "
+        "if it starts to sparkle.").setValue(0)
+    g["detail_sharpness"].setRange(0, 1)
 
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
@@ -887,6 +892,7 @@ def blink(name, output, src, cmap, zin, smap, layer, source_file, step=1):
     n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
     n[k + "sun_glow"].setExpression("parent.sun_glow")
     n[k + "diffusion"].setExpression("parent.diffusion")
+    n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n["disable"].setExpression(DISABLE % (layer, layer - 1))
     return n
 

@@ -80,6 +80,11 @@ Where the coverage map thins a deck, the clouds that are left keep the layer's d
 smaller clouds) instead of turning into thin see-through veils. Paint maps with soft edges: a hard
 edge in the map still stands up as a straight wall through a tall deck. The Storm Anvil's thin rim
 holds a minimum thickness, so it no longer breaks up into speckle.
+Volume shape **Shelf** and the **Shelf Cloud** type: a one-sided cloud shelf, thick and low at its
+box's -x end, thinning and lifting to a torn, streaky trailing edge at +x. Turn the box to point it.
+'detail sharpness' (by 'light diffusion'; 0 = as before) keeps more of the finer billow octaves and
+hardens the surface, for crisp cauliflower edges. With a self-lit EzAtmosScatter, the sun colour
+follows its 'white balance'.
 Cumulus and Cumulus Congestus decks have rounder bases ('base rounding' 0.1, was 0.04 and 0.02): a
 near-flat base showed as banded, terraced undersides when seen from close below.
 The Towering Cumulus type (shape Towers) is a cumulus complex: a few tall towers on a wider,

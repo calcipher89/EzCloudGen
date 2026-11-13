@@ -76,7 +76,7 @@ SETUPS = [
 ]
 
 
-VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box"]
+VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 
 
 def knob_value(k, v):
