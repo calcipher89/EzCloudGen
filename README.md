@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.37.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.38.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -194,6 +194,14 @@ the sun; a thick layer above dims the sun to a soft glow rather than black.
 For quick look-dev, tick **preview**: half the resolution and march steps, one sample, and only
 the passes the view needs (the node's label says PREVIEW). For fast playback or the farm, precomp
 the node with your own Write (channels all keeps every layer) and read it back.
+
+**motion blur** renders true 3D motion blur: each pixel sample sees the shot at its own moment
+inside the **shutter** (frames, centred; 0.5 is a 180 degree shutter), with the camera moved and
+turned and every layer drifted on the wind or moved with its box, so parallax, a turning camera
+and clouds at different depths blur as they would in a 3D render (a 2D VectorBlur can't). The
+blur comes from the samples: use sampling High or Ultra, or Manual 8 to 16, or it is grainy.
+Motion is taken from the next frame (straight within a frame), and the lighting is the frame's
+own. The motion vector outputs stay as they were, for blurring in comp instead.
 
 **render preset** (shot by default) sets resolution, quality, edge steps and sampling together. On a 2400x1760
 backlit cumulus shot on an RTX GPU, the clouds take:
