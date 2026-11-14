@@ -11,6 +11,9 @@ render in NukeX 15.1. `reference/` holds the Python prototype the kernel was por
 
 ## Using it
 
+New to the node? Start with the [artist guide](docs/ARTIST_GUIDE.md): a five-minute start,
+render settings, which type to pick, recipes and troubleshooting. This README is the full reference.
+
 Paste `groups/EzCloudGen_group.nk` into a script (or put `gizmos/` on the plugin path and create
 EzCloudGen). Inputs:
 
