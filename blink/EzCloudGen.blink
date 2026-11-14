@@ -1030,25 +1030,30 @@ local:
   }
 
   // Cloud density 0..1. cheap: no detail noise (for the light march).
-  // The layer's shape before its lobes and detail, as cloud() builds it: positive inside. (For
-  // 'even detail', which measures how steeply it rises.)
-  float baseField(float3 p, float foot, float sd, int lyr)
+  // The layer's shape before its lobes and detail: positive inside. Also its height in the
+  // layer (hn, 0 at the base .. 1 at the top), and for a deck the weather (w) and the base's
+  // height (b). cloud() calls it once, in a loop that also measures how steeply it rises for
+  // 'even detail' (Blink inlines it, and the weather in it, at every call site: a second call
+  // there doubled the CPU compile time).
+  float baseField(float3 p, float foot, float sd, int lyr, float &hn, float &w, float &b)
   {
     if (volume[lyr] == 1) {
-      float hv = 0.0f;
-      return volumeShape(p, hv, sd, lyr);
+      w = 0.0f;
+      b = 0.0f;
+      return volumeShape(p, hn, sd, lyr);
     }
-    float b = base[lyr];
-    float c = weather(p, foot, sd, lyr);
+    b = base[lyr];
+    w = weather(p, foot, sd, lyr);
     if (vary[lyr] > 0.0f) {
       float sv = scale_km[lyr] * 2500.0f;
       float vx = p.x + camPosition.x * sceneScale + offset[lyr].x;
       float vz = p.z + camPosition.z * sceneScale + offset[lyr].y;
       b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary[lyr] * thickness[lyr];
+      // And a finer ripple, so a base seen at eye level is a ragged edge, not a ruled line.
       b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary[lyr] * thickness[lyr] * 0.8f;
     }
-    float hn = (altitude(p) - b) / thickness[lyr];
-    return c - profile(clamp(hn, 0.0f, 1.0f), lyr) - (hn <= 0.0f || hn >= 1.0f ? 0.3f : 0.0f);
+    hn = (altitude(p) - b) / thickness[lyr];
+    return w - profile(clamp(hn, 0.0f, 1.0f), lyr) - (hn <= 0.0f || hn >= 1.0f ? 0.3f : 0.0f);
   }
 
   // band: set to 1 when p is near enough a cloud's surface for the detail to reach it (the
@@ -1065,41 +1070,63 @@ local:
     float lz = 0.0f;
     // The most the lobes can add (see below).
     float lreach = lumps[lyr] * (0.2f + 0.09f * small_lumps[lyr]);
-    if (volume[lyr] == 1) {
-      c = volumeShape(p, hn, sd, lyr);
-      if (c <= -0.15f - lreach)
-        return 0.0f;
-      alt = p.y;
-      height = vol_size[lyr].y;
-      // In the box's own frame (metres), so the cloud moves and turns with the box.
-      float3 lq = toLocal(p - vc[lyr], lyr);
-      lx = lq.x * vh[lyr].x + offset[lyr].x;
-      ly = lq.y * vh[lyr].y;
-      lz = lq.z * vh[lyr].z + offset[lyr].y;
-    } else {
-      alt = altitude(p);
-      float b = base[lyr];
-      c = weather(p, foot, sd, lyr);
-      // (A deck's lobes add nothing out in the clear.)
-      if (c <= -0.12f)
-        return 0.0f;
-      if (vary[lyr] > 0.0f) {
-        float sv = scale_km[lyr] * 2500.0f;
-        float vx = p.x + camPosition.x * sceneScale + offset[lyr].x;
-        float vz = p.z + camPosition.z * sceneScale + offset[lyr].y;
-        b += (vnoise2(vx / sv + 70.0f, vz / sv, sd) - 0.5f) * vary[lyr] * thickness[lyr];
-        // And a finer ripple, so a base seen at eye level is a ragged edge, not a ruled line.
-        b += (vnoise2(vx / (sv * 0.13f) + 11.0f, vz / (sv * 0.13f), sd) - 0.5f) * vary[lyr] * thickness[lyr] * 0.8f;
+    // The shape here (gk -1), then, for 'even detail', a billow or two along x, y and z, for how
+    // steeply it rises (gx, gy, gz); one baseField() call for all four (see there).
+    float ev = detail_model[lyr] == 1 ? 0.0f : clamp(evenDetail, 0.0f, 1.0f);
+    float hg = max(2.0f * detail_size[lyr], 2.0f * foot);
+    float gx = 0.0f;
+    float gy = 0.0f;
+    float gz = 0.0f;
+    bool nearWall = false;
+    float cBase = 0.0f;
+    for (int gk = -1; gk < 3; gk++) {
+      float3 q = gk < 0 ? p : p + (gk == 0 ? float3(hg, 0.0f, 0.0f) : gk == 1 ? float3(0.0f, hg, 0.0f) : float3(0.0f, 0.0f, hg));
+      float qh = 0.0f;
+      float qw = 0.0f;
+      float qb = 0.0f;
+      float bq = baseField(q, foot, sd, lyr, qh, qw, qb);
+      if (gk >= 0) {
+        // (A step out of a volume's box reads -1 there: no slope from that side, or the box's
+        // walls showed through as thin bright slivers.)
+        float d = bq <= -0.99f ? 0.0f : (bq - cBase) / hg;
+        nearWall = nearWall || bq <= -0.99f;
+        if (gk == 0)
+          gx = d;
+        else if (gk == 1)
+          gy = d;
+        else
+          gz = d;
+        continue;
       }
-      hn = (alt - b) / thickness[lyr];
-      if (hn <= 0.0f || hn >= 1.0f)
-        return 0.0f;
-      c -= profile(hn, lyr);
-      lx = p.x + camPosition.x * sceneScale + offset[lyr].x;
-      ly = alt - b - 0.5f * thickness[lyr];
-      lz = p.z + camPosition.z * sceneScale + offset[lyr].y;
+      hn = qh;
+      if (volume[lyr] == 1) {
+        c = bq;
+        if (c <= -0.15f - lreach)
+          return 0.0f;
+        alt = p.y;
+        height = vol_size[lyr].y;
+        // In the box's own frame (metres), so the cloud moves and turns with the box.
+        float3 lq = toLocal(p - vc[lyr], lyr);
+        lx = lq.x * vh[lyr].x + offset[lyr].x;
+        ly = lq.y * vh[lyr].y;
+        lz = lq.z * vh[lyr].z + offset[lyr].y;
+      } else {
+        // (A deck's lobes add nothing out in the clear.)
+        if (qw <= -0.12f || hn <= 0.0f || hn >= 1.0f)
+          return 0.0f;
+        c = bq;
+        alt = altitude(p);
+        lx = p.x + camPosition.x * sceneScale + offset[lyr].x;
+        ly = alt - qb - 0.5f * thickness[lyr];
+        lz = p.z + camPosition.z * sceneScale + offset[lyr].y;
+      }
+      cBase = c;
+      // The slope is needed only where 'even detail' acts (see there): no lobes can lift the
+      // shape by more than lreach, nor the detail's reach and the edge's softening pass these.
+      float most = -0.48f * (erosion[lyr] + wisp_amount[lyr] * (1.0f + 2.0f * max(skirt[lyr], 0.0f)) + grain_amount[lyr]) - 0.29f;
+      if (cheap || ev <= 0.0f || c + lreach < most)
+        break;
     }
-    float cBase = c;
     // Skirt: real cumulus are smooth, firm billows on top and soft, torn wisps around the base.
     // It widens the edge and feeds the wisps low down, and calms the billow erosion higher up.
     float sk = skirt[lyr] * (1.0f - sstep(0.1f, 0.55f, hn));
@@ -1184,28 +1211,8 @@ local:
     // its surface, as in a modelled cloud volume.
     // (Soft billows thin the cloud as a density, so they don't need it; there the slope's jumps
     // where two parts of a shape meet showed as thin shards.)
-    float ev = detail_model[lyr] == 1 ? 0.0f : clamp(evenDetail, 0.0f, 1.0f);
     float fk = 1.0f;
     if (ev > 0.0f && c >= -4.0f * reach - 4.0f * soften - 0.05f) {
-      float hg = max(2.0f * detail_size[lyr], 2.0f * foot);
-      float gx = 0.0f;
-      float gy = 0.0f;
-      float gz = 0.0f;
-      bool nearWall = false;
-      for (int gk = 0; gk < 3; gk++) {
-        float3 q = p + (gk == 0 ? float3(hg, 0.0f, 0.0f) : gk == 1 ? float3(0.0f, hg, 0.0f) : float3(0.0f, 0.0f, hg));
-        float bq = baseField(q, foot, sd, lyr);
-        // (A step out of a volume's box reads -1 there: no slope from that side, or the box's
-        // walls showed through as thin bright slivers.)
-        float d = bq <= -0.99f ? 0.0f : (bq - cBase) / hg;
-        nearWall = nearWall || bq <= -0.99f;
-        if (gk == 0)
-          gx = d;
-        else if (gk == 1)
-          gy = d;
-        else
-          gz = d;
-      }
       float g = sqrt(gx * gx + gy * gy + gz * gz);
       // 0.03 per billow is the slope of a typical placed volume's shape, which the fixed amounts
       // were tuned on (they give it billows about two billow sizes deep).
@@ -1427,15 +1434,12 @@ local:
     return (1.0f - gg) / (4.0f * pi * pow(1.0f + gg - 2.0f * g * c, 1.5f));
   }
 
-  // Optical depth towards the sun from p, inside the layer. Its loop also takes two cheap
-  // probes straight up, h1 and h2 above p, and returns their density times length in occ (sky
-  // occlusion). They share the loop's one cloud() call: Blink inlines cloud() at every call
-  // site, and a separate call made the kernel take minutes to compile on the CPU.
-  // side: with 'sky shading', how much of the sky a point sees round about (four probes slanted
-  // 45 degrees up to the four sides, 0 buried .. 1 open); below: the same straight down, for the
-  // light off the ground.
-  // farCap: march no further than this (with the light grid, which takes over beyond it).
-  float sunDepth(float3 p, float foot, float sd, float h1, float h2, float &occ, float &side, float &below, float farCap, int lyr)
+  // The march towards the sun from a lit point, and the probes for sky occlusion, as samples
+  // of the main march's one cloud() call (Blink inlines cloud() at every call site, and each
+  // extra one multiplies the CPU compile time: two took it from 11 to 51 minutes).
+  // sunFar: how far towards the sun to march from p, inside the layer, no further than farCap
+  // (with the light grid, which takes over beyond it).
+  float sunFar(float3 p, float farCap, int lyr)
   {
     float t0 = 0.0f;
     float t1 = 0.0f;
@@ -1449,69 +1453,65 @@ local:
         far = max(t1, 0.0f);
       far = min(far, min(6.0f * thickness[lyr] / max(sun.y, 0.08f), 12000.0f));
     }
-    far = min(far, farCap);
-    int steps = max(int(10.0f * quality), 2);
-    float od = 0.0f;
-    float prev = 0.0f;
-    occ = 0.0f;
+    return min(far, farCap);
+  }
+
+  // Sample i of the light at p: i < steps, the march towards the sun (its optical depth); then
+  // two cheap probes straight up, h1 and h2 above p (sky occlusion); then, with 'sky shading',
+  // one half way along each of four directions slanted 45 degrees up to the four sides (how much
+  // of the sky p sees round about) and one straight down (the light off the ground). Returns
+  // where, with its footprint fq, the length it stands for, and whether it can skip the detail.
+  // prev: the last sun step's distance (start at 0).
+  float3 sunSample(float3 p, float foot, float far, float sj, int i, int steps, float h1, float h2,
+                   int lyr, float &prev, float &fq, float &len, bool &cheap)
+  {
     // 'billow light': the first two sun samples go a quarter and one billow out, with all the
     // detail, so each billow shadows its own far side and the creases behind it (the sun march
-    // otherwise sees the billows only by chance, and they light flat).
+    // otherwise sees the billows only by chance, and they light flat). The first sky probe sees
+    // the detail too: creases go dark.
     float bl = clamp(billowLight, 0.0f, 1.0f);
-    // A smooth noise (not a per-point hash, which showed as grain at few samples): the contours
-    // wander and blend instead of standing as straight, flat-shaded facets.
-    float sj = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sd) - 0.5f), 0.0f, 1.0f);
-    float ds = detail_size[lyr];
-    side = 1.0f;
-    below = 1.0f;
-    float sideSum = 0.0f;
-    float probeK = sigma[lyr] * density[lyr] * 1.25f * sky_occlusion[lyr];
-    int probes = skyShading > 0.0f ? 7 : 2;
-    for (int i = 0; i < steps + probes; i++) {
-      float3 q;
-      float fq;
-      float len;
-      if (i < steps) {
-        // The steps are shifted by a random fraction per point: on fixed steps, a big cloud's
-        // shadow inside itself came out in flat-shaded, hard-edged contours (faceted).
-        float f = (float(i) + sj) / float(steps);
-        float t = far * f * f;
-        if (i < 2)
-          t += (min(i == 0 ? 0.25f * ds : ds, far) - t) * bl;
-        len = max(t - prev, 0.0f);
-        prev = max(prev, t);
-        q = p + sun * t;
-        fq = foot + t * 0.02f;
-      } else if (i < steps + 2) {
-        float h = i == steps ? h1 : h2;
-        len = i == steps ? h1 : h2 - h1;
-        q = p + float3(0.0f, h, 0.0f);
-        fq = foot + h * 0.05f;
-      } else {
-        // Sky shading: one sample half way along each of four slanted directions, and one down.
-        int k = i - steps - 2;
-        float3 dir = k == 0 ? float3(0.7071f, 0.7071f, 0.0f) : k == 1 ? float3(-0.7071f, 0.7071f, 0.0f)
-                   : k == 2 ? float3(0.0f, 0.7071f, 0.7071f) : k == 3 ? float3(0.0f, 0.7071f, -0.7071f)
-                            : float3(0.0f, -1.0f, 0.0f);
-        len = h2;
-        q = p + dir * (0.5f * h2);
-        fq = foot + h2 * 0.05f;
-      }
-      // The first sky probe sees the detail too with billow light on: creases go dark.
-      float bd = 0.0f;
-      float dn = cloud(q, fq, i > 1 && !(i == steps && bl > 0.0f), sd, lyr, bd) * len;
-      if (i < steps)
-        od += dn;
-      else if (i < steps + 2)
-        occ += dn;
-      else if (i < steps + 6)
-        sideSum += exp(-dn * probeK);
-      else
-        below = exp(-dn * probeK);
+    cheap = i > 1 && !(i == steps && bl > 0.0f);
+    if (i < steps) {
+      // The steps are shifted by a smooth noise fraction per point (sj): on fixed steps, a big
+      // cloud's shadow inside itself came out in flat-shaded, hard-edged contours (faceted).
+      float f = (float(i) + sj) / float(steps);
+      float t = far * f * f;
+      if (i < 2)
+        t += (min(i == 0 ? 0.25f * detail_size[lyr] : detail_size[lyr], far) - t) * bl;
+      len = max(t - prev, 0.0f);
+      prev = max(prev, t);
+      fq = foot + t * 0.02f;
+      return p + sun * t;
     }
-    if (probes > 2)
-      side = 0.25f * sideSum;
-    return od;
+    if (i < steps + 2) {
+      float h = i == steps ? h1 : h2;
+      len = i == steps ? h1 : h2 - h1;
+      fq = foot + h * 0.05f;
+      return p + float3(0.0f, h, 0.0f);
+    }
+    int k = i - steps - 2;
+    float3 dir = k == 0 ? float3(0.7071f, 0.7071f, 0.0f) : k == 1 ? float3(-0.7071f, 0.7071f, 0.0f)
+               : k == 2 ? float3(0.0f, 0.7071f, 0.7071f) : k == 3 ? float3(0.0f, 0.7071f, -0.7071f)
+                        : float3(0.0f, -1.0f, 0.0f);
+    len = h2;
+    fq = foot + h2 * 0.05f;
+    return p + dir * (0.5f * h2);
+  }
+
+  // The heights of the two sky occlusion probes above a point of layer lyr.
+  float probeH1(int lyr)
+  {
+    float layerH = volume[lyr] == 1 ? min(min(vol_size[lyr].x, vol_size[lyr].y), vol_size[lyr].z) : thickness[lyr];
+    float h1 = min(layerH, 3000.0f) * 0.05f;
+    // With billow light the first sky probe is about half a billow up, so it finds the billows
+    // overhanging a crease.
+    return h1 + (0.6f * detail_size[lyr] - h1) * clamp(billowLight, 0.0f, 1.0f);
+  }
+
+  float probeH2(int lyr, float h1)
+  {
+    float layerH = volume[lyr] == 1 ? min(min(vol_size[lyr].x, vol_size[lyr].y), vol_size[lyr].z) : thickness[lyr];
+    return max(min(layerH, 3000.0f) * 0.2f, 2.0f * h1);
   }
 
   // How much of the sun this layer blocks at p (on the bg's surface): 0 lit .. 1 shaded.
@@ -1605,26 +1605,14 @@ local:
   // Layer lyr's light at p, where its own extinction is sig: sun (multiple scattering, powder,
   // diffusion; dimmed by the other layers' sun maps) plus sky and ground light. direct: the sun
   // part alone.
-  float3 shade(float3 p, float sig, float foot, float sd, float cosT, int lyr, float3 &direct)
+  // The light at p from what the main march gathered: od, the optical depth towards the sun;
+  // occU, the sky occlusion probes' density times length; sideVis and belowVis, how much of the
+  // sky round about and of the ground p sees.
+  float3 shade(float3 p, float sig, float sd, float cosT, int lyr, float od, float occU, float sideVis,
+               float belowVis, float3 &direct)
   {
     float sig0 = sigma[lyr] * density[lyr];
     float layerH = volume[lyr] == 1 ? min(min(vol_size[lyr].x, vol_size[lyr].y), vol_size[lyr].z) : thickness[lyr];
-    float h1 = min(layerH, 3000.0f) * 0.05f;
-    // With billow light the first sky probe is about half a billow up, so it finds the billows
-    // overhanging a crease.
-    h1 += (0.6f * detail_size[lyr] - h1) * clamp(billowLight, 0.0f, 1.0f);
-    float h2 = max(min(layerH, 3000.0f) * 0.2f, 2.0f * h1);
-    float occU = 0.0f;
-    float sideVis = 1.0f;
-    float belowVis = 1.0f;
-    float od = 0.0f;
-    float nearLen = 1e9f;
-    float gOd = useGrid == 1 ? gridDepth(p, lyr, nearLen) : -1.0f;
-    // With the light grid, the layer's own detail is marched only over the first stretch
-    // towards the sun (a couple of billows, or a grid cell), and the grid, which holds every
-    // layer's cloud smoothly and with no noise, gives the rest (the sun map too).
-    od = sunDepth(p, foot, sd, h1, h2, occU, sideVis, belowVis, gOd >= 0.0f ? nearLen : 1e9f, lyr) * sig0
-         + (gOd >= 0.0f ? gOd : tauAbove(p, lyr));
     // Multiple scattering octaves (Wrenninge). Each octave keeps 0.6 of the energy and
     // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
     // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
@@ -2049,6 +2037,20 @@ local:
       int steps = 0;
       int act[3];
       float sigL[3];
+      // Each layer's light, gathered in the main loop (see there).
+      int sSteps = max(int(10.0f * quality), 2);
+      int sProbes = skyShading > 0.0f ? 7 : 2;
+      int NS = sSteps + sProbes;
+      float odS[3];
+      float occS[3];
+      float sideS[3];
+      float belowS[3];
+      float prevS[3];
+      float gOdS[3];
+      float farS[3];
+      float sjS[3];
+      float h1S[3];
+      float h2S[3];
       while (nI > 0 && t < tLast && T > tStop && steps < maxSteps) {
         // The layers t is inside, the next boundary ahead, and the next start.
         float nextEnd = tLast + 1.0f;
@@ -2127,11 +2129,79 @@ local:
         float far = clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
         float sig = 0.0f;
         bool near = false;
+        // One loop and one cloud() call for everything this step needs: first each layer's
+        // density here (j < 3), then, if the step is lit, each cloudy layer's light (its march
+        // towards the sun and its sky probes, NS samples a layer). Blink inlines cloud() at every
+        // call site, and a second one (the sun march in its own loop) took the CPU compile from
+        // 11 minutes to 51.
+        bool lightIt = output != 2 && output != 4 && output != 5;
+        bool shadeOn = false;
         for (int L = 0; L < 3; L++) {
+          sigL[L] = 0.0f;
+          odS[L] = 0.0f;
+          occS[L] = 0.0f;
+          sideS[L] = 0.0f;
+          belowS[L] = 1.0f;
+          prevS[L] = 0.0f;
+        }
+        for (int j = 0; j < 3 + 3 * NS; j++) {
+          int L = j < 3 ? j : (j - 3) / NS;
+          int i = j < 3 ? -1 : j - 3 - L * NS;
+          if (j == 3) {
+            // Every layer's density is in: is this step lit? (Not when it is about to go back
+            // and take fine steps, below.)
+            shadeOn = lightIt && sig > 0.0f && !((sig > 0.0f || near) && !fine && armed && edgeSteps > 1.5f);
+            if (!shadeOn)
+              break;
+          }
+          float3 q = p;
+          float fq = foot;
+          float len = 1.0f;
+          bool cheap = false;
+          if (i < 0) {
+            if (act[L] != 1)
+              continue;
+          } else {
+            if (sigL[L] <= 0.0f)
+              continue;
+            if (i == 0) {
+              h1S[L] = probeH1(L);
+              h2S[L] = probeH2(L, h1S[L]);
+              // With the light grid, the layer's own detail is marched only over the first
+              // stretch towards the sun (a couple of billows, or a grid cell), and the grid,
+              // which holds every layer's cloud smoothly and with no noise, gives the rest (the
+              // sun map too).
+              float nearLen = 1e9f;
+              gOdS[L] = useGrid == 1 ? gridDepth(p, L, nearLen) : -1.0f;
+              farS[L] = sunFar(p, gOdS[L] >= 0.0f ? nearLen : 1e9f, L);
+              // A smooth noise (not a per-point hash, which showed as grain at few samples): the
+              // contours wander and blend instead of standing as straight, flat-shaded facets.
+              sjS[L] = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sdL[L]) - 0.5f),
+                             0.0f, 1.0f);
+            }
+            if (i >= sSteps + sProbes)
+              continue;
+            float pv = prevS[L];
+            q = sunSample(p, foot, farS[L], sjS[L], i, sSteps, h1S[L], h2S[L], L, pv, fq, len, cheap);
+            prevS[L] = pv;
+          }
           float bd = 0.0f;
-          sigL[L] = act[L] == 1 ? cloud(p, foot, false, sdL[L], L, bd) * far * sig0[L] : 0.0f;
-          sig += sigL[L];
-          near = near || bd > 0.0f;
+          float dn = cloud(q, fq, cheap, sdL[L], L, bd);
+          if (i < 0) {
+            sigL[L] = dn * far * sig0[L];
+            sig += sigL[L];
+            near = near || bd > 0.0f;
+          } else if (i < sSteps) {
+            odS[L] += dn * len;
+          } else if (i < sSteps + 2) {
+            occS[L] += dn * len;
+          } else {
+            float vis = exp(-dn * len * sigma[L] * density[L] * 1.25f * sky_occlusion[L]);
+            if (i < sSteps + 6)
+              sideS[L] += 0.25f * vis;
+            else
+              belowS[L] = vis;
+          }
         }
         // Fine steps start on reaching cloud, or (with 'edge steps') the band round it where the
         // detail can reach: a thin, bright rim thinner than a coarse step is otherwise hit by one
@@ -2174,7 +2244,9 @@ local:
             for (int L = 0; L < 3; L++) {
               if (sigL[L] > 0.0f) {
                 float3 direct = float3(0.0f);
-                float3 c = shade(p, sigL[L], foot, sdL[L], cosT, L, direct);
+                float odL = odS[L] * sig0[L] + (gOdS[L] >= 0.0f ? gOdS[L] : tauAbove(p, L));
+                float3 c = shade(p, sigL[L], sdL[L], cosT, L, odL, occS[L], sProbes > 2 ? sideS[L] : 1.0f,
+                                 belowS[L], direct);
                 lit += c * (sigL[L] / sig);
                 sunLit += direct * (sigL[L] / sig);
               }

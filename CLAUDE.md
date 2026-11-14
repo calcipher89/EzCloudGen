@@ -39,9 +39,13 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
   curved-earth shell driven by a 2D weather field, the `weather()`, `profile()` and `cloud()`
   functions) or a placed volume (`volume=1`, `volumeShape()` in a box's local frame). Both share
   the erosion stack: billows, wisps, grain, swirl and shear. Lighting is a short sun march
-  (`sunDepth()`) with multiple-scattering octaves, sky and ground ambient, and haze.
-  Blink inlines `cloud()` at every call site: keep it to the three it has (main march, sun
-  march, ground shadow), each inside a loop over the layers.
+  (`sunFar()`/`sunSample()`, sampled by the main march's own `cloud()` call) with
+  multiple-scattering octaves, sky and ground ambient, and haze (`shade()`).
+  Blink inlines `cloud()` at every call site: the kernel has exactly three (the main march, which
+  also takes the sun-march and sky-probe samples; `groundShadow()`; `gridBake()`), and
+  `build_group.py` (`CLOUD_CALLS`) gives each pass kind a copy with only its own. Inside
+  `cloud()`, `baseField()` (the shape and weather) is likewise called once, in a loop that also
+  takes the even-detail slope samples.
 - `python/build_group.py` builds the whole Group inside Nuke:
   - one BlinkScript per pass for all the layers, and one sun map pass per layer;
   - the depth, shadow, motion-vector and preview chains;
@@ -64,11 +68,12 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
   every render ("stuck computing"). Always regenerate them with `build_group.py` inside NukeX.
 - **Self-contained node:** no init.py or menu.py. All code, presets and paths live in the
   node's knobs. Studio paths use TCL like `[getenv JOB]`. Ship both the Group and the gizmo.
-- **Blink inlines every call to `cloud()`.** Each extra call site multiplies the CPU (LLVM)
-  compile time; two extra calls took it past 10 minutes. Add new density samples to an existing
-  loop (see the sky-occlusion probes in `sunDepth()`), not as new calls. A cold CPU compile of
-  the kernel takes about 5 minutes per machine even on main. A warm build or a GPU compile takes
-  seconds.
+- **Blink inlines every call to `cloud()` (and to `baseField()` inside it).** CPU (LLVM) compile
+  time grows much faster than the call sites: one `cloud()` call compiles in about 5 minutes, two
+  in about 50, four in well over an hour. Add new density samples to an existing loop (the main
+  march's sample loop, or the `gk` loop in `cloud()`), never as new calls, and update
+  `CLOUD_CALLS` in `build_group.py` if a call line changes. Compiled CPU kernels are cached on
+  disk (`jitCache-<user>` in Nuke's temp folder). A GPU compile takes seconds.
 - When `build_group.py` runs from the terminal, Nuke only compiles Blink via
   `kernelSourceFile` + `reloadKernelSourceFile` + recompile.
 - Nuke API quirks met so far:
