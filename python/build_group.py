@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.33.0"
+VERSION = "0.34.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -291,11 +291,21 @@ def box_expr(layer, what, step=0):
 
 # ---- The type menu ------------------------------------------------------------------------
 
+# The render presets: what 'render preset' sets (see its help). Times are for the clouds of a
+# 2400 x 1760 backlit cumulus shot on an RTX GPU.
+RENDER_PRESETS = {
+    "draft": {"resolution": "Half", "quality": 0.5, "edge_steps": 2.0, "samples": 1},
+    "shot": {"resolution": "Full", "quality": 1.0, "edge_steps": 3.0, "samples": 2},
+    "hero": {"resolution": "Full", "quality": 1.0, "edge_steps": 3.0, "samples": 4},
+}
+
+
 def knob_changed():
     # Plain top-level code: Nuke runs knob scripts with separate locals, which functions and
     # comprehensions can't see.
     table = dict((name, cloud_types.full(name)) for name in TYPE_NAMES)
-    return ("k = nuke.thisKnob()\n"
+    return ("RENDER_PRESETS = " + repr(RENDER_PRESETS) + "\n"
+            "k = nuke.thisKnob()\n"
             "n = nuke.thisNode()\n"
             "layers = []\n"
             "if k.name() in ('l1_type', 'l2_type', 'l3_type'):\n"
@@ -322,6 +332,13 @@ def knob_changed():
             "    c = {'depth': 'depth.Z'}.get(k.value(), k.value())\n"
             "    n.node('DepthEnsure')['channels'].setValue(c)\n"
             "    n.node('DepthSource')['from0'].setValue(c)\n"
+            "elif k.name() == 'render_preset' and k.value() != 'custom':\n"
+            "    for key, v in RENDER_PRESETS[k.value()].items():\n"
+            "        n[key].setValue(v)\n"
+            "elif k.name() in ('resolution', 'quality', 'edge_steps', 'samples'):\n"
+            "    pr = n['render_preset'].value()\n"
+            "    if pr != 'custom' and n[k.name()].value() != RENDER_PRESETS[pr][k.name()]:\n"
+            "        n['render_preset'].setValue('custom')\n"
             "elif k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -454,6 +471,12 @@ def build_knobs(g):
         "or a motion blur in comp. They follow the camera, the wind drift and moving 3D boxes. Takes two "
         "more (cheap) passes per layer.")
     g["motion_vectors"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.Enumeration_Knob("render_preset", "render preset", ["custom", "draft", "shot", "hero"]),
+        "Sets resolution, quality, edge steps and samples together. draft: half resolution, half the steps, "
+        "one sample (fast look-dev, grainy edges; about a sixth of hero's time). shot: full resolution, two "
+        "samples (clean surfaces, a little grain on thin edges; about 70% of hero's time). hero: four "
+        "samples (clean edges; for close-ups and stills). Changing any of the four by hand makes it custom. "
+        "custom: as set below.")
     r = add(g, nuke.Enumeration_Knob("resolution", "resolution", ["Full", "Half", "Quarter"]),
             "Render the clouds smaller and scale them back up: much faster, softer.")
     r.setValue("Half")
