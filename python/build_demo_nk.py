@@ -85,6 +85,8 @@ def knob_value(k, v):
         return VOL_SHAPES[int(v)]
     if isinstance(v, (tuple, list)):
         return "{%s}" % " ".join("%g" % c for c in v)
+    if isinstance(v, str) and " " in v:
+        return '"%s"' % v
     return v
 
 

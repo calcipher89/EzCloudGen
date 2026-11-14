@@ -14,7 +14,10 @@ DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, win
                 wisp_size=60, wisp_amount=0.0, grain_size=15, grain_amount=0.0, swirl=0.0, swirl_size=400,
                 turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0,
                 # Per-side fades of a volume's box, 0..1 of the box in from that face.
-                fade_top=0.0, fade_bottom=0.0, fade_left=0.0, fade_right=0.0, fade_front=0.0, fade_back=0.0)
+                fade_top=0.0, fade_bottom=0.0, fade_left=0.0, fade_right=0.0, fade_front=0.0, fade_back=0.0,
+                # Fine detail: "soft billows" (cumulus and volumes) or "classic" (stratiform and mackerel
+                # decks, which keep their coverage with it).
+                model="soft billows")
 
 KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_km", stretch="stretch",
               wind_deg="wind_deg", edge="edge", taper="taper", bottom="bottom_round", top="top_round",
@@ -25,7 +28,7 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
               wisp_amount="wisp_amount", grain_size="grain_size", grain_amount="grain_amount", swirl="swirl",
               swirl_size="swirl_size", turbulence="turbulence", crumble="crumble", crumble_size="crumble_size",
               shear="shear", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
-              fade_right="fade_right", fade_front="fade_front", fade_back="fade_back")
+              fade_right="fade_right", fade_front="fade_front", fade_back="fade_back", model="detail_model")
 
 TYPES = {
     # Fair weather cumulus: flat bases, cauliflower domes, blue gaps.
@@ -40,23 +43,23 @@ TYPES = {
     # Stratocumulus: low lumpy deck with gaps (the EzCloudShafts demo look).
     "Stratocumulus": dict(base=1300, thick=600, coverage=0.66, scale=1.1, stretch=1.4, edge=0.16,
                            taper=0.35, bottom=0.15, top=0.35, detail=120, erosion=0.45, sigma=0.035,
-                           warp=1.8, octaves=3, billow=0.8, vary=0.3, sky_occ=0.7),
+                           warp=1.8, octaves=3, billow=0.8, vary=0.3, sky_occ=0.7, model="classic"),
     # Stratus: low grey sheet, soft base, little texture.
     "Stratus": dict(base=500, thick=450, coverage=0.97, scale=4.0, stretch=1.5, edge=0.35, taper=0.0,
                      bottom=0.35, top=0.3, detail=220, erosion=0.25, sigma=0.02, warp=1.0, octaves=2,
-                     billow=0.2, vary=0.3, sky_occ=0.5),
+                     billow=0.2, vary=0.3, sky_occ=0.5, model="classic"),
     # Altocumulus: mid level mackerel rows of small puffs.
     "Altocumulus": dict(base=4200, thick=350, coverage=0.62, scale=2.5, stretch=2.0, edge=0.14, taper=0.3,
                          bottom=0.25, top=0.35, detail=60, erosion=0.5, sigma=0.03, cells=0.85,
-                         cell_km=0.35, warp=1.6, octaves=2.5, billow=0.9, vary=0.25),
+                         cell_km=0.35, warp=1.6, octaves=2.5, billow=0.9, vary=0.25, model="classic"),
     # Altostratus / overcast: thick mid grey layer, sun as a dim disk.
     "Altostratus": dict(base=3000, thick=1500, coverage=1.0, scale=6.0, stretch=1.5, edge=0.4, taper=0.0,
                          bottom=0.3, top=0.3, detail=300, erosion=0.2, sigma=0.006, warp=1.0, octaves=2,
-                         billow=0.3, vary=0.2, g=0.85, sky_occ=0.4),
+                         billow=0.3, vary=0.2, g=0.85, sky_occ=0.4, model="classic"),
     # Cirrus: high thin ice fibres, strongly stretched.
     "Cirrus": dict(base=9000, thick=500, coverage=0.5, scale=5.0, stretch=7.0, wind_deg=35, edge=0.25,
                     taper=0.0, bottom=0.4, top=0.4, detail=150, erosion=0.6, sigma=0.0012, warp=2.5,
-                    octaves=2, billow=0.0, streaks=1.0, g=0.85, ambient=1.2),
+                    octaves=2, billow=0.0, streaks=1.0, g=0.85, ambient=1.2, model="classic"),
     # Cirrocumulus: high, tiny grain-like ripples.
     "Cirrocumulus": dict(base=7500, thick=250, coverage=0.55, scale=3.0, stretch=2.5, wind_deg=-30,
                           edge=0.15, taper=0.0, bottom=0.35, top=0.35, detail=40, erosion=0.45, sigma=0.008,
