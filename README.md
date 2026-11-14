@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.35.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.36.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -47,7 +47,10 @@ out of the edges, for torn cloud and fog) and wind shear. A volume can also fade
 face of its box ('fade top', 'fade bottom', left, right, front, back), so fog sits flat on the
 ground and tears away above it. The fog types (Ground Fog, Wispy Fog, Torn Low Cloud) are made
 for low cloud drifting through a valley; layer two or three at different distances for
-parallax. The layers are marched together, one ray through all three: where they overlap (a
+parallax. Two decks are made to fly through: **Valley Fog**, a soft, smoky layer filling the low
+ground with ridges standing out of it (an FPV dive into it reads like drone footage; set 'base'
+just above the valley floor), and **Canopy Mist**, thin patchy mist lying on a forest, combed
+into streaks along the wind (set 'base' to the treetops; 'wind speed' drifts it). The layers are marched together, one ray through all three: where they overlap (a
 deck crossing a hero cloud, a tower rising through a deck, fog banks one behind another) their
 clouds interleave sample by sample instead of one whole layer being drawn over the other, so there
 are no hard seams or dotted outlines where they meet. A layer alone renders exactly as it did.
