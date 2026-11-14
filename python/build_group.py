@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.33.0"
+VERSION = "0.34.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -291,11 +291,31 @@ def box_expr(layer, what, step=0):
 
 # ---- The type menu ------------------------------------------------------------------------
 
+# The render presets: what 'render preset' sets (see its help). Times are for the clouds of a
+# 2400 x 1760 backlit cumulus shot on an RTX GPU.
+RENDER_PRESETS = {
+    "draft": {"resolution": "Half", "quality": 0.5, "edge_steps": 2.0, "sampling": "Low"},
+    "shot": {"resolution": "Full", "quality": 1.0, "edge_steps": 3.0, "sampling": "Medium"},
+    "hero": {"resolution": "Full", "quality": 1.0, "edge_steps": 3.0, "sampling": "High"},
+}
+
+# 'sampling': samples per pixel at an HD-wide plate (1920), scaled by 1920 / the plate's width, as
+# a pixel's share of the frame (its grain and its stair-steps) shrinks with the resolution, and
+# kept to 1 .. 16.
+SAMPLING = ["Low", "Medium", "High", "Ultra", "Manual"]
+SAMPLING_HD = [1, 2, 4, 8]
+# The kernels' sample count (an expression inside the group, where the plate's format is known).
+SAMPLES_EXPR = ("parent.preview ? 1 : parent.sampling == 4 ? max(1, parent.samples) : max(1, min(16, rint("
+                "(parent.sampling == 0 ? %d : parent.sampling == 1 ? %d : parent.sampling == 2 ? %d : %d)"
+                " * 1920 / max(FormatBox.width, 1))))" % tuple(SAMPLING_HD))
+
+
 def knob_changed():
     # Plain top-level code: Nuke runs knob scripts with separate locals, which functions and
     # comprehensions can't see.
     table = dict((name, cloud_types.full(name)) for name in TYPE_NAMES)
-    return ("k = nuke.thisKnob()\n"
+    return ("RENDER_PRESETS = " + repr(RENDER_PRESETS) + "\n"
+            "k = nuke.thisKnob()\n"
             "n = nuke.thisNode()\n"
             "layers = []\n"
             "if k.name() in ('l1_type', 'l2_type', 'l3_type'):\n"
@@ -322,7 +342,16 @@ def knob_changed():
             "    c = {'depth': 'depth.Z'}.get(k.value(), k.value())\n"
             "    n.node('DepthEnsure')['channels'].setValue(c)\n"
             "    n.node('DepthSource')['from0'].setValue(c)\n"
-            "elif k.name() == 'showPanel':\n"
+            "elif k.name() == 'render_preset' and k.value() != 'custom':\n"
+            "    for key, v in RENDER_PRESETS[k.value()].items():\n"
+            "        n[key].setValue(v)\n"
+            "elif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n"
+            "    pr = n['render_preset'].value()\n"
+            "    if pr != 'custom' and n[k.name()].value() != RENDER_PRESETS[pr][k.name()]:\n"
+            "        n['render_preset'].setValue('custom')\n"
+            "if k.name() in ('sampling', 'showPanel'):\n"
+            "    n['samples'].setEnabled(n['sampling'].value() == 'Manual')\n"
+            "if k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
             "    vol = n[p + 'volume'].value() > 0.5\n"
@@ -454,6 +483,12 @@ def build_knobs(g):
         "or a motion blur in comp. They follow the camera, the wind drift and moving 3D boxes. Takes two "
         "more (cheap) passes per layer.")
     g["motion_vectors"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.Enumeration_Knob("render_preset", "render preset", ["custom", "draft", "shot", "hero"]),
+        "Sets resolution, quality, edge steps and samples together. draft: half resolution, half the steps, "
+        "one sample (fast look-dev, grainy edges; about a sixth of hero's time). shot: full resolution, two "
+        "samples (clean surfaces, a little grain on thin edges; about 70% of hero's time). hero: four "
+        "samples (clean edges; for close-ups and stills). Changing any of the four by hand makes it custom. "
+        "custom: as set below.")
     r = add(g, nuke.Enumeration_Knob("resolution", "resolution", ["Full", "Half", "Quarter"]),
             "Render the clouds smaller and scale them back up: much faster, softer.")
     r.setValue("Half")
@@ -464,8 +499,19 @@ def build_knobs(g):
         "Finer ray steps where a ray meets cloud (this many to a normal step): clean, grain-free "
         "surfaces and edges. 1: off (faster, grainy). The preview uses 1.").setValue(3)
     g["edge_steps"].setRange(1, 6)
-    s = add(g, nuke.Int_Knob("samples", "samples"), "Jittered samples per pixel: anti-aliasing and less grain.")
-    s.setValue(1)
+    s = add(g, nuke.Enumeration_Knob("sampling", "sampling", SAMPLING),
+            "How many jittered samples each pixel takes (anti-aliasing and less grain), worked out from the "
+            "plate's resolution so it needn't be guessed: Low, Medium, High and Ultra take 1, 2, 4 and 8 on an "
+            "HD-wide plate (1920), fewer on a bigger plate and more on a smaller one, where each pixel is a "
+            "bigger share of the frame (2 to 16 on a 960 preview; on a 4K plate Medium is 1). The cost is "
+            "about proportional: High takes twice Medium's time. Manual: takes 'samples' per pixel, as many "
+            "as you set, whatever the plate.")
+    s.setValue("Medium")
+    k = add(g, nuke.Int_Knob("samples", "samples"),
+            "With sampling on Manual: the samples per pixel, as many as you like (the cost grows with them).")
+    k.setValue(8)
+    k.setEnabled(False)
+    k.clearFlag(nuke.STARTLINE)
     add(g, nuke.Double_Knob("max_distance", "max distance"),
         "Clouds fade out towards this distance (km). The default reaches past the horizon from high up.").setValue(400)
     g["max_distance"].setRange(5, 500)
@@ -911,7 +957,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "horizon_haze"].setExpression("parent.horizon_haze")
     n[k + "quality"].setExpression("parent.quality * (parent.preview ? 0.5 : 1)")
     n[k + "edge_steps"].setExpression("parent.preview ? 1 : parent.edge_steps")
-    n[k + "samples"].setExpression("parent.preview ? 1 : parent.samples")
+    n[k + "samples"].setExpression(SAMPLES_EXPR)
     # The global seed jitters the steps; each layer's own seed shapes its clouds.
     n[k + "seed"].setExpression("parent.seed")
     n[k + "evolve"].setExpression("parent.evolve_speed * parent.time_s")

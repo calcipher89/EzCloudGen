@@ -47,7 +47,7 @@ def main():
     g.setInput(1, cam)
     g["sun_direction"].setValue([0.627, 0.574, -0.527])
     g["resolution"].setValue("Full")
-    g["samples"].setValue(2)
+    g["sampling"].setValue("Medium")
 
     grade = nuke.nodes.Grade(name="TestTone", white=0.8)
     grade.setInput(0, g)
