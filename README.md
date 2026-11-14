@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.31.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.32.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -92,7 +92,15 @@ similar depth all over the cloud, as on a modelled cloud volume whose shape is a
 surface. Without it, gently sloping faces (a big swell, a painted mass's front, a deck's broad tops)
 came out smooth. The scale is kept between 0.8 and 2 times. It costs up to about 70% more render time
 (three more looks at the shape near each surface); set it to 0 for quick work.
-'horizon samples' (4 by default; 1 = as before) takes that many times the pixel samples in the band within a few degrees of level, where a deck is seen edge on and its clouds shrink below a pixel: with the usual 2 samples they aliased and shimmered on camera moves. On a pan this halves the frame-to-frame change there, and the band is thin, so it costs next to nothing.
+'horizon samples' (4 by default; 1 = as before) takes that many times the pixel samples in the band
+within a few degrees of level, where a deck is seen edge on and its clouds shrink below a pixel:
+with the usual 2 samples they aliased and shimmered on camera moves. On a pan this halves the frame-
+to-frame change there, and the band is thin, so it costs next to nothing.
+'wrap light' (by 'light diffusion', 1 by default; 0 = as before) keeps the light that has scattered
+a few times inside the cloud travelling mostly forward, as it does in real cloud, fading to even
+with depth: looking towards the sun, the edges and thinner cloud within about 30 degrees of it glow
+and the light wraps round the outline, as in a backlit photo, while the same cloud seen side on is a
+touch darker. It acts only with 'light diffusion' on.
 'light grid' (by 'billow shrink', on by default; off = as before) bakes each layer's shadow from the sun
 once per frame, on a grid fitted to the camera's view (192 x 108 cells across the frame plus a margin,
 64 slices in distance from 200 m to 80 km, log spaced, marched 48 steps and 25 km towards the sun),

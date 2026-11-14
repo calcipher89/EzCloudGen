@@ -130,6 +130,7 @@ param:
   float sky_occlusion[3];
   float shadow_depth[3];
   float sunGlow;
+  float wrapLight;
   float diffusion;
   float detailSharpness;
   float billowLight;
@@ -281,6 +282,7 @@ local:
     defineParam(gapAmount, "gap_amount", 0.0f);
     defineParam(gapSize, "gap_size", 2000.0f);
     defineParam(sunGlow, "sun_glow", 0.0f);
+    defineParam(wrapLight, "wrap_light", 0.0f);
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
@@ -1655,6 +1657,15 @@ local:
       float single = exp(-od) * (0.75f * hg(forward[lyr], cosT) + 0.25f * hg(-0.25f, cosT)
                                  + sunGlow * hg(0.93f, cosT));
       float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward[lyr]) * od);
+      // Wrap light: light scattered a few times in cloud still travels mostly forward (a droplet
+      // throws most of its light within some 20 degrees of straight on), and only deep in does it
+      // forget where the sun was. So, looking towards the sun, the edges and the thinner cloud
+      // within some 30 degrees of it glow, and the light wraps round the cloud's outline, while
+      // the same cloud seen side on is a touch darker (the same light, sent another way). The
+      // forward bias fades with depth. 0: spread evenly, as before.
+      float wg = 0.7f * clamp(wrapLight, 0.0f, 1.5f) * exp(-0.12f * od);
+      if (wg > 0.0f)
+        many *= 12.566f * hg(min(wg, 0.9f), cosT);
       float3 soft = sunColor * (single + many);
       direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
     }

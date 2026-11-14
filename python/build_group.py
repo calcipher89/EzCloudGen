@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.31.0"
+VERSION = "0.32.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -549,6 +549,12 @@ def build_knobs(g):
         "billows shade off gradually round their sides and cores stay luminous grey instead of dead. "
         "Use 'highlight rolloff' with it.").setValue(0)
     g["diffusion"].setRange(0, 1)
+    add(g, nuke.Double_Knob("wrap_light", "wrap light"),
+        "With 'light diffusion': the light scattered inside a cloud keeps going mostly forward, so looking "
+        "towards the sun the edges and thinner cloud within about 30 degrees of it glow and the light wraps "
+        "round the outline, as in a backlit photo; side on and from behind the sun, a cloud is a touch "
+        "darker. 0: as before.").setValue(1)
+    g["wrap_light"].setRange(0, 1.5)
     add(g, nuke.Double_Knob("detail_sharpness", "detail sharpness"),
         "Crisper billows: keeps more of the finer detail octaves and hardens the cloud's surface, for the "
         "sharp cauliflower edges of a sunlit cumulus. 0: as before (softer). Raise 'quality' or 'edge steps' "
@@ -938,6 +944,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "sun_map_size"].setValue(SUN_MAP_SIZE)
     n[k + "sun_glow"].setExpression("parent.sun_glow")
     n[k + "diffusion"].setExpression("parent.diffusion")
+    n[k + "wrap_light"].setExpression("parent.wrap_light")
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n[k + "billow_light"].setExpression("parent.billow_light")
     n[k + "billow_shrink"].setExpression("parent.billow_shrink")
