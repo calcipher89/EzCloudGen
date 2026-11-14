@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.32.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.33.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -205,6 +205,25 @@ Building (in NukeX, it compiles the kernel and writes its hash):
 Blink, to check edits without Nuke (per-layer settings: `base=2000` is layer 1, `base.2=5000`
 layer 2, `layer_on.2=1` turns it on). On the CPU, Nuke takes about 13 minutes to compile the
 kernel the first time (30 s on the GPU). `reference/sheets/nuke/` has the test renders from NukeX.
+
+## Render farm and CPU
+
+Render EzCloudGen on GPU machines. Measured on an i7-10700K (16 threads) against an RTX GPU, a
+960x540 frame at half resolution with 2 samples:
+
+| | GPU | CPU |
+|---|---|---|
+| first render on a machine (compiling the kernels) | seconds | about 58 minutes |
+| each frame after that | about 3 s | about 11 minutes |
+
+CPU and GPU give the same image (identical in a half-float EXR).
+
+The CPU compile is paid once per machine and kernel version: Nuke keeps the compiled kernels in
+`jitCache-<user>` under its temp folder (`NUKE_TEMP_DIR`), and later sessions reuse them. On a
+CPU-only node, render one frame of any EzCloudGen script after each update to warm the cache
+before sending a job. Each pass kind has its own kernel with a single `cloud()` call, because the
+CPU compile time grows much faster than the number of call sites (one call: about 5 minutes,
+two: about 50, four: well over an hour).
 
 ## Planned v1
 

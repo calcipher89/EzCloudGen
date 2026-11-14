@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.32.0"
+VERSION = "0.33.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -1022,15 +1022,36 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
 
 
 
+# The kernel's three cloud() calls, one per kind of pass. Blink inlines cloud() at every call site,
+# and the CPU (LLVM) compile time grows much faster than their number (one: about 11 minutes, two:
+# 51, four: well over an hour), so each pass gets a copy of the kernel with only its own call; in
+# it the others read no cloud (that pass never runs them).
+CLOUD_CALLS = {
+    "march": ("          float dn = cloud(q, fq, cheap, sdL[L], L, bd);", "          float dn = 0.0f;"),
+    "shadow": ("      od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd, lyr, bd) * dt;", "      od += 0.0f;"),
+    "grid": ("        odL[L] += cloud(p + sun * t, max(cell, t * 0.02f), true, layer_seed[L], L, bd) * len * sig0;",
+             "        odL[L] += 0.0f;"),
+}
+
+
 def lf_copy(kernel):
-    """An LF-only copy of a kernel in the temp folder (a Windows checkout may have CRLF)."""
+    """LF-only copies of a kernel in the temp folder (a Windows checkout may have CRLF), one per kind
+    of pass (CLOUD_CALLS): {kind: path}."""
     import tempfile
     with open(os.path.join(ROOT, "blink", kernel + ".blink")) as f:
         text = f.read().replace("\r\n", "\n")
-    path = os.path.join(tempfile.gettempdir(), kernel + ".blink").replace("\\", "/")
-    with open(path, "w", newline="\n") as f:
-        f.write(text)
-    return path
+    paths = {}
+    for kind in CLOUD_CALLS:
+        t = text
+        for other, (call, none) in CLOUD_CALLS.items():
+            assert t.count(call) == 1, "the kernel's %s cloud() call has changed: update CLOUD_CALLS" % other
+            if other != kind:
+                t = t.replace(call, none)
+        path = os.path.join(tempfile.gettempdir(), "%s_%s.blink" % (kernel, kind)).replace("\\", "/")
+        with open(path, "w", newline="\n") as f:
+            f.write(t)
+        paths[kind] = path
+    return paths
 
 
 def compiled(name, source_file):
@@ -1048,7 +1069,8 @@ def compiled(name, source_file):
 def build():
     for layer, chans in LAYERS.items():
         nuke.Layer(layer, ["%s.%s" % (layer, c) for c in chans])
-    source = lf_copy(KERNEL)
+    sources = lf_copy(KERNEL)
+    source = sources["march"]
 
     g = nuke.nodes.Group(name="EzCloudGen")
     build_knobs(g)
@@ -1135,7 +1157,7 @@ def build():
         gridfmt["box_width"].setValue(GRID_W * GRID_T)
         gridfmt["box_height"].setValue(GRID_H * GRID_T)
         gridfmt.setInput(0, nuke.toNode("WorkBlack"))
-        lgrid = blink("Clouds_LightGrid", 6, gridfmt, mp, gridfmt, sunmaps, source)
+        lgrid = blink("Clouds_LightGrid", 6, gridfmt, mp, gridfmt, sunmaps, sources["grid"])
         lgrid[KERNEL + "_samples"].setExpression("1")
         lgrid[KERNEL + "_tiles"].setExpression("1")
         # The grid is laid out over the camera's frame, not its own image's.
@@ -1145,7 +1167,7 @@ def build():
         col = blink("Clouds_Color", 0, work, mp, zwork, sunmaps, source, lgrid=lgrid)
         sunm = blink("Clouds_Sun", 1, work, mp, zwork, sunmaps, source, lgrid=lgrid)
         sunm["disable"].setExpression("%s || !((parent.breakout && !parent.preview) || parent.view==2)" % none_on)
-        shadow = blink("Clouds_Shadow", 3, work, mp, zwork, [smfmt] * 3, source)
+        shadow = blink("Clouds_Shadow", 3, work, mp, zwork, [smfmt] * 3, sources["shadow"])
         shadow["disable"].setExpression("%s || !(parent.occlude && parent.bg_found) || "
                                         "!(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"
                                         % none_on)
