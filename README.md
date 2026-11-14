@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.34.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.35.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -31,6 +31,9 @@ EzCloudGen). Inputs:
   Each deck's 'follow map' sets how much it obeys, and 'map channel' lets each deck read its own
   channel.
 
+The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
+lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three
+**Layer** tabs and **About**.
 Each of the three Layer tabs has a type menu that fills in its knobs. A layer is either a sky
 deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Soft Cumulus, Storm Anvil, Fog Bank, Puff):
 picking a volume type drops it 'distance' ahead of the camera ('place in front of camera' does
@@ -48,11 +51,12 @@ parallax. The layers are marched together, one ray through all three: where they
 deck crossing a hero cloud, a tower rising through a deck, fog banks one behind another) their
 clouds interleave sample by sample instead of one whole layer being drawn over the other, so there
 are no hard seams or dotted outlines where they meet. A layer alone renders exactly as it did.
-'billow light' (by 'detail sharpness'; 0 = as before) lights each billow on its own: the light march
+'billow light' (by 'detail sharpness'; on at 1 by default) lights each billow on its own: the light march
 looks a billow towards the sun with the fine detail, so every lobe gets a sunlit side and a shaded far
 side, and the creases between lobes go dark. 'billow shrink' gives big, soft lobes low in a cloud and
-tighter cauliflower near its top. For photographic cumulus use 'light diffusion' 1, 'detail
-sharpness' about 0.6, 'billow light' 1 and 'billow shrink' about 0.6.
+tighter cauliflower near its top. For a backlit photographic cumulus add 'light diffusion' 1 and
+'billow shrink' about 0.6 to the defaults; front lit, the defaults keep more shaded form, as in the
+references.
 'map softness' (coverage map, default 0.5) frays and blurs the painted edges over part of a cloud's
 size, so a hard edge in the map comes out as cloud thinning out rather than a straight wall.
 Cleaner silhouettes: the march now takes its fine edge steps from the band where a cloud's detail
@@ -108,14 +112,16 @@ and the colour and sun passes read it back smoothly: soft, noise-free self-shado
 mass, and the other layers' shadows exactly (instead of the sun map's slab estimate). Each point still
 marches the first couple of billows (or a grid cell) towards the sun itself, so the fine detail
 shades itself. The bake takes about 4 s on the GPU.
-'detail model' (per layer, by 'map use'): **soft billows** (the default) builds the fine detail from
+'detail model' (per layer, by 'map use', set by the type): **soft billows** builds the fine detail from
 Perlin-Worley noise, as in Guerrilla's clouds for Horizon: gradient noise remapped by inverted Worley
 cells, so billows are rounded, soft-edged and run into each other. The detail thins the cloud as a
 density as well as moving its outline, so the outer cloud is soft, see-through puffs over a dense
 core, billowy on top and wispier towards the base; 'swirl' and 'turbulence' curl it with curl noise
 (the cross product of two gradient-noise gradients), so wisps roll instead of smearing into streaks.
 Best on clouds seen close up. **classic** is the earlier cauliflower billows with a crisp skin, which
-hold their form better on far decks and masses many km away. Soft billows skip 'even detail', so they
+hold their form better on far decks. The cumulus types and every placed volume use soft billows
+(classic leaves boxy, cut-off edges on a volume); stratocumulus, stratus, altocumulus, altostratus
+and cirrus decks use classic, which keeps their coverage. Soft billows skip 'even detail', so they
 render in about the same time as classic.
 'sky occlusion' (in 'more shape', after 'sky light') sets how much the cloud above darkens the
 sky light below it, deepening bases and the folds between lobes: 1 for cumulus, lower for tall
@@ -154,7 +160,7 @@ edge in the map still stands up as a straight wall through a tall deck. The Stor
 holds a minimum thickness, so it no longer breaks up into speckle.
 Volume shape **Shelf** and the **Shelf Cloud** type: a one-sided cloud shelf, thick and low at its
 box's -x end, thinning and lifting to a torn, streaky trailing edge at +x. Turn the box to point it.
-'detail sharpness' (by 'light diffusion'; 0 = as before) keeps more of the finer billow octaves and
+'detail sharpness' (by 'light diffusion'; 0.6 by default) keeps more of the finer billow octaves and
 hardens the surface, for crisp cauliflower edges. With a self-lit EzAtmosScatter, the sun colour
 follows its 'white balance'.
 Cumulus and Cumulus Congestus decks have rounder bases ('base rounding' 0.1, was 0.04 and 0.02): a
@@ -183,7 +189,7 @@ For quick look-dev, tick **preview**: half the resolution and march steps, one s
 the passes the view needs (the node's label says PREVIEW). For fast playback or the farm, precomp
 the node with your own Write (channels all keeps every layer) and read it back.
 
-**render preset** sets resolution, quality, edge steps and sampling together. On a 2400x1760
+**render preset** (shot by default) sets resolution, quality, edge steps and sampling together. On a 2400x1760
 backlit cumulus shot on an RTX GPU, the clouds take:
 
 | preset | settings | time | look |
@@ -202,7 +208,7 @@ Medium takes 4; on a 2400-wide plate High takes 3; on 4K Medium takes 1). **Manu
 doubles it) and edge steps (1 saves about a third, with grain). Even detail, sky shading, round
 lobes, billow light and the light grid cost under 15% each.
 
-'show me variations' (main tab) shows nine seeds of one layer side by side ('next nine' for
+'show me variations' (Air, time & map tab) shows nine seeds of one layer side by side ('next nine' for
 more); type the number of the one you like (1 top left, 9 bottom right) into 'use number' and
 press 'use it'.
 

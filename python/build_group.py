@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.34.0"
+VERSION = "0.35.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -488,10 +488,10 @@ def build_knobs(g):
         "one sample (fast look-dev, grainy edges; about a sixth of hero's time). shot: full resolution, two "
         "samples (clean surfaces, a little grain on thin edges; about 70% of hero's time). hero: four "
         "samples (clean edges; for close-ups and stills). Changing any of the four by hand makes it custom. "
-        "custom: as set below.")
+        "custom: as set below.").setValue("shot")
     r = add(g, nuke.Enumeration_Knob("resolution", "resolution", ["Full", "Half", "Quarter"]),
             "Render the clouds smaller and scale them back up: much faster, softer.")
-    r.setValue("Half")
+    r.setValue("Full")
     add(g, nuke.Double_Knob("quality", "quality"),
         "Ray march step count: higher is smoother and slower.").setValue(1.0)
     g["quality"].setRange(0.25, 4)
@@ -556,6 +556,7 @@ def build_knobs(g):
         "cloud volumes, tall ones and ones outside the frame included.").setValue(True)
     hidden(g, nuke.Double_Knob("sun_map_size")).setValue(SUN_MAP_SIZE)
 
+    add(g, nuke.Tab_Knob("light_tab", "Light"))
     add(g, nuke.Text_Knob("sun_divider", "sun"))
     sf = add(g, nuke.Enumeration_Knob("sun_from", "sun from", ["Auto", "Axis", "EzAtmosScatter", "Manual"]),
              "Auto: the Axis in 'sun' if there is one, else the EzAtmosScatter in 'atmos', else 'sun direction'.")
@@ -601,16 +602,17 @@ def build_knobs(g):
         "round the outline, as in a backlit photo; side on and from behind the sun, a cloud is a touch "
         "darker. 0: as before.").setValue(1)
     g["wrap_light"].setRange(0, 1.5)
+    add(g, nuke.Text_Knob("look_divider", "look"))
     add(g, nuke.Double_Knob("detail_sharpness", "detail sharpness"),
         "Crisper billows: keeps more of the finer detail octaves and hardens the cloud's surface, for the "
-        "sharp cauliflower edges of a sunlit cumulus. 0: as before (softer). Raise 'quality' or 'edge steps' "
-        "if it starts to sparkle.").setValue(0)
+        "sharp cauliflower edges of a sunlit cumulus. 0: softer. Raise 'quality' or 'edge steps' if it "
+        "starts to sparkle.").setValue(0.6)
     g["detail_sharpness"].setRange(0, 1)
     add(g, nuke.Double_Knob("billow_light", "billow light"),
         "Lights each billow on its own: the light march looks a billow towards the sun with all the fine "
         "detail, so every cauliflower lobe gets a bright sunlit side and a shaded far side, and the creases "
-        "between lobes go dark. 0: as before (billows light flat). 1 for photographic cumulus (it takes "
-        "one more detailed cloud lookup per lit step, so a little longer to render).").setValue(0)
+        "between lobes go dark, as in a photographed cumulus. 0: billows light flat (it takes one more "
+        "detailed cloud lookup per lit step, about 3% of the render time).").setValue(1)
     g["billow_light"].setRange(0, 1)
     add(g, nuke.Double_Knob("billow_shrink", "billow shrink"),
         "Big, soft lobes low in the cloud and smaller, tighter cauliflower towards the top, as real cumulus "
@@ -642,6 +644,7 @@ def build_knobs(g):
         "seams. 0: as before.").setValue(1)
     g["round_lobes"].setRange(0, 1)
 
+    add(g, nuke.Tab_Knob("more_tab", "Air, time & map"))
     add(g, nuke.Text_Knob("haze_divider", "air"))
     add(g, nuke.Double_Knob("haze_distance", "haze distance"),
         "Distance (km) over which far clouds fade into the haze colour. 0: off.").setValue(60)
@@ -726,8 +729,9 @@ def build_knobs(g):
                 "run into each other) and it thins the cloud rather than only pushing a surface in and out, so "
                 "the outer cloud is soft, see-through puffs and wisps over a dense core; 'swirl' and "
                 "'turbulence' curl it with curl noise, so wisps roll instead of smearing. Best on clouds seen "
-                "close up. classic: as before (cauliflower billows with a crisp skin), which holds up better on "
-                "far decks and big masses many km away.")
+                "close up. classic: cauliflower billows with a crisp skin, which hold up better on far "
+                "stratiform and mackerel decks. Each type sets the one that suits it.")
+        k.setValue(vals["detail_model"])
         k = add(g, nuke.Enumeration_Knob(p + "map_use", "map use", ["footprint", "silhouette"]),
                 "footprint: the map marks where clouds stand on the layer, seen from above (they rise "
                 "from it in heaps). silhouette: the painted shape is the cloud mass's outline as the "
