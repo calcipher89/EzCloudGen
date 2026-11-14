@@ -183,16 +183,22 @@ For quick look-dev, tick **preview**: half the resolution and march steps, one s
 the passes the view needs (the node's label says PREVIEW). For fast playback or the farm, precomp
 the node with your own Write (channels all keeps every layer) and read it back.
 
-**render preset** sets resolution, quality, edge steps and samples together. On a 2400x1760
+**render preset** sets resolution, quality, edge steps and sampling together. On a 2400x1760
 backlit cumulus shot on an RTX GPU, the clouds take:
 
 | preset | settings | time | look |
 |---|---|---|---|
-| draft | half resolution, quality 0.5, edge steps 2, 1 sample | about 2.5 s | grainy edges, for look-dev |
-| shot | full, quality 1, edge steps 3, 2 samples | about 9 s | clean surfaces, a little grain on thin edges |
-| hero | full, quality 1, edge steps 3, 4 samples | about 12 s | clean edges, for close-ups and stills |
+| draft | half resolution, quality 0.5, edge steps 2, sampling Low | about 2.5 s | grainy edges, for look-dev |
+| shot | full, quality 1, edge steps 3, sampling Medium | about 9 s | clean surfaces, a little grain on thin edges |
+| hero | full, quality 1, edge steps 3, sampling High | about 12 s | clean edges, for close-ups and stills |
 
-Changing any of the four by hand sets it to custom. What costs the time: samples (2 to 4 roughly
+Changing any of the four by hand sets it to custom.
+
+**sampling** (Low, Medium, High, Ultra) works out the samples per pixel from the plate's width, so
+they needn't be guessed: 1, 2, 4 and 8 on an HD-wide plate (1920), scaled by 1920 / the plate's
+width and kept to 1 to 16, as each pixel is a smaller share of a bigger frame (on a 960 preview
+Medium takes 4; on a 2400-wide plate High takes 3; on 4K Medium takes 1). **Manual** unlocks
+'samples', for as many per pixel as you like when Ultra isn't enough. What costs the time: samples (2 to 4 roughly
 doubles it) and edge steps (1 saves about a third, with grain). Even detail, sky shading, round
 lobes, billow light and the light grid cost under 15% each.
 
