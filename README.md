@@ -221,8 +221,9 @@ CPU and GPU give the same image (identical in a half-float EXR).
 The CPU compile is paid once per machine and kernel version: Nuke keeps the compiled kernels in
 `jitCache-<user>` under its temp folder (`NUKE_TEMP_DIR`), and later sessions reuse them. On a
 CPU-only node, render one frame of any EzCloudGen script after each update to warm the cache
-before sending a job. Each pass kind has its own kernel with a single `cloud()` call, because the
-CPU compile time grows much faster than the number of call sites (one call: about 5 minutes,
+before sending a job (each pass node compiles on its own, which is why the first render takes so
+long). Each pass kind has its own kernel with a single `cloud()` call, because the
+CPU compile time grows much faster than the number of call sites (one call: about 5 to 10 minutes,
 two: about 50, four: well over an hour).
 
 ## Planned v1
