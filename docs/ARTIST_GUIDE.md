@@ -136,12 +136,13 @@ time & map) changes the shapes slowly over time. Turn on **motion vectors** for 
 | Clouds in front of the mountains | check bg depth: **depth**, **depth is**, **units to metres** (EzCloudGen tab) |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
 | Render too slow | render preset *draft* or **preview** while you work |
-| Flat stripes inside a volume you fly into, with a deck above | **light grid** off (known issue) |
+| A straight edge in the shading inside a volume you fly into, with a deck above | **light grid** off (known issue) |
 | The node is "computing" forever on a CPU farm node | it is compiling (once per machine, about an hour); render on GPU |
 
 ## Known issues
 
-- **Light grid stripes:** with the camera inside a placed volume under a deck, the light grid can
-  draw flat stripes. Turn **light grid** off for those shots; it costs nothing in render time.
+- **Light grid edge:** with the camera inside a placed volume under a deck (layers shadowing each
+  other), a soft straight edge can show where the light grid hands over to the plain sun march.
+  Turn **light grid** off for those shots; it costs nothing in render time.
 - **CPU rendering** is very slow (minutes a frame) and compiles for about an hour on each
   machine's first render. Use GPU nodes.
