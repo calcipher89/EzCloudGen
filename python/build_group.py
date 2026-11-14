@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.36.0"
+VERSION = "0.37.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -467,7 +467,7 @@ def build_knobs(g):
     v = add(g, nuke.Enumeration_Knob("view", "view", VIEWS),
             "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. "
             "Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. "
-            "Variations: nine seeds of one layer side by side (see 'variations'). "
+            "Variations: nine seeds of one layer side by side over a plain sky, numbered (see 'variations'). "
             "Shadow: the clouds' shadows on the bg (needs its depth), white is shaded.")
     v.setValue("Comp")
     add(g, nuke.Boolean_Knob("preview", "preview"),
@@ -1390,9 +1390,30 @@ def build():
         shadow_view = nuke.nodes.Copy(name="View_Shadow", channels="rgba")
         shadow_view.setInput(0, layers)
         shadow_view.setInput(1, shadow_up)
+        # Variations: the layer shown, tiled (by the kernels), over a plain sky blue rather than
+        # the bg (the plate showing through made the tiles hard to judge), each tile numbered as
+        # 'use number' counts them (1 top left, reading order).
+        var_view = nuke.nodes.Expression(name="View_VariationsSky", label="clouds over a plain sky")
+        for j, (e, sky) in enumerate((("r", 0.14), ("g", 0.22), ("b", 0.42))):
+            var_view["expr%d" % j].setValue("%s+(1-a)*%g" % (e, sky))
+        var_view["expr3"].setValue("1")
+        var_view.setInput(0, clouds_view)
+        for k in range(1, 10):
+            col, row = (k - 1) % 3, (k - 1) // 3
+            t = nuke.nodes.Text2(name="View_VariationNumber%d" % k)
+            t["message"].setValue(str(k))
+            for j, e in enumerate(("width*%d/3+height/60" % col, "height*(1-%d/3)" % (row + 1),
+                                   "width*%d/3" % (col + 1), "height*(1-%d/3)-height/60" % row)):
+                t["box"].setExpression(e, j)
+            t["xjustify"].setValue("left")
+            t["yjustify"].setValue("top")
+            t["font_size"].setExpression("height/14")
+            t["global_font_scale"].setValue(0.6)
+            t["color"].setValue([1, 0.85, 0.3, 1])
+            t.setInput(0, var_view)
+            var_view = t
         view = nuke.nodes.Switch(name="ViewOutput")
-        # Variations: the comp, with only the layer shown, tiled (by the kernels).
-        for j, n in enumerate((layers, clouds_view, sun_view, depth_view, layers, shadow_view)):
+        for j, n in enumerate((layers, clouds_view, sun_view, depth_view, var_view, shadow_view)):
             view.setInput(j, n)
         view["which"].setExpression("parent.view")
 
