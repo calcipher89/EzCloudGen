@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.36.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.37.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -212,8 +212,8 @@ doubles it) and edge steps (1 saves about a third, with grain). Even detail, sky
 lobes, billow light and the light grid cost under 15% each.
 
 'show me variations' (Air, time & map tab) shows nine seeds of one layer side by side ('next nine' for
-more); type the number of the one you like (1 top left, 9 bottom right) into 'use number' and
-press 'use it'.
+more), over a plain sky blue rather than the plate and each tile numbered; type the number of the
+one you like into 'use number' and press 'use it'.
 
 Output: rgba (the comp, or a view), depth.Z (Planar Z of the clouds, scene units, for
 EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky, and
