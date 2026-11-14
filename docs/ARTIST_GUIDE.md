@@ -115,7 +115,9 @@ in `_scenes/valley_fog_fpv` (not part of the repo).
 **fade bottom** so the fog sits flat on the ground and tears away above.
 
 **A sky that moves.** Each layer's **wind speed** and **wind direction** drift it; **evolve** (Air,
-time & map) changes the shapes slowly over time. Turn on **motion vectors** for VectorBlur.
+time & map) changes the shapes slowly over time. For motion blur, turn on **motion blur**
+(EzCloudGen tab) for true 3D blur rendered in (set **shutter**, and sampling High or more), or
+**motion vectors** for VectorBlur in comp.
 
 ## Comping the outputs
 
@@ -123,7 +125,8 @@ time & map) changes the shapes slowly over time. Turn on **motion vectors** for 
 - With **breakout layers**: *cloud* (rgba), *cloud_sun* and *cloud_sky* (rgb) to re-grade sun and
   sky light separately, *cloud_shadow* (the clouds' shadows on the bg, needs bg depth).
 - **depth.Z**: Planar Z of the clouds, for EzDepthHaze and defocus.
-- **forward / backward**: motion vectors, with **motion vectors** on.
+- **forward / backward**: motion vectors, with **motion vectors** on (or render the blur in with
+  **motion blur**).
 - **sun shadow layer** (*cloud_sunmap*): feeds EzCloudShafts for sun rays through the clouds.
 - Precomp the node with your own Write (channels: all) for fast playback and farm renders.
 

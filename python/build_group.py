@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.37.1"
+VERSION = "0.38.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -483,6 +483,17 @@ def build_knobs(g):
         "or a motion blur in comp. They follow the camera, the wind drift and moving 3D boxes. Takes two "
         "more (cheap) passes per layer.")
     g["motion_vectors"].clearFlag(nuke.STARTLINE)
+    add(g, nuke.Boolean_Knob("motion_blur", "motion blur"),
+        "True 3D motion blur, rendered in: each sample sees the shot at its own moment inside the shutter, "
+        "with the camera moved and turned and every layer drifted on the wind (or moved with its box) that "
+        "far, so parallax, a turning camera and clouds at different depths blur correctly, which a 2D "
+        "VectorBlur can't do. It needs samples to be smooth: use 'sampling' High or Ultra (or Manual 8 to "
+        "16); with few it is grainy. Motion comes from the next frame, so a move that changes direction "
+        "within a frame is straightened. The lighting is the frame's own.")
+    add(g, nuke.Double_Knob("shutter", "shutter"),
+        "How long the shutter is open, in frames, centred on the frame (0.5 = a 180 degree shutter).").setValue(0.5)
+    g["shutter"].setRange(0, 1)
+    g["shutter"].clearFlag(nuke.STARTLINE)
     add(g, nuke.Enumeration_Knob("render_preset", "render preset", ["custom", "draft", "shot", "hero"]),
         "Sets resolution, quality, edge steps and samples together. draft: half resolution, half the steps, "
         "one sample (fast look-dev, grainy edges; about a sixth of hero's time). shot: full resolution, two "
@@ -1007,6 +1018,8 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "grid_far"].setExpression("min(parent.max_distance * 1000, 80000)")
     n[k + "even_detail"].setExpression("parent.even_detail")
     n[k + "horizon_samples"].setExpression("parent.horizon_samples")
+    n[k + "motion_blur"].setExpression("parent.motion_blur && !parent.preview")
+    n[k + "shutter"].setExpression("parent.shutter")
     n[k + "sky_shading"].setExpression("parent.sky_shading")
     n[k + "round_lobes"].setExpression("parent.round_lobes")
     n[k + "map_softness"].setExpression("parent.map_softness")

@@ -209,6 +209,8 @@ param:
   float3 otherRow1;
   float3 otherRow2;
   float3 otherPosition;
+  int motionBlur;
+  float shutter;
   float otherFocal;
   float otherHaperture;
   float2 other_offset[3];
@@ -259,6 +261,8 @@ local:
     defineParam(camRow1, "cam_row1", float3(0.0f, 1.0f, 0.0f));
     defineParam(camRow2, "cam_row2", float3(0.0f, 0.0f, 1.0f));
     defineParam(camPosition, "cam_position", float3(0.0f, 3000.0f, 0.0f));
+    defineParam(motionBlur, "motion_blur", 0);
+    defineParam(shutter, "shutter", 0.5f);
     defineParam(focal, "focal", 24.0f);
     defineParam(haperture, "haperture", 36.0f);
     defineParam(frameSize, "frame_size", float2(1920.0f, 1080.0f));
@@ -1930,6 +1934,33 @@ local:
       // Planar Z per metre along the ray.
       float zPer = 1.0f / length(cd);
       float3 o = cam;
+      // Motion blur: this sample sees the shot at its own moment inside the shutter (ts frames
+      // from this one, spread evenly over the samples): the camera moved and turned that far
+      // towards the next frame, and each layer drifted or moved with its box (see mShift). True
+      // 3D motion: parallax, the camera turning, and clouds at different depths moving apart.
+      // The lighting stays this frame's. Smooth only with enough samples ('sampling').
+      float3 mShift[3];
+      for (int L = 0; L < 3; L++)
+        mShift[L] = float3(0.0f);
+      if (motionBlur == 1 && (output == 0 || output == 1 || output == 2) && tiles <= 1) {
+        float ts = shutter * ((float(s) + hash3(pos.x + 3.3f, pos.y + 1.7f, 11.0f + seed)) / float(ns) - 0.5f);
+        float3 oc = float3((otherPosition.x - camPosition.x) * sceneScale, (otherPosition.y - groundHeight) * sceneScale,
+                           (otherPosition.z - camPosition.z) * sceneScale);
+        o = cam + (oc - cam) * ts;
+        float3 r0 = camRow0 + (otherRow0 - camRow0) * ts;
+        float3 r1 = camRow1 + (otherRow1 - camRow1) * ts;
+        float3 r2 = camRow2 + (otherRow2 - camRow2) * ts;
+        d = normalize(float3(dot(r0, cd), dot(r1, cd), dot(r2, cd)));
+        for (int L = 0; L < 3; L++) {
+          // A deck's field is read at p + offset, so at ts it reads p + ts x its change; a
+          // volume moved by its box's change shows at p - ts x that.
+          if (volume[L] == 1)
+            mShift[L] = -float3(other_vol_center[L].x - vol_center[L].x, other_vol_center[L].y - vol_center[L].y,
+                                other_vol_center[L].z - vol_center[L].z) * (sceneScale * ts);
+          else
+            mShift[L] = float3(other_offset[L].x - offset[L].x, 0.0f, other_offset[L].y - offset[L].y) * ts;
+        }
+      }
       // The smallest detail worth marching: half a metre, or a sun map texel on the ground.
       float footMin = 0.5f;
       if (output == 5) {
@@ -2203,6 +2234,7 @@ local:
             prevS[L] = pv;
           }
           float bd = 0.0f;
+          q += mShift[L];
           float dn = cloud(q, fq, cheap, sdL[L], L, bd);
           if (i < 0) {
             sigL[L] = dn * far * sig0[L];
