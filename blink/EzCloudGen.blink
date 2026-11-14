@@ -1728,8 +1728,9 @@ local:
   }
 
   // The optical depth towards the sun from the light grid, looked up nearLen metres towards the
-  // sun from p (so past the cell p is in); -1 where that is off the grid.
-  float gridDepth(float3 p, int lyr, float &nearLen)
+  // sun from p (so past the cell p is in); -1 where that is off the grid. inside: 1 well inside
+  // the grid, easing to 0 over its outer cells (the caller blends to the plain sun march there).
+  float gridDepth(float3 p, int lyr, float &nearLen, float &inside)
   {
     float w = float(lgrid.bounds.width());
     if (w < 2.0f)
@@ -1750,6 +1751,14 @@ local:
       return -1.0f;
     if (gx < -0.5f || gy < -0.5f || gx > float(gridW) - 0.5f || gy > float(gridH) - 0.5f || gz > nd - 0.5f)
       return -1.0f;
+    // Off the grid the plain march takes over, and the two don't agree exactly (the grid and the
+    // sun maps see other layers differently), so a hard switch drew the grid's edge as flat
+    // stripes (a camera inside a volume under a deck, the sun off screen). Ease over 12 cells.
+    float edge = min(min(gx + 0.5f, float(gridW) - 0.5f - gx), min(gy + 0.5f, float(gridH) - 0.5f - gy));
+    inside = clamp(edge / 12.0f, 0.0f, 1.0f) * clamp((nd - 0.5f - gz) / 2.0f, 0.0f, 1.0f);
+    // Nearer the camera than the grid's first slice, the lookup would read the first slice, some
+    // way further along the pixel's ray than the point: ease off over the first two slices.
+    inside *= clamp((gz + 0.5f) / 2.0f, 0.0f, 1.0f);
     gz = clamp(gz, 0.0f, nd - 1.001f);
     int k0 = int(floor(gz));
     float fz = gz - float(k0);
@@ -2047,6 +2056,9 @@ local:
       float belowS[3];
       float prevS[3];
       float gOdS[3];
+      float gInS[3];
+      float nearS[3];
+      float odNearS[3];
       float farS[3];
       float sjS[3];
       float h1S[3];
@@ -2172,8 +2184,13 @@ local:
               // which holds every layer's cloud smoothly and with no noise, gives the rest (the
               // sun map too).
               float nearLen = 1e9f;
-              gOdS[L] = useGrid == 1 ? gridDepth(p, L, nearLen) : -1.0f;
-              farS[L] = sunFar(p, gOdS[L] >= 0.0f ? nearLen : 1e9f, L);
+              float gIn = 0.0f;
+              gOdS[L] = useGrid == 1 ? gridDepth(p, L, nearLen, gIn) : -1.0f;
+              gInS[L] = gOdS[L] >= 0.0f ? gIn : 0.0f;
+              nearS[L] = gOdS[L] >= 0.0f ? nearLen : 1e9f;
+              odNearS[L] = 0.0f;
+              // Where the grid is eased off (its edges), the march goes the whole way too.
+              farS[L] = sunFar(p, gInS[L] >= 1.0f ? nearLen : 1e9f, L);
               // A smooth noise (not a per-point hash, which showed as grain at few samples): the
               // contours wander and blend instead of standing as straight, flat-shaded facets.
               sjS[L] = clamp(0.5f + 1.6f * (vnoise3(p.x / 700.0f + 3.1f, p.y / 700.0f, p.z / 700.0f + sdL[L]) - 0.5f),
@@ -2193,6 +2210,8 @@ local:
             near = near || bd > 0.0f;
           } else if (i < sSteps) {
             odS[L] += dn * len;
+            if (prevS[L] <= nearS[L] + 1e-3f)
+              odNearS[L] += dn * len;
           } else if (i < sSteps + 2) {
             occS[L] += dn * len;
           } else {
@@ -2244,7 +2263,10 @@ local:
             for (int L = 0; L < 3; L++) {
               if (sigL[L] > 0.0f) {
                 float3 direct = float3(0.0f);
-                float odL = odS[L] * sig0[L] + (gOdS[L] >= 0.0f ? gOdS[L] : tauAbove(p, L));
+                float odPlain = odS[L] * sig0[L] + tauAbove(p, L);
+                float odL = gInS[L] >= 1.0f ? odNearS[L] * sig0[L] + gOdS[L]
+                          : gInS[L] > 0.0f ? (odNearS[L] * sig0[L] + gOdS[L]) * gInS[L] + odPlain * (1.0f - gInS[L])
+                                           : odPlain;
                 float3 c = shade(p, sigL[L], sdL[L], cosT, L, odL, occS[L], sProbes > 2 ? sideS[L] : 1.0f,
                                  belowS[L], direct);
                 lit += c * (sigL[L] / sig);
