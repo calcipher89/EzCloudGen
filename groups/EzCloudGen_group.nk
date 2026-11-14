@@ -8,7 +8,7 @@ Group {
  label "\[expr \{\[value preview] ? \"PREVIEW\" : \"\"\}]"
  selected true
  addUserKnob {20 ezcloudgen l EzCloudGen}
- addUserKnob {4 view t "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. Variations: nine seeds of one layer side by side (see 'variations'). Shadow: the clouds' shadows on the bg (needs its depth), white is shaded." M {Comp Clouds "Sun share" Depth Variations Shadow}}
+ addUserKnob {4 view t "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. Variations: nine seeds of one layer side by side over a plain sky, numbered (see 'variations'). Shadow: the clouds' shadows on the bg (needs its depth), white is shaded." M {Comp Clouds "Sun share" Depth Variations Shadow}}
  addUserKnob {6 preview t "Fast look-dev: half the resolution and the ray march steps, one sample, and only the passes the view needs (no sun share, shadows or motion vectors, so those layers are black). Turn it off for the real thing; the node's label says PREVIEW while it is on." -STARTLINE}
  addUserKnob {6 breakout l "breakout layers" t "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the plate, and cloud_shadow (rgb, the shadows on the bg; needs its depth). Takes extra passes per layer." -STARTLINE}
  breakout true
@@ -491,7 +491,7 @@ Group {
  addUserKnob {43 box_lib l "box lib" +INVISIBLE}
  box_lib "\nimport math\n\n\ndef find_box(n, idx):\n    # The 3D transforms in the box input, outermost first: TransformGeos down to the geometry\n    # (a Cube), or one Axis (its world_matrix already holds its parents). Dots pass through.\n    chain = \[]\n    b = n.input(idx)\n    while b is not None:\n        if b.knob('world_matrix') or b.knob('rot_order'):\n            chain.append(b)\n            if b.knob('world_matrix') or b.knob('cube'):\n                break\n        b = b.input(0) if b.maxInputs() else None\n    return chain\n\n\ndef mul(a, c):\n    r = \[0.0] * 16\n    for i in range(4):\n        for j in range(4):\n            r\[i * 4 + j] = sum(a\[i * 4 + k] * c\[k * 4 + j] for k in range(4))\n    return r\n\n\ndef rot(axis, deg):\n    a = math.radians(deg)\n    c, s = math.cos(a), math.sin(a)\n    if axis == 'X':\n        return \[1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]\n    if axis == 'Y':\n        return \[c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]\n    return \[c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n\n\ndef local_matrix(b, f):\n    # Translate, rotate (rot_order, first letter applied first), scale, in xform_order, about\n    # the pivot: what Nuke's 3D transform knobs do.\n    t = \[b\['translate'].getValueAt(f, i) for i in range(3)]\n    r = \[b\['rotate'].getValueAt(f, i) for i in range(3)] if b.knob('rotate') else \[0, 0, 0]\n    u = b\['uniform_scale'].getValueAt(f) if b.knob('uniform_scale') else 1.0\n    sc = \[b\['scaling'].getValueAt(f, i) * u for i in range(3)] if b.knob('scaling') else \[u, u, u]\n    pv = \[b\['pivot'].getValueAt(f, i) for i in range(3)] if b.knob('pivot') else \[0, 0, 0]\n    T = \[1, 0, 0, t\[0], 0, 1, 0, t\[1], 0, 0, 1, t\[2], 0, 0, 0, 1]\n    S = \[sc\[0], 0, 0, 0, 0, sc\[1], 0, 0, 0, 0, sc\[2], 0, 0, 0, 0, 1]\n    R = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for ax in (b\['rot_order'].value() if b.knob('rot_order') else 'ZXY'):\n        R = mul(rot(ax, r\['XYZ'.index(ax)]), R)\n    parts = \{'S': S, 'R': R, 'T': T\}\n    P = \[1, 0, 0, pv\[0], 0, 1, 0, pv\[1], 0, 0, 1, pv\[2], 0, 0, 0, 1]\n    Pi = \[1, 0, 0, -pv\[0], 0, 1, 0, -pv\[1], 0, 0, 1, -pv\[2], 0, 0, 0, 1]\n    M = Pi\n    for c in (b\['xform_order'].value() if b.knob('xform_order') else 'SRT'):\n        if c == 'T':\n            M = mul(P, M)\n        M = mul(parts\[c], M)\n    return M\n\n\ndef box_matrix(b, f):\n    if b.knob('world_matrix'):\n        return \[b\['world_matrix'].getValueAt(f, i) for i in range(16)]\n    M = local_matrix(b, f)\n    # A parent Axis on the node's axis input (a TransformGeo's input 1; a Cube has none).\n    for i in range(1, b.maxInputs()):\n        p = b.input(i)\n        if p is not None and p.knob('world_matrix'):\n            M = mul(\[p\['world_matrix'].getValueAt(f, j) for j in range(16)], M)\n            break\n    return M\n\n\ndef box_value(n, idx, step, what):\n    # what: found, center (3), axis_x/y/z (3, unit), size (3, metres). One float, index in what.\n    chain = find_box(n, idx)\n    if not chain:\n        return 0.0\n    if what == 'found':\n        return 1.0\n    name, i = what.rsplit(':', 1)\n    i = int(i)\n    M = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for t in chain:\n        M = mul(M, box_matrix(t, nuke.frame() + step))\n    b = chain\[-1]\n    # The geometry's own extent: a Cube's 'cube' knob, else a unit cube about the origin.\n    e = \[b\['cube'].value(j) for j in range(6)] if b.knob('cube') else \[-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]\n    c = \[(e\[0] + e\[3]) / 2.0, (e\[1] + e\[4]) / 2.0, (e\[2] + e\[5]) / 2.0]\n    if name == 'center':\n        return M\[i * 4] * c\[0] + M\[i * 4 + 1] * c\[1] + M\[i * 4 + 2] * c\[2] + M\[i * 4 + 3]\n    if name.startswith('axis'):\n        j = 'xyz'.index(name\[-1])\n        col = \[M\[j], M\[4 + j], M\[8 + j]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2) or 1.0\n        return col\[i] / l\n    if name == 'size':\n        col = \[M\[i], M\[4 + i], M\[8 + i]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2)\n        return l * abs(e\[3 + i] - e\[i]) * (n\['scene_scale'].value() or 1.0)\n    return 0.0\n"
  addUserKnob {20 about l About}
- addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.36.0"}
+ addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.37.0"}
  addUserKnob {78 cam_world_matrix l "camera matrix" +INVISIBLE n 16}
  cam_world_matrix {{"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 0) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 1) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 2) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 3) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 4) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 5) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 6) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 7) if c is not None else 3000\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 8) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 9) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 10) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 11) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 12) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 13) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 14) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 15) if c is not None else 1\}]"}}
  addUserKnob {7 cam_focal +INVISIBLE}
@@ -564,6 +564,18 @@ Group {
  }
  BackdropNode {
   inputs 0
+  name Backdrop_Views
+  tile_color 0x5a4a6aff
+  label Views
+  note_font_size 32
+  xpos -40
+  ypos 3465
+  bdwidth 880
+  bdheight 949
+  z_order 1
+ }
+ BackdropNode {
+  inputs 0
   name Backdrop_Back_to_full_size
   tile_color 0x444444ff
   label "Back to full size"
@@ -572,7 +584,7 @@ Group {
   ypos 1233
   bdwidth 1240
   bdheight 529
-  z_order 1
+  z_order 2
  }
  BackdropNode {
   inputs 0
@@ -584,7 +596,7 @@ Group {
   ypos 735
   bdwidth 1240
   bdheight 439
-  z_order 2
+  z_order 3
  }
  BackdropNode {
   inputs 0
@@ -596,18 +608,6 @@ Group {
   ypos 2547
   bdwidth 520
   bdheight 859
-  z_order 3
- }
- BackdropNode {
-  inputs 0
-  name Backdrop_Views
-  tile_color 0x5a4a6aff
-  label Views
-  note_font_size 32
-  xpos -40
-  ypos 3465
-  bdwidth 880
-  bdheight 349
   z_order 4
  }
  BackdropNode {
@@ -653,7 +653,7 @@ Group {
   label Output
   note_font_size 32
   xpos -40
-  ypos 3864
+  ypos 4464
   bdwidth 160
   bdheight 118
   z_order 8
@@ -699,7 +699,7 @@ Group {
   name bg
   xpos 180
  }
-set N30352000 [stack 0]
+set N4a7e2000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -727,14 +727,14 @@ set N30352000 [stack 0]
   xpos 0
   ypos 180
  }
-set N3036a800 [stack 0]
+set N4a7fa800 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $N3036a800
+push $N4a7fa800
  Merge2 {
   inputs 2
   operation plus
@@ -751,43 +751,43 @@ push $N3036a800
   xpos 0
   ypos 360
  }
-set N3036b400 [stack 0]
+set N4a7fb400 [stack 0]
  Dot {
-  name LayoutDot13
+  name LayoutDot14
   xpos 86
   ypos 363
  }
  Dot {
-  name LayoutDot14
+  name LayoutDot15
   xpos 86
   ypos 795
  }
-set N7fc14c00 [stack 0]
+set N2db51800 [stack 0]
  Dot {
-  name LayoutDot20
+  name LayoutDot21
   xpos 86
   ypos 1323
  }
-set N7fc2e400 [stack 0]
+set N2db69000 [stack 0]
  Dot {
-  name LayoutDot21
+  name LayoutDot22
   xpos 394
   ypos 1323
  }
-set N7fc2e800 [stack 0]
-push $N3036a800
+set N2db69400 [stack 0]
+push $N4a7fa800
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set N7fbb7800 [stack 0]
+set N2db32000 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set N7fbb7c00 [stack 0]
+set N2db32400 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -801,38 +801,38 @@ set N7fbb7c00 [stack 0]
   ypos 240
  }
  Dot {
-  name LayoutDot52
+  name LayoutDot53
   xpos 626
   ypos 243
  }
  Dot {
-  name LayoutDot53
+  name LayoutDot54
   xpos 626
   ypos 567
  }
-set N7fc92800 [stack 0]
+set N2dbcf400 [stack 0]
  Dot {
-  name LayoutDot57
+  name LayoutDot58
   xpos 626
   ypos 945
  }
-set N7fc93800 [stack 0]
+set N2dc6a400 [stack 0]
  Dot {
-  name LayoutDot58
+  name LayoutDot59
   xpos 610
   ypos 945
  }
-set N7fc93c00 [stack 0]
+set N2dc6a800 [stack 0]
  Dot {
-  name LayoutDot59
+  name LayoutDot60
   xpos 430
   ypos 945
  }
-set N7fcb2000 [stack 0]
-push $N7fcb2000
-push $N7fcb2000
-push $N7fcb2000
-push $N30352000
+set N2dc6ac00 [stack 0]
+push $N2dc6ac00
+push $N2dc6ac00
+push $N2dc6ac00
+push $N4a7e2000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -840,16 +840,16 @@ push $N30352000
   ypos 60
  }
  Dot {
-  name LayoutDot41
+  name LayoutDot42
   xpos 290
   ypos 63
  }
  Dot {
-  name LayoutDot42
+  name LayoutDot43
   xpos 290
   ypos 243
  }
-push $N7fbb7800
+push $N2db32000
  Copy {
   inputs 2
   from0 depth.Z
@@ -868,18 +868,18 @@ push $N7fbb7800
   ypos 300
  }
  Dot {
-  name LayoutDot43
+  name LayoutDot44
   xpos 470
   ypos 303
  }
  Dot {
-  name LayoutDot44
+  name LayoutDot45
   xpos 470
   ypos 885
  }
-set N7fc7e400 [stack 0]
+set N2dbb5000 [stack 0]
  Dot {
-  name LayoutDot46
+  name LayoutDot47
   xpos 376
   ypos 885
  }
@@ -902,35 +902,35 @@ set N7fc7e400 [stack 0]
   ypos 60
  }
  Dot {
-  name LayoutDot27
+  name LayoutDot28
   xpos 446
   ypos 63
  }
  Dot {
-  name LayoutDot28
+  name LayoutDot29
   xpos 446
   ypos 537
  }
-set N7fc4a400 [stack 0]
+set N2db85000 [stack 0]
  Dot {
-  name LayoutDot32
+  name LayoutDot33
   xpos 446
   ypos 855
  }
-set N7fc4b400 [stack 0]
+set N2db9a000 [stack 0]
  Dot {
-  name LayoutDot33
+  name LayoutDot34
   xpos 412
   ypos 855
  }
-set N7fc4b800 [stack 0]
-push $N7fc14c00
+set N2db9a400 [stack 0]
+push $N2db51800
  Dot {
-  name LayoutDot15
+  name LayoutDot16
   xpos 394
   ypos 795
  }
-set N7fc15000 [stack 0]
+set N2db51c00 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1096,17 +1096,17 @@ set N7fc15000 [stack 0]
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !(parent.occlude && parent.bg_found) || !(((parent.breakout || parent.view==0) && !parent.preview) || parent.view==5)"}}
  }
  Dot {
-  name LayoutDot99
+  name LayoutDot100
   xpos 518
   ypos 1059
  }
  Dot {
-  name LayoutDot100
+  name LayoutDot101
   xpos 518
   ypos 1353
  }
  Dot {
-  name LayoutDot101
+  name LayoutDot102
   xpos 412
   ypos 1353
  }
@@ -1128,141 +1128,141 @@ set N7fc15000 [stack 0]
   ypos 1584
  }
  Dot {
-  name LayoutDot102
+  name LayoutDot103
   xpos 446
   ypos 1587
  }
  Dot {
-  name LayoutDot103
+  name LayoutDot104
   xpos 446
   ypos 1971
  }
-set N7fd2f000 [stack 0]
+set N2dce9c00 [stack 0]
  Dot {
-  name LayoutDot105
+  name LayoutDot106
   xpos 446
   ypos 2667
  }
-set N7fd2f800 [stack 0]
+set N2dd04400 [stack 0]
  Dot {
-  name LayoutDot108
+  name LayoutDot109
   xpos 446
   ypos 3585
  }
  Dot {
-  name LayoutDot109
+  name LayoutDot110
   xpos 772
   ypos 3585
  }
-push $N7fc2e800
+push $N2db69400
  Dot {
-  name LayoutDot22
+  name LayoutDot23
   xpos 574
   ypos 1323
  }
-set N7fc2ec00 [stack 0]
+set N2db69800 [stack 0]
  Dot {
-  name LayoutDot23
+  name LayoutDot24
   xpos 754
   ypos 1323
  }
-set N7fc2f000 [stack 0]
+set N2db69c00 [stack 0]
  Dot {
-  name LayoutDot24
+  name LayoutDot25
   xpos 934
   ypos 1323
  }
-set N7fc2f400 [stack 0]
+set N2db84000 [stack 0]
  Dot {
-  name LayoutDot25
+  name LayoutDot26
   xpos 1114
   ypos 1323
  }
-push $N7fc93800
+push $N2dc6a400
  Dot {
-  name LayoutDot60
+  name LayoutDot61
   xpos 970
   ypos 945
  }
-set N7fcb2400 [stack 0]
+set N2dc6b000 [stack 0]
  Dot {
-  name LayoutDot61
+  name LayoutDot62
   xpos 1150
   ypos 945
  }
-set N7fcb2800 [stack 0]
-push $N7fcb2800
-push $N7fcb2800
-push $N7fcb2800
-push $N7fc7e400
+set N2dc6b400 [stack 0]
+push $N2dc6b400
+push $N2dc6b400
+push $N2dc6b400
+push $N2dbb5000
  Dot {
-  name LayoutDot45
+  name LayoutDot46
   xpos 556
   ypos 885
  }
-set N7fc7e800 [stack 0]
+set N2dbb5400 [stack 0]
  Dot {
-  name LayoutDot47
+  name LayoutDot48
   xpos 790
   ypos 885
  }
-set N7fc7f000 [stack 0]
+set N2dbb5c00 [stack 0]
  Dot {
-  name LayoutDot48
+  name LayoutDot49
   xpos 916
   ypos 885
  }
-set N7fc7f400 [stack 0]
+set N2dbce000 [stack 0]
  Dot {
-  name LayoutDot49
+  name LayoutDot50
   xpos 1096
   ypos 885
  }
-push $N7fc4b400
+push $N2db9a000
  Dot {
-  name LayoutDot34
+  name LayoutDot35
   xpos 592
   ypos 855
  }
-set N7fc4bc00 [stack 0]
+set N2db9a800 [stack 0]
  Dot {
-  name LayoutDot36
+  name LayoutDot37
   xpos 736
   ypos 855
  }
-set N7fc60400 [stack 0]
+set N2db9b000 [stack 0]
  Dot {
-  name LayoutDot37
+  name LayoutDot38
   xpos 952
   ypos 855
  }
-set N7fc60800 [stack 0]
+set N2db9b400 [stack 0]
  Dot {
-  name LayoutDot38
+  name LayoutDot39
   xpos 1132
   ypos 855
  }
-push $N7fc15000
+push $N2db51c00
  Dot {
-  name LayoutDot16
+  name LayoutDot17
   xpos 574
   ypos 795
  }
-set N7fc15400 [stack 0]
+set N2db68000 [stack 0]
  Dot {
-  name LayoutDot17
+  name LayoutDot18
   xpos 754
   ypos 795
  }
-set N7fc15800 [stack 0]
+set N2db68400 [stack 0]
  Dot {
-  name LayoutDot18
+  name LayoutDot19
   xpos 934
   ypos 795
  }
-set N7fc15c00 [stack 0]
+set N2db68800 [stack 0]
  Dot {
-  name LayoutDot19
+  name LayoutDot20
   xpos 1114
   ypos 795
  }
@@ -1431,17 +1431,17 @@ set N7fc15c00 [stack 0]
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.motion_vectors || parent.preview"}}
  }
  Dot {
-  name LayoutDot145
+  name LayoutDot146
   xpos 1166
   ypos 1059
  }
  Dot {
-  name LayoutDot146
+  name LayoutDot147
   xpos 1166
   ypos 1473
  }
  Dot {
-  name LayoutDot147
+  name LayoutDot148
   xpos 1132
   ypos 1473
  }
@@ -1471,33 +1471,33 @@ set N7fc15c00 [stack 0]
   ypos 1644
  }
  Dot {
-  name LayoutDot148
+  name LayoutDot149
   xpos 1166
   ypos 1647
  }
  Dot {
-  name LayoutDot149
-  xpos 1166
-  ypos 2757
- }
- Dot {
   name LayoutDot150
-  xpos 470
+  xpos 1166
   ypos 2757
  }
  Dot {
   name LayoutDot151
   xpos 470
+  ypos 2757
+ }
+ Dot {
+  name LayoutDot152
+  xpos 470
   ypos 3291
  }
-push $N7fc2f400
-push $N7fcb2400
-push $N7fcb2400
-push $N7fcb2400
-push $N7fcb2400
-push $N7fc7f400
-push $N7fc60800
-push $N7fc15c00
+push $N2db84000
+push $N2dc6b000
+push $N2dc6b000
+push $N2dc6b000
+push $N2dc6b000
+push $N2dbce000
+push $N2db9b400
+push $N2db68800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1663,17 +1663,17 @@ push $N7fc15c00
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.motion_vectors || parent.preview"}}
  }
  Dot {
-  name LayoutDot138
+  name LayoutDot139
   xpos 986
   ypos 1059
  }
  Dot {
-  name LayoutDot139
+  name LayoutDot140
   xpos 986
   ypos 1443
  }
  Dot {
-  name LayoutDot140
+  name LayoutDot141
   xpos 952
   ypos 1443
  }
@@ -1703,43 +1703,43 @@ push $N7fc15c00
   ypos 1644
  }
  Dot {
-  name LayoutDot141
+  name LayoutDot142
   xpos 986
   ypos 1647
  }
  Dot {
-  name LayoutDot142
-  xpos 986
-  ypos 2727
- }
- Dot {
   name LayoutDot143
-  xpos 314
+  xpos 986
   ypos 2727
  }
  Dot {
   name LayoutDot144
   xpos 314
+  ypos 2727
+ }
+ Dot {
+  name LayoutDot145
+  xpos 314
   ypos 3231
  }
-push $N7fc92800
+push $N2dbcf400
  Dot {
-  name LayoutDot54
+  name LayoutDot55
   xpos 592
   ypos 567
  }
-set N7fc92c00 [stack 0]
-push $N7fc92c00
-push $N7fc92c00
-push $N7fc92c00
-push $N7fc92c00
-push $N7fc4a400
+set N2dbcf800 [stack 0]
+push $N2dbcf800
+push $N2dbcf800
+push $N2dbcf800
+push $N2dbcf800
+push $N2db85000
  Dot {
-  name LayoutDot30
+  name LayoutDot31
   xpos 574
   ypos 537
  }
-push $N7fc92c00
+push $N2dbcf800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1906,56 +1906,56 @@ push $N7fc92c00
   disable {{"!(!(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot80
+  name LayoutDot81
   xpos 650
   ypos 621
  }
  Dot {
-  name LayoutDot81
+  name LayoutDot82
   xpos 650
   ypos 975
  }
-set N7fce3800 [stack 0]
- Dot {
-  name LayoutDot84
-  xpos 650
-  ypos 1119
- }
-set N7fcfc400 [stack 0]
+set N2dcb6400 [stack 0]
  Dot {
   name LayoutDot85
   xpos 650
-  ypos 2001
+  ypos 1119
  }
+set N2dcb7000 [stack 0]
  Dot {
   name LayoutDot86
-  xpos 638
+  xpos 650
   ypos 2001
  }
  Dot {
   name LayoutDot87
+  xpos 638
+  ypos 2001
+ }
+ Dot {
+  name LayoutDot88
   xpos 626
   ypos 2103
  }
-push $N7fc92c00
+push $N2dbcf800
  Dot {
-  name LayoutDot55
+  name LayoutDot56
   xpos 412
   ypos 567
  }
-set N7fc93000 [stack 0]
-push $N7fc93000
-push $N7fc93000
-push $N7fc93000
-push $N7fc93000
-push $N7fc4a400
+set N2dbcfc00 [stack 0]
+push $N2dbcfc00
+push $N2dbcfc00
+push $N2dbcfc00
+push $N2dbcfc00
+push $N2db85000
  Dot {
-  name LayoutDot29
+  name LayoutDot30
   xpos 394
   ypos 537
  }
-set N7fc4a800 [stack 0]
-push $N7fc93000
+set N2db85400 [stack 0]
+push $N2dbcfc00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2122,50 +2122,50 @@ push $N7fc93000
   disable {{"!(!(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot71
+  name LayoutDot72
   xpos 494
   ypos 621
  }
  Dot {
-  name LayoutDot72
+  name LayoutDot73
   xpos 494
   ypos 915
  }
-set N7fcc9400 [stack 0]
+set N2dc9e000 [stack 0]
  Dot {
-  name LayoutDot75
+  name LayoutDot76
   xpos 494
   ypos 1024
  }
-set N7fce2000 [stack 0]
+set N2dc9ec00 [stack 0]
  Dot {
-  name LayoutDot78
+  name LayoutDot79
   xpos 494
   ypos 1941
  }
  Dot {
-  name LayoutDot79
+  name LayoutDot80
   xpos 592
   ypos 1941
  }
-push $N7fc93000
+push $N2dbcfc00
  Dot {
-  name LayoutDot56
+  name LayoutDot57
   xpos 232
   ypos 567
  }
-set N7fc93400 [stack 0]
-push $N7fc93400
-push $N7fc93400
-push $N7fc93400
-push $N7fc93400
-push $N7fc4a800
+set N2dc6a000 [stack 0]
+push $N2dc6a000
+push $N2dc6a000
+push $N2dc6a000
+push $N2dc6a000
+push $N2db85400
  Dot {
-  name LayoutDot31
+  name LayoutDot32
   xpos 214
   ypos 537
  }
-push $N7fc93400
+push $N2dc6a000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2332,29 +2332,29 @@ push $N7fc93400
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0))) || !(parent.layer_shadows || (parent.sun_map_out && parent.breakout))"}}
  }
  Dot {
-  name LayoutDot62
+  name LayoutDot63
   xpos 290
   ypos 621
  }
  Dot {
-  name LayoutDot63
+  name LayoutDot64
   xpos 290
   ypos 825
  }
-set N7fcb3000 [stack 0]
+set N2dc6bc00 [stack 0]
  Dot {
-  name LayoutDot66
+  name LayoutDot67
   xpos 290
   ypos 1038
  }
-set N7fcb3c00 [stack 0]
+set N2dc80800 [stack 0]
  Dot {
-  name LayoutDot69
+  name LayoutDot70
   xpos 290
   ypos 1911
  }
  Dot {
-  name LayoutDot70
+  name LayoutDot71
   xpos 574
   ypos 1911
  }
@@ -2373,17 +2373,17 @@ set N7fcb3c00 [stack 0]
   ypos 2112
  }
  Dot {
-  name LayoutDot131
+  name LayoutDot132
   xpos 626
   ypos 2115
  }
  Dot {
-  name LayoutDot132
+  name LayoutDot133
   xpos 626
   ypos 1293
  }
  Dot {
-  name LayoutDot133
+  name LayoutDot134
   xpos 214
   ypos 1293
  }
@@ -2399,63 +2399,63 @@ set N7fcb3c00 [stack 0]
   ypos 1524
  }
  Dot {
-  name LayoutDot134
+  name LayoutDot135
   xpos 314
   ypos 1527
  }
  Dot {
-  name LayoutDot135
-  xpos 314
-  ypos 2637
- }
- Dot {
   name LayoutDot136
-  xpos 338
+  xpos 314
   ypos 2637
  }
  Dot {
   name LayoutDot137
   xpos 338
+  ypos 2637
+ }
+ Dot {
+  name LayoutDot138
+  xpos 338
   ypos 3111
  }
-push $N7fd2f800
+push $N2dd04400
  Dot {
-  name LayoutDot106
+  name LayoutDot107
   xpos 266
   ypos 2667
  }
  Dot {
-  name LayoutDot107
+  name LayoutDot108
   xpos 266
   ypos 3051
  }
-push $N7fc2e400
+push $N2db69000
  Dot {
-  name LayoutDot26
+  name LayoutDot27
   xpos 86
   ypos 1506
  }
-push $N7fcb3000
+push $N2dc6bc00
  Dot {
-  name LayoutDot64
+  name LayoutDot65
   xpos 214
   ypos 825
  }
-set N7fcb3400 [stack 0]
-push $N7fce3800
+set N2dc80000 [stack 0]
+push $N2dcb6400
  Dot {
-  name LayoutDot83
+  name LayoutDot84
   xpos 250
   ypos 975
  }
-push $N7fcc9400
+push $N2dc9e000
  Dot {
-  name LayoutDot74
+  name LayoutDot75
   xpos 196
   ypos 915
  }
-push $N7fcb3400
-push $N7fbb7c00
+push $N2dc80000
+push $N2db32400
  Dot {
   name LayoutDot3
   xpos 754
@@ -2474,28 +2474,28 @@ push $N7fbb7c00
   ypos 240
  }
  Dot {
-  name LayoutDot88
+  name LayoutDot89
   xpos 830
   ypos 243
  }
  Dot {
-  name LayoutDot89
+  name LayoutDot90
   xpos 830
   ypos 1005
  }
  Dot {
-  name LayoutDot90
+  name LayoutDot91
   xpos 178
   ypos 1005
  }
-set N7fcfdc00 [stack 0]
-push $N7fc4b800
+set N2dcd0800 [stack 0]
+push $N2db9a400
  Dot {
-  name LayoutDot35
+  name LayoutDot36
   xpos 232
   ypos 855
  }
-push $N7fcfdc00
+push $N2dcd0800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2660,58 +2660,58 @@ push $N7fcfdc00
   ypos 1056
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set N7f980c00 [stack 0]
+set N2c770c00 [stack 0]
  Dot {
-  name LayoutDot158
+  name LayoutDot159
   xpos 46
   ypos 1059
  }
-push $N7fcfc400
-push $N7fce2000
+push $N2dcb7000
+push $N2dc9ec00
  Dot {
-  name LayoutDot76
+  name LayoutDot77
   xpos 134
   ypos 1024
  }
  Dot {
-  name LayoutDot77
+  name LayoutDot78
   xpos 134
   ypos 1119
  }
-push $N7fcb3c00
+push $N2dc80800
  Dot {
-  name LayoutDot67
+  name LayoutDot68
   xpos 110
   ypos 1038
  }
  Dot {
-  name LayoutDot68
+  name LayoutDot69
   xpos 110
   ypos 1107
  }
-push $N7fc7e400
+push $N2dbb5000
  Dot {
-  name LayoutDot50
+  name LayoutDot51
   xpos 470
   ypos 1084
  }
  Dot {
-  name LayoutDot51
+  name LayoutDot52
   xpos 124
   ypos 1084
  }
-push $N7fc4b400
+push $N2db9a000
  Dot {
-  name LayoutDot39
+  name LayoutDot40
   xpos 446
   ypos 1098
  }
  Dot {
-  name LayoutDot40
+  name LayoutDot41
   xpos 124
   ypos 1098
  }
-push $N3036b400
+push $N4a7fb400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2892,7 +2892,7 @@ push $N3036b400
   xpos 0
   ypos 1584
  }
-set N7fa52c00 [stack 0]
+set N2c842c00 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -2909,40 +2909,40 @@ set N7fa52c00 [stack 0]
   xpos 180
   ypos 1644
  }
-set N7fab0000 [stack 0]
+set N2d870000 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 1647
  }
-push $N7fc2f000
-push $N7f980c00
+push $N2db69c00
+push $N2c770c00
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1107
  }
-push $N7fce3800
+push $N2dcb6400
  Dot {
-  name LayoutDot82
+  name LayoutDot83
   xpos 808
   ypos 975
  }
-push $N7fcc9400
+push $N2dc9e000
  Dot {
-  name LayoutDot73
+  name LayoutDot74
   xpos 718
   ypos 915
  }
-push $N7fcb3000
+push $N2dc6bc00
  Dot {
-  name LayoutDot65
+  name LayoutDot66
   xpos 772
   ypos 825
  }
-push $N7fc7f000
-push $N7fc60400
-push $N7fc15800
+push $N2dbb5c00
+push $N2db9b000
+push $N2db68400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3108,17 +3108,17 @@ push $N7fc15800
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
  Dot {
-  name LayoutDot121
+  name LayoutDot122
   xpos 806
   ypos 1119
  }
  Dot {
-  name LayoutDot122
+  name LayoutDot123
   xpos 806
   ypos 1413
  }
  Dot {
-  name LayoutDot123
+  name LayoutDot124
   xpos 772
   ypos 1413
  }
@@ -3149,24 +3149,24 @@ push $N7fc15800
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
  Dot {
-  name LayoutDot124
+  name LayoutDot125
   xpos 806
   ypos 1707
  }
  Dot {
-  name LayoutDot125
+  name LayoutDot126
   xpos 806
   ypos 2697
  }
-set N7fd7e800 [stack 0]
+set N2dd39400 [stack 0]
  Dot {
-  name LayoutDot126
+  name LayoutDot127
   xpos 412
   ypos 2697
  }
-set N7fd7ec00 [stack 0]
-push $N7fab0000
-push $N7fa52c00
+set N2dd39800 [stack 0]
+push $N2d870000
+push $N2c842c00
  Merge2 {
   inputs 2
   operation multiply
@@ -3176,32 +3176,32 @@ push $N7fa52c00
   ypos 1704
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N7fab0400 [stack 0]
+set N2d870400 [stack 0]
  Dot {
-  name LayoutDot91
+  name LayoutDot92
   xpos 86
   ypos 1707
  }
  Dot {
-  name LayoutDot92
+  name LayoutDot93
   xpos 86
   ypos 2289
  }
-set N7fd18400 [stack 0]
+set N2dcd1000 [stack 0]
  Dot {
-  name LayoutDot94
+  name LayoutDot95
   xpos 86
   ypos 2607
  }
-set N7fd18c00 [stack 0]
+set N2dcd1800 [stack 0]
  Dot {
-  name LayoutDot95
+  name LayoutDot96
   xpos 214
   ypos 2607
  }
-set N7fd19000 [stack 0]
+set N2dcd1c00 [stack 0]
  Dot {
-  name LayoutDot96
+  name LayoutDot97
   xpos 394
   ypos 2607
  }
@@ -3218,26 +3218,26 @@ set N7fd19000 [stack 0]
   xpos 394
   ypos 2991
  }
-push $N7fd7ec00
+push $N2dd39800
  Dot {
-  name LayoutDot127
+  name LayoutDot128
   xpos 290
   ypos 2697
  }
  Dot {
-  name LayoutDot128
+  name LayoutDot129
   xpos 290
   ypos 2931
  }
-push $N7fd19000
-push $N7fc2ec00
-push $N7fc93c00
-push $N7fc93c00
-push $N7fc93c00
-push $N7fc93c00
-push $N7fc7e800
-push $N7fc4bc00
-push $N7fc15400
+push $N2dcd1c00
+push $N2db69800
+push $N2dc6a800
+push $N2dc6a800
+push $N2dc6a800
+push $N2dc6a800
+push $N2dbb5400
+push $N2db9a800
+push $N2db68000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3403,17 +3403,17 @@ push $N7fc15400
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2)))"}}
  }
  Dot {
-  name LayoutDot113
+  name LayoutDot114
   xpos 626
   ypos 1059
  }
  Dot {
-  name LayoutDot114
+  name LayoutDot115
   xpos 638
   ypos 1383
  }
  Dot {
-  name LayoutDot115
+  name LayoutDot116
   xpos 592
   ypos 1383
  }
@@ -3436,30 +3436,30 @@ push $N7fc15400
   ypos 1584
  }
  Dot {
-  name LayoutDot116
+  name LayoutDot117
   xpos 674
   ypos 1587
  }
  Dot {
-  name LayoutDot117
+  name LayoutDot118
   xpos 674
   ypos 2790
  }
-set N7fd66800 [stack 0]
+set N2dd1f400 [stack 0]
  Dot {
-  name LayoutDot118
+  name LayoutDot119
   xpos 110
   ypos 2790
  }
-push $N7fd18400
+push $N2dcd1000
  Dot {
-  name LayoutDot93
+  name LayoutDot94
   xpos 214
   ypos 2289
  }
-push $N7fd2f000
+push $N2dce9c00
  Dot {
-  name LayoutDot104
+  name LayoutDot105
   xpos 214
   ypos 1971
  }
@@ -3473,19 +3473,19 @@ push $N7fd2f000
   xpos 180
   ypos 2052
  }
-push $N30352000
+push $N4a7e2000
  Dot {
-  name LayoutDot10
+  name LayoutDot11
   xpos 266
   ypos 3
  }
  Dot {
-  name LayoutDot11
+  name LayoutDot12
   xpos 266
   ypos 1881
  }
  Dot {
-  name LayoutDot12
+  name LayoutDot13
   xpos 394
   ypos 1881
  }
@@ -3499,17 +3499,17 @@ push $N30352000
   disable {{"!(parent.occlude && parent.bg_found) || parent.shadow_amount==0"}}
  }
  Dot {
-  name LayoutDot110
+  name LayoutDot111
   xpos 470
   ypos 2115
  }
  Dot {
-  name LayoutDot111
+  name LayoutDot112
   xpos 470
   ypos 2319
  }
  Dot {
-  name LayoutDot112
+  name LayoutDot113
   xpos 232
   ypos 2319
  }
@@ -3519,7 +3519,7 @@ push $N30352000
   xpos 180
   ypos 2370
  }
-push $N7fab0400
+push $N2d870400
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -3536,7 +3536,7 @@ push $N7fab0400
   xpos 0
   ypos 2808
  }
-set N7fb0f000 [stack 0]
+set N2d8cf000 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -3605,7 +3605,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3108
   disable {{!parent.sun_map_out}}
  }
-push $N7fb0f000
+push $N2d8cf000
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -3614,7 +3614,7 @@ push $N7fb0f000
   xpos 0
   ypos 3168
  }
-set N3039be00 [stack 0]
+set N4a82be00 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -3635,7 +3635,7 @@ set N3039be00 [stack 0]
   xpos 180
   ypos 3288
  }
-push $N3039be00
+push $N4a82be00
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -3644,37 +3644,37 @@ push $N3039be00
   xpos 0
   ypos 3348
  }
-set N3039c300 [stack 0]
+set N4a82c300 [stack 0]
  Dot {
-  name LayoutDot152
+  name LayoutDot153
   xpos 110
   ypos 3351
  }
  Dot {
-  name LayoutDot153
+  name LayoutDot154
   xpos 110
   ypos 3555
  }
  Dot {
-  name LayoutDot154
+  name LayoutDot155
   xpos 232
   ypos 3555
  }
-set N7fdcdc00 [stack 0]
+set N2dd9e800 [stack 0]
  Dot {
-  name LayoutDot155
+  name LayoutDot156
   xpos 394
   ypos 3555
  }
-set N7fde6000 [stack 0]
+set N2dd9ec00 [stack 0]
  Dot {
-  name LayoutDot156
+  name LayoutDot157
   xpos 574
   ypos 3555
  }
-set N7fde6400 [stack 0]
+set N2dd9f000 [stack 0]
  Dot {
-  name LayoutDot157
+  name LayoutDot158
   xpos 754
   ypos 3555
  }
@@ -3686,23 +3686,241 @@ set N7fde6400 [stack 0]
   ypos 3696
  }
  Dot {
-  name LayoutDot9
+  name LayoutDot10
   xpos 754
-  ypos 3759
+  ypos 4359
  }
-push $N3039c300
-push $N7fd66800
+push $N2dcd1800
  Dot {
-  name LayoutDot119
+  name LayoutDot98
+  xpos 86
+  ypos 3525
+ }
+ Dot {
+  name LayoutDot99
+  xpos 214
+  ypos 3525
+ }
+push $N2dd9e800
+ Copy {
+  inputs 2
+  channels rgba
+  name View_Clouds
+  xpos 180
+  ypos 3696
+ }
+set N2d976400 [stack 0]
+ Expression {
+  expr0 r+(1-a)*0.14
+  expr1 g+(1-a)*0.22
+  expr2 b+(1-a)*0.42
+  expr3 1
+  name View_VariationsSky
+  label "clouds over a plain sky"
+  xpos 180
+  ypos 3756
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 1
+  old_message {{49}
+    }
+  box {{width*0/3+height/60} {height*(1-1/3)} {width*1/3} {height*(1-0/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber1
+  xpos 180
+  ypos 3816
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 2
+  old_message {{50}
+    }
+  box {{width*1/3+height/60} {height*(1-1/3)} {width*2/3} {height*(1-0/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber2
+  xpos 180
+  ypos 3876
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 3
+  old_message {{51}
+    }
+  box {{width*2/3+height/60} {height*(1-1/3)} {width*3/3} {height*(1-0/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber3
+  xpos 180
+  ypos 3936
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 4
+  old_message {{52}
+    }
+  box {{width*0/3+height/60} {height*(1-2/3)} {width*1/3} {height*(1-1/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber4
+  xpos 180
+  ypos 3996
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 5
+  old_message {{53}
+    }
+  box {{width*1/3+height/60} {height*(1-2/3)} {width*2/3} {height*(1-1/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber5
+  xpos 180
+  ypos 4056
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 6
+  old_message {{54}
+    }
+  box {{width*2/3+height/60} {height*(1-2/3)} {width*3/3} {height*(1-1/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber6
+  xpos 180
+  ypos 4116
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 7
+  old_message {{55}
+    }
+  box {{width*0/3+height/60} {height*(1-3/3)} {width*1/3} {height*(1-2/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber7
+  xpos 180
+  ypos 4176
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 8
+  old_message {{56}
+    }
+  box {{width*1/3+height/60} {height*(1-3/3)} {width*2/3} {height*(1-2/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber8
+  xpos 180
+  ypos 4236
+ }
+ Text2 {
+  font_size_toolbar {{height/14}}
+  font_width_toolbar 100
+  font_height_toolbar 100
+  message 9
+  old_message {{57}
+    }
+  box {{width*2/3+height/60} {height*(1-3/3)} {width*3/3} {height*(1-2/3)-height/60}}
+  transforms {{0 2}
+    }
+  global_font_scale 0.6
+  font_size {{height/14}}
+  autofit_bbox false
+  group_animations {{0} imported: 0 selected: 0 items: "root transform/"}
+  animation_layers {{1 11 1024 778 0 0 1 1 0 0 0 0}
+    }
+  color {1 0.85 0.3 1}
+  name View_VariationNumber9
+  xpos 180
+  ypos 4296
+ }
+push $N2dd1f400
+ Dot {
+  name LayoutDot120
   xpos 674
   ypos 3615
  }
  Dot {
-  name LayoutDot120
+  name LayoutDot121
   xpos 592
   ypos 3615
  }
-push $N7fde6400
+push $N2dd9f000
  Copy {
   inputs 2
   channels rgba
@@ -3711,22 +3929,22 @@ push $N7fde6400
   ypos 3696
  }
  Dot {
-  name LayoutDot8
+  name LayoutDot9
   xpos 574
-  ypos 3759
+  ypos 4359
  }
-push $N7fd7e800
+push $N2dd39400
  Dot {
-  name LayoutDot129
+  name LayoutDot130
   xpos 806
   ypos 3645
  }
  Dot {
-  name LayoutDot130
+  name LayoutDot131
   xpos 412
   ypos 3645
  }
-push $N7fde6000
+push $N2dd9ec00
  Copy {
   inputs 2
   channels rgba
@@ -3735,41 +3953,28 @@ push $N7fde6000
   ypos 3696
  }
  Dot {
-  name LayoutDot7
+  name LayoutDot8
   xpos 394
-  ypos 3747
+  ypos 4347
  }
-push $N7fd18c00
+push $N2d976400
  Dot {
-  name LayoutDot97
-  xpos 86
-  ypos 3525
+  name LayoutDot7
+  xpos 46
+  ypos 3699
  }
- Dot {
-  name LayoutDot98
-  xpos 214
-  ypos 3525
- }
-push $N7fdcdc00
- Copy {
-  inputs 2
-  channels rgba
-  name View_Clouds
-  xpos 180
-  ypos 3696
- }
-push $N3039c300
+push $N4a82c300
  Switch {
   inputs 6
   which {{parent.view}}
   name ViewOutput
   label view
   xpos 0
-  ypos 3756
+  ypos 4356
  }
  Output {
   name Output1
   xpos 0
-  ypos 3924
+  ypos 4524
  }
 end_group
