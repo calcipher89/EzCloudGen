@@ -96,7 +96,7 @@ def main():
             g[p + "place"].execute()
 
     # The fog types sit low: look level at them (the test camera is pitched 18 degrees up).
-    FOG = ("Ground Fog", "Wispy Fog", "Torn Low Cloud")
+    FOG = ("Ground Fog", "Wispy Fog", "Torn Low Cloud", "Valley Fog", "Canopy Mist")
     for tname in cloud_types.TYPES:
         cam["rotate"].setValue([2 if tname in FOG else 18, 0, 0])
         set_type("l1_", tname)

@@ -56,6 +56,19 @@ TYPES = {
     "Altostratus": dict(base=3000, thick=1500, coverage=1.0, scale=6.0, stretch=1.5, edge=0.4, taper=0.0,
                          bottom=0.3, top=0.3, detail=300, erosion=0.2, sigma=0.006, warp=1.0, octaves=2,
                          billow=0.3, vary=0.2, g=0.85, sky_occ=0.4, model="classic"),
+    # Valley fog: a soft, smoky layer filling the low ground, ridges standing out of it; to fly
+    # through (an FPV dive). Smooth on the whole, combed into smoky veils by wisps and curl swirl.
+    # Set 'base' to just above the valley floor.
+    "Valley Fog": dict(base=100, thick=420, coverage=0.78, scale=1.2, stretch=2.2, edge=0.6, taper=0.0,
+                       bottom=0.15, top=0.6, detail=50, erosion=0.45, sigma=0.0035, warp=1.0, octaves=5,
+                       billow=0.1, vary=0.35, wisp_amount=1.0, wisp_size=30, swirl=0.6, swirl_size=250,
+                       turbulence=0.8, ambient=1.3),
+    # Canopy mist: a thin, patchy mist lying on a forest, combed into streaks along the wind. Set
+    # 'base' to the treetops.
+    "Canopy Mist": dict(base=20, thick=90, coverage=0.74, scale=0.15, stretch=2.5, edge=0.5, taper=0.0,
+                        bottom=0.3, top=0.6, detail=25, erosion=0.4, sigma=0.011, warp=1.0, octaves=4,
+                        billow=0.1, vary=0.2, wisp_amount=0.8, wisp_size=15, swirl=0.5, swirl_size=80,
+                        turbulence=0.6),
     # Cirrus: high thin ice fibres, strongly stretched.
     "Cirrus": dict(base=9000, thick=500, coverage=0.5, scale=5.0, stretch=7.0, wind_deg=35, edge=0.25,
                     taper=0.0, bottom=0.4, top=0.4, detail=150, erosion=0.6, sigma=0.0012, warp=2.5,
