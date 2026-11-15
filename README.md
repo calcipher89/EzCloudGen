@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.39.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.40.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -21,6 +21,9 @@ EzCloudGen). Inputs:
   channel (depth.Z by default; 'depth is' Planar Z, ScanlineRender's 1/Z or distance), the
   clouds go behind its mountains and buildings, and their shadows fall on it ('hide behind bg').
   Depth of 0, or beyond 'sky beyond' (km), is sky.
+  'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline: each
+  sample reads the bg's depth up to that far off its own pixel, so a hard or aliased depth edge
+  (a ridge, a building) blends instead of cutting a line. Smoother with more samples.
 - **camera**: the shot camera. Without one the node looks level from 300 m up.
 - **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
   measures in its HDRI light the clouds ('light from' Auto).

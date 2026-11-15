@@ -145,6 +145,7 @@ time & map) changes the shapes slowly over time. For motion blur, turn on **moti
 |---|---|
 | Grainy or speckled edges | raise **sampling**, or **edge steps** to 3 |
 | Far deck shimmers on camera moves | keep **horizon samples** at 4 (the default) |
+| A hard line where clouds meet a ridge or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to a few pixels |
 | Clouds in front of the mountains | check bg depth: **depth**, **depth is**, **units to metres** (EzCloudGen tab) |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
 | Render too slow | render preset *draft* or **preview** while you work |
