@@ -72,7 +72,7 @@ kernel EzCloudGen : ImageComputationKernel<ePixelWise>
 {
   Image<eRead, eAccessPoint, eEdgeClamped> src;
   Image<eRead, eAccessRandom, eEdgeClamped> cmap;
-  Image<eRead, eAccessPoint, eEdgeClamped> zin;
+  Image<eRead, eAccessRandom, eEdgeClamped> zin;
   Image<eRead, eAccessRandom, eEdgeClamped> smap;
   Image<eRead, eAccessRandom, eEdgeClamped> smap2;
   Image<eRead, eAccessRandom, eEdgeClamped> smap3;
@@ -1844,6 +1844,27 @@ local:
     return float2((ou - u) * frameSize.x, (ov - v) * frameSize.y);
   }
 
+  // The bg's surface point (kernel frame) seen through work-format pixel (x, y) by the frame's own
+  // camera, from the bg depth; false for sky (no depth, or beyond 'sky beyond').
+  bool bgSurface(float x, float y, float3 &S)
+  {
+    float hap = haperture;
+    float vap = haperture * frameSize.y / frameSize.x;
+    int ix = int(floor(x + 0.5f));
+    int iy = int(floor(y + 0.5f));
+    float3 cd = float3(((float(ix) + 0.5f) / frameSize.x - 0.5f) * hap / focal,
+                       ((float(iy) + 0.5f) / frameSize.y - 0.5f) * vap / focal, -1.0f);
+    float z = zin(ix, iy).x;
+    if (depthMode == 1)
+      z = z > 0.0f ? 1.0f / z : 0.0f;
+    if (!(z > 0.0f && z < skyDepth))
+      return false;
+    float t = depthMode == 2 ? z * sceneScale : z * sceneScale * length(cd);
+    float3 d0 = normalize(float3(dot(camRow0, cd), dot(camRow1, cd), dot(camRow2, cd)));
+    S = float3(0.0f, camAlt, 0.0f) + d0 * t;
+    return true;
+  }
+
   void process(int2 pos)
   {
     if (output == 6) {
@@ -1942,7 +1963,9 @@ local:
       float3 mShift[3];
       for (int L = 0; L < 3; L++)
         mShift[L] = float3(0.0f);
+      bool mbActive = false;
       if (motionBlur == 1 && (output == 0 || output == 1 || output == 2) && tiles <= 1) {
+        mbActive = true;
         float ts = shutter * ((float(s) + hash3(pos.x + 3.3f, pos.y + 1.7f, 11.0f + seed)) / float(ns) - 0.5f);
         float3 oc = float3((otherPosition.x - camPosition.x) * sceneScale, (otherPosition.y - groundHeight) * sceneScale,
                            (otherPosition.z - camPosition.z) * sceneScale);
@@ -1984,7 +2007,7 @@ local:
       // The bg's surface along this ray, from its depth (sceneT < 0: sky, or no depth).
       float sceneT = -1.0f;
       if (occlude == 1 && tiles <= 1 && output != 5) {
-        float z = zin().x;
+        float z = zin(pos.x, pos.y).x;
         if (depthMode == 1)
           z = z > 0.0f ? 1.0f / z : 0.0f;
         if (z > 0.0f && z < skyDepth)
@@ -2002,6 +2025,37 @@ local:
           acc += float4(1.0f - lit, 1.0f - lit, 1.0f - lit, 1.0f);
         }
         continue;
+      }
+      if (mbActive && occlude == 1) {
+        // Motion blur: the bg doesn't move, but this sample's ray does. Find where it meets the
+        // bg by reprojecting into the frame's own camera and its depth, a few times over (a
+        // point along the ray -> the bg surface behind that pixel -> how far along the ray that
+        // is). Samples near a ridge's edge then see past it or not each at their own moment, so
+        // the clouds blur across the edge with the ridge instead of stopping at a hard line.
+        float t = sceneT > 0.0f ? sceneT : 2000.0f;
+        bool hit = false;
+        float hap0 = haperture;
+        float vap0 = haperture * frameSize.y / frameSize.x;
+        for (int k = 0; k < 4; k++) {
+          float3 q = o + d * t - float3(0.0f, camAlt, 0.0f);
+          float cx = camRow0.x * q.x + camRow1.x * q.y + camRow2.x * q.z;
+          float cy = camRow0.y * q.x + camRow1.y * q.y + camRow2.y * q.z;
+          float cz = camRow0.z * q.x + camRow1.z * q.y + camRow2.z * q.z;
+          if (cz > -1.0f)
+            break;
+          float qx = (cx / -cz * focal / hap0 + 0.5f) * frameSize.x - 0.5f;
+          float qy = (cy / -cz * focal / vap0 + 0.5f) * frameSize.y - 0.5f;
+          if (qx < -0.5f || qy < -0.5f || qx > frameSize.x - 0.5f || qy > frameSize.y - 0.5f)
+            break;
+          float3 S = float3(0.0f);
+          if (!bgSurface(qx, qy, S)) {
+            hit = false;
+            break;
+          }
+          t = max(dot(S - o, d), 1.0f);
+          hit = true;
+        }
+        sceneT = hit ? t : -1.0f;
       }
       if (sceneT > 0.0f)
         tmax = min(tmax, sceneT);
