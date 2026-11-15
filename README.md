@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.38.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.39.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -26,6 +26,15 @@ EzCloudGen). Inputs:
   measures in its HDRI light the clouds ('light from' Auto).
 - **sun** (optional): an Axis, overriding the sun direction.
 - **box1, box2, box3** (optional): a 3D node per layer that the layer's volume fills.
+- **holdout**, **add** (optional): 3D shapes for art direction. Plug a Scene of Spheres, Cubes
+  and Cylinders (TransformGeos, parenting and animation all work), or a single one, into
+  **holdout** to carve cloud away (a clear tunnel along a flight path, a gap round a hero) or
+  into **add** to grow cloud there. Up to 8 shapes in all. They act on the cloud's form before its
+  lobes and detail, so the edges are broken up by the cloud's own billows and wisps, and they are
+  true 3D: they hold from any angle, through camera moves, and in the lighting (a carved gap lets
+  the sun through). 'shape softness' (metres, Air, time & map tab) feathers them; 'holdout' and
+  'add' set how strongly. An add shape grows cloud only within a layer's own height band (a
+  deck's base to top) or its volume's box.
 - **map** (optional): a coverage map for the sky decks, painted over the shot (a Roto over the
   plate works): white piles up clouds, mid grey keeps the layer's coverage, black clears it. It is
   seen through the camera on 'map frame' and marks where the clouds stand on the layer (read at
