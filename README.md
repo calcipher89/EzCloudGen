@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.38.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.38.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -201,7 +201,9 @@ turned and every layer drifted on the wind or moved with its box, so parallax, a
 and clouds at different depths blur as they would in a 3D render (a 2D VectorBlur can't). The
 blur comes from the samples: use sampling High or Ultra, or Manual 8 to 16, or it is grainy.
 Motion is taken from the next frame (straight within a frame), and the lighting is the frame's
-own. The motion vector outputs stay as they were, for blurring in comp instead.
+own. The motion vector outputs stay as they were, for blurring in comp instead. With 'hide behind
+bg', each sample also finds where its own ray meets the bg (reprojected through the frame's
+depth), so clouds blur across a ridge's edge with it rather than stopping at a hard line.
 
 **render preset** (shot by default) sets resolution, quality, edge steps and sampling together. On a 2400x1760
 backlit cumulus shot on an RTX GPU, the clouds take:
