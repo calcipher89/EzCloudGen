@@ -209,6 +209,18 @@ param:
   float3 otherRow1;
   float3 otherRow2;
   float3 otherPosition;
+  // Shapes ('holdout' and 'add' inputs): up to 8 Spheres, Cubes and Cylinders. Each one's rows
+  // take a point (scene units, world) into its unit shape (radius 1, half size 1; a cylinder
+  // along y). type: 1 sphere, 2 cube, 3 cylinder; mode: 0 holdout, 1 add; scale: metres per unit
+  // of the unit shape (its smallest), for the softness.
+  int shapeCount;
+  float4 shape_r0[8];
+  float4 shape_r1[8];
+  float4 shape_r2[8];
+  float3 shape_info[8];
+  float shapeSoft;
+  float holdAmount;
+  float addAmount;
   int motionBlur;
   float shutter;
   float otherFocal;
@@ -261,6 +273,10 @@ local:
     defineParam(camRow1, "cam_row1", float3(0.0f, 1.0f, 0.0f));
     defineParam(camRow2, "cam_row2", float3(0.0f, 0.0f, 1.0f));
     defineParam(camPosition, "cam_position", float3(0.0f, 3000.0f, 0.0f));
+    defineParam(shapeCount, "shape_count", 0);
+    defineParam(shapeSoft, "shape_softness", 50.0f);
+    defineParam(holdAmount, "holdout_amount", 1.0f);
+    defineParam(addAmount, "add_amount", 1.0f);
     defineParam(motionBlur, "motion_blur", 0);
     defineParam(shutter, "shutter", 0.5f);
     defineParam(focal, "focal", 24.0f);
@@ -1060,6 +1076,41 @@ local:
     return w - profile(clamp(hn, 0.0f, 1.0f), lyr) - (hn <= 0.0f || hn >= 1.0f ? 0.3f : 0.0f);
   }
 
+  // The shapes at p (kernel frame): x, how far inside a holdout (0..1, softened over 'shape
+  // softness' either side of its surface); y, the same for an add shape.
+  float2 shapeMasks(float3 p)
+  {
+    float3 ws = float3(p.x / sceneScale + camPosition.x, p.y / sceneScale + groundHeight, p.z / sceneScale + camPosition.z);
+    float hold = 0.0f;
+    float add = 0.0f;
+    for (int k = 0; k < 8; k++) {
+      if (k >= shapeCount)
+        break;
+      float3 l = float3(shape_r0[k].x * ws.x + shape_r0[k].y * ws.y + shape_r0[k].z * ws.z + shape_r0[k].w,
+                        shape_r1[k].x * ws.x + shape_r1[k].y * ws.y + shape_r1[k].z * ws.z + shape_r1[k].w,
+                        shape_r2[k].x * ws.x + shape_r2[k].y * ws.y + shape_r2[k].z * ws.z + shape_r2[k].w);
+      float dist = 0.0f;
+      float type = shape_info[k].x;
+      if (type < 1.5f) {
+        dist = length(l) - 1.0f;
+      } else if (type < 2.5f) {
+        float3 q = float3(fabs(l.x) - 1.0f, fabs(l.y) - 1.0f, fabs(l.z) - 1.0f);
+        dist = length(float3(max(q.x, 0.0f), max(q.y, 0.0f), max(q.z, 0.0f))) + min(max(q.x, max(q.y, q.z)), 0.0f);
+      } else {
+        float qr = sqrt(l.x * l.x + l.z * l.z) - 1.0f;
+        float qy = fabs(l.y) - 1.0f;
+        dist = sqrt(max(qr, 0.0f) * max(qr, 0.0f) + max(qy, 0.0f) * max(qy, 0.0f)) + min(max(qr, qy), 0.0f);
+      }
+      // In metres (by the shape's smallest size: exact for a sphere or cube, close for others).
+      float m = sstep(0.0f, 1.0f, 0.5f - dist * shape_info[k].z / (2.0f * max(shapeSoft, 1.0f)));
+      if (shape_info[k].y < 0.5f)
+        hold = max(hold, m);
+      else
+        add = max(add, m);
+    }
+    return float2(hold * clamp(holdAmount, 0.0f, 1.0f), add * clamp(addAmount, 0.0f, 2.0f));
+  }
+
   // band: set to 1 when p is near enough a cloud's surface for the detail to reach it (the
   // march takes fine steps there, so thin rims aren't stepped over).
   float cloud(float3 p, float foot, bool cheap, float sd, int lyr, float &band)
@@ -1103,6 +1154,14 @@ local:
         continue;
       }
       hn = qh;
+      // The shapes act on the cloud's form, before its lobes and detail (which then break up
+      // their edges): a holdout pulls it down to clear air, an add shape up to solid cloud.
+      float2 sm = shapeCount > 0 ? shapeMasks(p) : float2(0.0f);
+      if (shapeCount > 0) {
+        bq += (0.55f - bq) * min(sm.y, 1.0f) * (bq < 0.55f ? 1.0f : 0.0f);
+        bq += (-0.6f - bq) * sm.x;
+        qw = max(qw, -0.12f + 0.2f * sm.y);
+      }
       if (volume[lyr] == 1) {
         c = bq;
         if (c <= -0.15f - lreach)

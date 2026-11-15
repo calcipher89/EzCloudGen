@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.38.1"
+VERSION = "0.39.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -275,6 +275,19 @@ def box_value(n, idx, step, what):
         return l * abs(e[3 + i] - e[i]) * (n['scene_scale'].value() or 1.0)
     return 0.0
 """
+
+
+SHAPE_LIB = "\nHOLD_INPUT, ADD_INPUT, MAX_SHAPES = 8, 9, 8\n\n\ndef unit_matrix(b):\n    # The unit shape (radius 1, half size 1, centred) to the primitive's own object space.\n    c = b.Class()\n    if c == 'Sphere':\n        r = b['radius'].value()\n        return [r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 1.0\n    if c == 'Cube':\n        e = [b['cube'].value(j) for j in range(6)]\n        h = [(e[3] - e[0]) / 2.0, (e[4] - e[1]) / 2.0, (e[5] - e[2]) / 2.0]\n        m = [(e[3] + e[0]) / 2.0, (e[4] + e[1]) / 2.0, (e[5] + e[2]) / 2.0]\n        return [h[0], 0, 0, m[0], 0, h[1], 0, m[1], 0, 0, h[2], m[2], 0, 0, 0, 1], 2.0\n    r, hh = b['radius'].value(), b['height'].value() / 2.0\n    return [r, 0, 0, 0, 0, hh, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 3.0\n\n\ndef collect(b, M, f, out):\n    # Scenes and MergeGeos gather, TransformGeos move what is under them, Dots pass through.\n    if b is None or len(out) >= MAX_SHAPES or (b.knob('disable') and b['disable'].value()):\n        return\n    c = b.Class()\n    if c in ('Scene', 'MergeGeo', 'MergeGeo2'):\n        for i in range(b.inputs()):\n            collect(b.input(i), M, f, out)\n    elif c in ('Dot', 'NoOp'):\n        collect(b.input(0), M, f, out)\n    elif c == 'TransformGeo':\n        collect(b.input(0), mul(M, box_matrix(b, f)), f, out)\n    elif c in ('Sphere', 'Cube', 'Cylinder'):\n        U, t = unit_matrix(b)\n        out.append((t, mul(mul(M, box_matrix(b, f)), U)))\n\n\ndef shapes(n, f):\n    I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    found = []\n    for mode, idx in ((0.0, HOLD_INPUT), (1.0, ADD_INPUT)):\n        got = []\n        collect(n.input(idx), I, f, got)\n        found += [(t, mode, M) for t, M in got]\n    return found[:MAX_SHAPES]\n\n\ndef inverse(M):\n    # An affine 4x4 (row major): the inverse of its 3x3, and of its translation.\n    a = [M[0], M[1], M[2], M[4], M[5], M[6], M[8], M[9], M[10]]\n    det = (a[0] * (a[4] * a[8] - a[5] * a[7]) - a[1] * (a[3] * a[8] - a[5] * a[6])\n           + a[2] * (a[3] * a[7] - a[4] * a[6]))\n    if abs(det) < 1e-12:\n        return [0.0] * 12\n    inv = [(a[4] * a[8] - a[5] * a[7]) / det, (a[2] * a[7] - a[1] * a[8]) / det, (a[1] * a[5] - a[2] * a[4]) / det,\n           (a[5] * a[6] - a[3] * a[8]) / det, (a[0] * a[8] - a[2] * a[6]) / det, (a[2] * a[3] - a[0] * a[5]) / det,\n           (a[3] * a[7] - a[4] * a[6]) / det, (a[1] * a[6] - a[0] * a[7]) / det, (a[0] * a[4] - a[1] * a[3]) / det]\n    t = [M[3], M[7], M[11]]\n    rows = []\n    for r in range(3):\n        rows += inv[r * 3:r * 3 + 3] + [-(inv[r * 3] * t[0] + inv[r * 3 + 1] * t[1] + inv[r * 3 + 2] * t[2])]\n    return rows\n\n\ndef shape_value(n, slot, what):\n    # what: count; or for shape slot: rN:j (its world-to-unit rows), info:0 type, info:1 mode,\n    # info:2 metres per unit (its smallest size).\n    found = shapes(n, nuke.frame())\n    if what == 'count':\n        return float(len(found))\n    if slot >= len(found):\n        return 0.0\n    t, mode, M = found[slot]\n    name, j = what.split(':')\n    j = int(j)\n    if name == 'info':\n        if j == 0:\n            return t\n        if j == 1:\n            return mode\n        cols = [(M[c] ** 2 + M[4 + c] ** 2 + M[8 + c] ** 2) ** 0.5 for c in range(3)]\n        return min(cols) * (n['scene_scale'].value() or 1.0)\n    return inverse(M)[int(name[1]) * 4 + j]\n"
+
+
+def shape_expr(slot, what):
+    """Expression: one value of the shapes in the holdout and add inputs (see SHAPE_LIB)."""
+    return py("ret = 0\n"
+              "if nuke.thisNode().input(8) is not None or nuke.thisNode().input(9) is not None:\n"
+              "    g = {'nuke': nuke}\n"
+              "    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+              "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n"
+              "    ret = g['shape_value'](nuke.thisNode(), %d, '%s')" % (slot, what))
 
 
 def box_expr(layer, what, step=0):
@@ -696,6 +709,33 @@ def build_knobs(g):
         "Sets the layer's seed to that variation and goes back to the Comp view.")
     g["use_variation"].clearFlag(nuke.STARTLINE)
 
+    add(g, nuke.Text_Knob("shapes_divider", "shapes"))
+    add(g, nuke.Text_Knob("shapes_help", "", "Plug a Scene of Spheres, Cubes and Cylinders (or one) into "
+        "<b>holdout</b> to carve cloud away, or into <b>add</b> to grow it. Up to 8 shapes."))
+    k = add(g, nuke.Double_Knob("shape_softness", "shape softness"),
+            "How far the shapes' edges feather into the cloud, in metres, either side of their surface. "
+            "The cloud's own detail then breaks the edge up.")
+    k.setValue(50)
+    k.setRange(1, 1000)
+    k = add(g, nuke.Double_Knob("holdout_amount", "holdout"), "How completely the holdout shapes clear the cloud.")
+    k.setValue(1)
+    k.setRange(0, 1)
+    k = add(g, nuke.Double_Knob("add_amount", "add"), "How much cloud the add shapes grow (up to solid at 1).")
+    k.setValue(1)
+    k.setRange(0, 2)
+    k.clearFlag(nuke.STARTLINE)
+    k = add(g, nuke.Int_Knob("shape_count", "shapes found"), "Shapes read from the holdout and add inputs.")
+    k.setExpression(shape_expr(0, "count"))
+    k.setEnabled(False)
+    k.clearFlag(nuke.STARTLINE)
+    for slot in range(8):
+        for row in range(3):
+            k = hidden(g, nuke.Array_Knob("shape%d_r%d" % (slot, row), "", 4))
+            for j in range(4):
+                k.setExpression(shape_expr(slot, "r%d:%d" % (row, j)), j)
+        k = hidden(g, nuke.Array_Knob("shape%d_info" % slot, "", 3))
+        for j in range(3):
+            k.setExpression(shape_expr(slot, "info:%d" % j), j)
     add(g, nuke.Text_Knob("map_divider", "coverage map"))
     add(g, nuke.Text_Knob("map_help", "",
                           "Plug a picture into 'map' to say where the decks have clouds, as seen\n"
@@ -820,6 +860,8 @@ def build_knobs(g):
 
     k = hidden(g, nuke.Multiline_Eval_String_Knob("box_lib", "box lib"))
     k.setValue(BOX_LIB)
+    k = hidden(g, nuke.Multiline_Eval_String_Knob("shape_lib", "shape lib"))
+    k.setValue(SHAPE_LIB)
     add(g, nuke.Tab_Knob("about", "About"))
     add(g, nuke.Text_Knob("version", "", "EzCloudGen v%s" % VERSION))
 
@@ -1018,6 +1060,16 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "grid_far"].setExpression("min(parent.max_distance * 1000, 80000)")
     n[k + "even_detail"].setExpression("parent.even_detail")
     n[k + "horizon_samples"].setExpression("parent.horizon_samples")
+    n[k + "shape_count"].setExpression("parent.shape_count")
+    n[k + "shape_softness"].setExpression("parent.shape_softness")
+    n[k + "holdout_amount"].setExpression("parent.holdout_amount")
+    n[k + "add_amount"].setExpression("parent.add_amount")
+    for slot in range(8):
+        for row in range(3):
+            for j in range(4):
+                n[k + "shape_r%d" % row].setExpression("parent.shape%d_r%d.%d" % (slot, row, j), slot * 4 + j)
+        for j in range(3):
+            n[k + "shape_info"].setExpression("parent.shape%d_info.%d" % (slot, j), slot * 3 + j)
     n[k + "motion_blur"].setExpression("parent.motion_blur && !parent.preview")
     n[k + "shutter"].setExpression("parent.shutter")
     n[k + "sky_shading"].setExpression("parent.sky_shading")
@@ -1147,6 +1199,9 @@ def build():
         sun = nuke.nodes.Input(name="sun")
         mp = nuke.nodes.Input(name="map")
         boxes = [nuke.nodes.Input(name="box%d" % i) for i in (1, 2, 3)]
+        # Shapes (Scenes of Spheres, Cubes, Cylinders) that carve cloud away, and that grow it.
+        nuke.nodes.Input(name="holdout")
+        nuke.nodes.Input(name="add")
         for n in [cam, atm, sun, mp] + boxes:
             n.setXYpos(-1000, -1000)  # placed by the layout
         # The format: the bg's, or the script's without one.
@@ -1441,7 +1496,7 @@ def build():
 
 
 MODULES = [
-    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat|LightGridFormat)"),
+    ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|holdout|add|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat|LightGridFormat)"),
     ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
     ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
     ("Back to full size", 0x444444ff, r"(ColorUp.*|SunUp.*|DepthUp.*|ShadowUp.*|FwdUp.*|BwdUp.*|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
