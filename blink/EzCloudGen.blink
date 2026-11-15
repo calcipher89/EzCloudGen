@@ -221,6 +221,7 @@ param:
   float shapeSoft;
   float holdAmount;
   float addAmount;
+  float bgEdgeSoft;
   int motionBlur;
   float shutter;
   float otherFocal;
@@ -277,6 +278,7 @@ local:
     defineParam(shapeSoft, "shape_softness", 50.0f);
     defineParam(holdAmount, "holdout_amount", 1.0f);
     defineParam(addAmount, "add_amount", 1.0f);
+    defineParam(bgEdgeSoft, "bg_edge_softness", 0.0f);
     defineParam(motionBlur, "motion_blur", 0);
     defineParam(shutter, "shutter", 0.5f);
     defineParam(focal, "focal", 24.0f);
@@ -2085,7 +2087,18 @@ local:
         }
         continue;
       }
-      if (mbActive && occlude == 1) {
+      // 'bg edge softness': each sample reads the bg's depth up to that many pixels off its own
+      // (spread evenly over a disc across the samples), so where the clouds meet the bg's
+      // outline they feather over that width instead of stopping on one pixel's line.
+      float ejx = 0.0f;
+      float ejy = 0.0f;
+      if (bgEdgeSoft > 0.0f && occlude == 1 && tiles <= 1 && output != 5) {
+        float ea = 6.2831853f * fr(radInv(s + 1, 2) + hash3(pos.x + 7.7f, pos.y + 2.9f, 3.0f));
+        float er = bgEdgeSoft * sqrt(fr(radInv(s + 1, 3) + hash3(pos.y + 5.1f, pos.x + 1.3f, 9.0f)));
+        ejx = er * cos(ea);
+        ejy = er * sin(ea);
+      }
+      if ((mbActive || ejx != 0.0f || ejy != 0.0f) && occlude == 1 && output != 5 && tiles <= 1) {
         // Motion blur: the bg doesn't move, but this sample's ray does. Find where it meets the
         // bg by reprojecting into the frame's own camera and its depth, a few times over (a
         // point along the ray -> the bg surface behind that pixel -> how far along the ray that
@@ -2102,8 +2115,8 @@ local:
           float cz = camRow0.z * q.x + camRow1.z * q.y + camRow2.z * q.z;
           if (cz > -1.0f)
             break;
-          float qx = (cx / -cz * focal / hap0 + 0.5f) * frameSize.x - 0.5f;
-          float qy = (cy / -cz * focal / vap0 + 0.5f) * frameSize.y - 0.5f;
+          float qx = (cx / -cz * focal / hap0 + 0.5f) * frameSize.x - 0.5f + ejx;
+          float qy = (cy / -cz * focal / vap0 + 0.5f) * frameSize.y - 0.5f + ejy;
           if (qx < -0.5f || qy < -0.5f || qx > frameSize.x - 0.5f || qy > frameSize.y - 0.5f)
             break;
           float3 S = float3(0.0f);
