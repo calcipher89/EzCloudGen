@@ -392,8 +392,10 @@ def install():
 
 def shape_expr(slot, what):
     """Expression: one value from the shape table (see SHAPE_LIB). The library is loaded once per
-    session, under a name that changes with its text."""
-    return py("f = getattr(nuke, '_ezcg_shape_table_0e47c8aa', None)\n"
+    session, under a name that changes with its text. The count checks the inputs first (nothing
+    plugged in: 0 without the table); every other value runs no Python at all unless its slot
+    holds a shape ('shapes found' is past it), so unused slots cost a plain TCL test."""
+    code = py("f = getattr(nuke, '_ezcg_shape_table_0e47c8aa', None)\n"
               "if f is None:\n"
               "    g = {'nuke': nuke}\n"
               "    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
@@ -401,6 +403,17 @@ def shape_expr(slot, what):
               "    f = g['install']()\n"
               "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\n"
               "ret = f(nuke.thisNode(), %d, '%s')" % (slot, what))
+    if what == "count":
+        return code.replace("{f = getattr", "{ret = 0\nif nuke.thisNode().input(8) is not None or "
+                            "nuke.thisNode().input(9) is not None:\n  f = getattr", 1).replace(
+            "\nif f is None:\n    g = {'nuke': nuke}\n    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+            "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n    f = g['install']()\n"
+            "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\nret = f(",
+            "\n  if f is None:\n    g = {'nuke': nuke}\n    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+            "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n    f = g['install']()\n"
+            "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\n  ret = f(")
+    # TCL 'if' runs only the branch it takes, so an empty slot never reaches Python.
+    return "[if {[value shape_count] > %d} {%s} {expr 0}]" % (slot, code[1:-1])
 
 
 def box_expr(layer, what, step=0):
