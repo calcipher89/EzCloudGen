@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.41.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.42.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -45,6 +45,16 @@ EzCloudGen). Inputs:
   stays put in the world and drifts with the wind.
   Each deck's 'follow map' sets how much it obeys, and 'map channel' lets each deck read its own
   channel.
+
+**analyze scene** (top of the EzCloudGen tab) sets the node up from its inputs at the current frame. It finds
+the bg's depth channel and whether it is Planar Z or 1/Z (a ScanlineRender up the plate's B pipe, or depth
+that is all under 1), where a sky dome starts in it ('sky beyond'), and the ground height (the lowest ground
+the depth shows under the camera). It turns on 'hide behind bg', raises 'max distance' to reach the
+terrain, and moves any placed volume that is behind the camera, out of frame or behind the terrain to in
+front of the camera (no further than 0.7 of the middle terrain distance). It reads the depth only as
+numbers on a 32 x 18 grid, so no picture leaves the node, then lists what it found and changed, and what
+to check by hand: 'units to metres' (it can't tell the scene's units) and the sun (plug the scene's sun
+Axis or EzAtmosScatter). One undo reverts it. Press it again after changing the camera or the units.
 
 The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
 lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three

@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.41.0"
+VERSION = "0.42.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -601,8 +601,24 @@ def hidden(g, knob):
     return knob
 
 
+# 'analyze scene': python/analyze_lib.py, stored in the hidden 'analyze_lib' knob.
+ANALYZE_LIB = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "analyze_lib.py")).read()
+ANALYZE_BUTTON = ("g = {'nuke': nuke}\n"
+                  "exec(nuke.thisNode()['analyze_lib'].getText(), g)\n"
+                  "g['analyze'](nuke.thisNode())\n")
+
+
 def build_knobs(g):
     add(g, nuke.Tab_Knob("ezcloudgen", "EzCloudGen"))
+    add(g, nuke.PyScript_Knob("analyze", "analyze scene", ANALYZE_BUTTON),
+        "Sets the node up from its inputs at this frame: finds the bg's depth channel and whether it is "
+        "Planar Z or 1/Z, where the sky starts in it ('sky beyond'), the ground height under the camera "
+        "(the lowest ground the depth shows), turns on 'hide behind bg', raises 'max distance' to reach "
+        "the terrain, and moves any placed volume that is behind the camera, out of frame or behind the "
+        "terrain to in front of the camera. It reads the depth as numbers on a 32 x 18 grid; no picture "
+        "leaves the node. Then it lists what it found and changed, and what to check by hand (units, "
+        "the sun). One undo reverts it. Press it again after changing the camera or 'units to metres'.")
+    add(g, nuke.Text_Knob("analysis", "", "Plug in bg (with depth), camera and sun, then press 'analyze scene'."))
     v = add(g, nuke.Enumeration_Knob("view", "view", VIEWS),
             "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. "
             "Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. "
@@ -994,6 +1010,8 @@ def build_knobs(g):
     k.setValue(BOX_LIB)
     k = hidden(g, nuke.Multiline_Eval_String_Knob("shape_lib", "shape lib"))
     k.setValue(SHAPE_LIB)
+    k = hidden(g, nuke.Multiline_Eval_String_Knob("analyze_lib", "analyze lib"))
+    k.setValue(ANALYZE_LIB)
     add(g, nuke.Tab_Knob("about", "About"))
     add(g, nuke.Text_Knob("version", "", "EzCloudGen v%s" % VERSION))
 

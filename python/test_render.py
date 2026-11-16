@@ -431,6 +431,52 @@ def main():
         nuke.thisNode, nuke.thisKnob = saved
     if g.node("DepthSource")["from0"].value() != "depth.Z":
         raise RuntimeError("depth.Z on the knob gave DepthSource " + g.node("DepthSource")["from0"].value())
+
+    # 'analyze scene' (checked, not rendered): a flat ground at y 200 (decimetres) seen from the
+    # test camera tilted 8 degrees down, out to 40 km, and a sky dome 95 km away beyond it (Planar
+    # Z); a hero volume behind the camera.
+    cam["rotate"].setValue([-8, 0, 0])
+    hap = cam["haperture"].value()
+    ground = nuke.nodes.Expression(
+        name="TestGround", temp_name0="cx", temp_expr0="((x + 0.5) / width - 0.5) * %g / 24" % hap,
+        temp_name1="cy", temp_expr1="((y + 0.5) / height - 0.5) * %g * height / width / 24" % hap,
+        temp_name2="l", temp_expr2="sqrt(cx * cx + cy * cy + 1)",
+        temp_name3="dy", temp_expr3="cy * %r + %r" % (math.cos(math.radians(-8)), math.sin(math.radians(-8))),
+        channel0="depth", expr0="dy < 0 && -2800 / dy * l < 400000 ? -2800 / dy : 950000 / l",
+        channel1="none", channel2="none", channel3="none")
+    ground.setInput(0, sky)
+    g.setInput(0, ground)
+    g["l2_enable"].setValue(True)
+    set_type("l2_", "Hero Cumulus")
+    g["l2_vol_position"].setValue([0, 0, 50000])
+    g["sky_depth"].setValue(50)
+    g["ground_height"].setValue(0)
+    g["occlude"].setValue(False)
+    lib = {"nuke": nuke}
+    exec(g["analyze_lib"].getText(), lib)
+    report = lib["analyze"](g)
+    print("analyze scene:\n" + report)
+    if abs(g["ground_height"].value() - 200) > 20:
+        raise RuntimeError("analyze: ground height %g, not 200" % g["ground_height"].value())
+    if not 40 < g["sky_depth"].value() < 95:
+        raise RuntimeError("analyze: sky beyond %g km, not between the ground and the dome" % g["sky_depth"].value())
+    if not g["occlude"].value() or g["depth_mode"].value() != "Planar Z":
+        raise RuntimeError("analyze: didn't turn on hide behind bg, or changed Planar Z")
+    if not g["l2_vol_position"].value()[2] < 0:
+        raise RuntimeError("analyze: the volume behind the camera wasn't placed in front")
+    # The same ground as ScanlineRender's 1/Z.
+    ground["expr0"].setValue("1 / (%s)" % ground["expr0"].value())
+    lib["analyze"](g)
+    if not g["depth_mode"].value().startswith("1/Z") or abs(g["ground_height"].value() - 200) > 20:
+        raise RuntimeError("analyze: 1/Z depth not recognised (%s, ground %g)"
+                           % (g["depth_mode"].value(), g["ground_height"].value()))
+    g["depth_mode"].setValue("Planar Z")
+    g["l2_enable"].setValue(False)
+    g["ground_height"].setValue(0)
+    g["sky_depth"].setValue(50)
+    g["max_distance"].setValue(400)
+    cam["rotate"].setValue([18, 0, 0])
+    nuke.delete(ground)
     g.setInput(0, sky)
 
     # Motion vectors: the camera pans 0.5 degrees left per frame (rotate.y), no wind. The clouds
