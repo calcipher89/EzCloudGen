@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.40.0"
+VERSION = "0.41.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -277,17 +277,143 @@ def box_value(n, idx, step, what):
 """
 
 
-SHAPE_LIB = "\nHOLD_INPUT, ADD_INPUT, MAX_SHAPES = 8, 9, 8\n\n\ndef unit_matrix(b):\n    # The unit shape (radius 1, half size 1, centred) to the primitive's own object space.\n    c = b.Class()\n    if c == 'Sphere':\n        r = b['radius'].value()\n        return [r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 1.0\n    if c == 'Cube':\n        e = [b['cube'].value(j) for j in range(6)]\n        h = [(e[3] - e[0]) / 2.0, (e[4] - e[1]) / 2.0, (e[5] - e[2]) / 2.0]\n        m = [(e[3] + e[0]) / 2.0, (e[4] + e[1]) / 2.0, (e[5] + e[2]) / 2.0]\n        return [h[0], 0, 0, m[0], 0, h[1], 0, m[1], 0, 0, h[2], m[2], 0, 0, 0, 1], 2.0\n    r, hh = b['radius'].value(), b['height'].value() / 2.0\n    return [r, 0, 0, 0, 0, hh, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 3.0\n\n\ndef collect(b, M, f, out):\n    # Scenes and MergeGeos gather, TransformGeos move what is under them, Dots pass through.\n    if b is None or len(out) >= MAX_SHAPES or (b.knob('disable') and b['disable'].value()):\n        return\n    c = b.Class()\n    if c in ('Scene', 'MergeGeo', 'MergeGeo2'):\n        for i in range(b.inputs()):\n            collect(b.input(i), M, f, out)\n    elif c in ('Dot', 'NoOp'):\n        collect(b.input(0), M, f, out)\n    elif c == 'TransformGeo':\n        collect(b.input(0), mul(M, box_matrix(b, f)), f, out)\n    elif c in ('Sphere', 'Cube', 'Cylinder'):\n        U, t = unit_matrix(b)\n        out.append((t, mul(mul(M, box_matrix(b, f)), U)))\n\n\ndef shapes(n, f):\n    I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    found = []\n    for mode, idx in ((0.0, HOLD_INPUT), (1.0, ADD_INPUT)):\n        got = []\n        collect(n.input(idx), I, f, got)\n        found += [(t, mode, M) for t, M in got]\n    return found[:MAX_SHAPES]\n\n\ndef inverse(M):\n    # An affine 4x4 (row major): the inverse of its 3x3, and of its translation.\n    a = [M[0], M[1], M[2], M[4], M[5], M[6], M[8], M[9], M[10]]\n    det = (a[0] * (a[4] * a[8] - a[5] * a[7]) - a[1] * (a[3] * a[8] - a[5] * a[6])\n           + a[2] * (a[3] * a[7] - a[4] * a[6]))\n    if abs(det) < 1e-12:\n        return [0.0] * 12\n    inv = [(a[4] * a[8] - a[5] * a[7]) / det, (a[2] * a[7] - a[1] * a[8]) / det, (a[1] * a[5] - a[2] * a[4]) / det,\n           (a[5] * a[6] - a[3] * a[8]) / det, (a[0] * a[8] - a[2] * a[6]) / det, (a[2] * a[3] - a[0] * a[5]) / det,\n           (a[3] * a[7] - a[4] * a[6]) / det, (a[1] * a[6] - a[0] * a[7]) / det, (a[0] * a[4] - a[1] * a[3]) / det]\n    t = [M[3], M[7], M[11]]\n    rows = []\n    for r in range(3):\n        rows += inv[r * 3:r * 3 + 3] + [-(inv[r * 3] * t[0] + inv[r * 3 + 1] * t[1] + inv[r * 3 + 2] * t[2])]\n    return rows\n\n\ndef shape_value(n, slot, what):\n    # what: count; or for shape slot: rN:j (its world-to-unit rows), info:0 type, info:1 mode,\n    # info:2 metres per unit (its smallest size).\n    found = shapes(n, nuke.frame())\n    if what == 'count':\n        return float(len(found))\n    if slot >= len(found):\n        return 0.0\n    t, mode, M = found[slot]\n    name, j = what.split(':')\n    j = int(j)\n    if name == 'info':\n        if j == 0:\n            return t\n        if j == 1:\n            return mode\n        cols = [(M[c] ** 2 + M[4 + c] ** 2 + M[8 + c] ** 2) ** 0.5 for c in range(3)]\n        return min(cols) * (n['scene_scale'].value() or 1.0)\n    return inverse(M)[int(name[1]) * 4 + j]\n"
+SHAPE_LIB = r'''
+HOLD_INPUT, ADD_INPUT, MAX_SHAPES = 8, 9, 32
+
+
+def unit_matrix(b):
+    # The unit shape (radius 1, half size 1, centred) to the primitive's own object space.
+    c = b.Class()
+    if c == 'Sphere':
+        r = b['radius'].value()
+        return [r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 1.0
+    if c == 'Cube':
+        e = [b['cube'].value(j) for j in range(6)]
+        h = [(e[3] - e[0]) / 2.0, (e[4] - e[1]) / 2.0, (e[5] - e[2]) / 2.0]
+        m = [(e[3] + e[0]) / 2.0, (e[4] + e[1]) / 2.0, (e[5] + e[2]) / 2.0]
+        return [h[0], 0, 0, m[0], 0, h[1], 0, m[1], 0, 0, h[2], m[2], 0, 0, 0, 1], 2.0
+    r, hh = b['radius'].value(), b['height'].value() / 2.0
+    return [r, 0, 0, 0, 0, hh, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 3.0
+
+
+def collect(b, M, f, out):
+    # Scenes and MergeGeos gather, TransformGeos move what is under them, Dots pass through.
+    if b is None or len(out) >= MAX_SHAPES or (b.knob('disable') and b['disable'].value()):
+        return
+    c = b.Class()
+    if c in ('Scene', 'MergeGeo', 'MergeGeo2'):
+        for i in range(b.inputs()):
+            collect(b.input(i), M, f, out)
+    elif c in ('Dot', 'NoOp'):
+        collect(b.input(0), M, f, out)
+    elif c == 'TransformGeo':
+        collect(b.input(0), mul(M, box_matrix(b, f)), f, out)
+    elif c in ('Sphere', 'Cube', 'Cylinder'):
+        U, t = unit_matrix(b)
+        out.append((t, mul(mul(M, box_matrix(b, f)), U)))
+
+
+def shapes(n, f):
+    I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+    found = []
+    for mode, idx in ((0.0, HOLD_INPUT), (1.0, ADD_INPUT)):
+        got = []
+        collect(n.input(idx), I, f, got)
+        found += [(t, mode, M) for t, M in got]
+    return found[:MAX_SHAPES]
+
+
+def inverse(M):
+    # An affine 4x4 (row major): the inverse of its 3x3, and of its translation.
+    a = [M[0], M[1], M[2], M[4], M[5], M[6], M[8], M[9], M[10]]
+    det = (a[0] * (a[4] * a[8] - a[5] * a[7]) - a[1] * (a[3] * a[8] - a[5] * a[6])
+           + a[2] * (a[3] * a[7] - a[4] * a[6]))
+    if abs(det) < 1e-12:
+        return [0.0] * 12
+    inv = [(a[4] * a[8] - a[5] * a[7]) / det, (a[2] * a[7] - a[1] * a[8]) / det, (a[1] * a[5] - a[2] * a[4]) / det,
+           (a[5] * a[6] - a[3] * a[8]) / det, (a[0] * a[8] - a[2] * a[6]) / det, (a[2] * a[3] - a[0] * a[5]) / det,
+           (a[3] * a[7] - a[4] * a[6]) / det, (a[1] * a[6] - a[0] * a[7]) / det, (a[0] * a[4] - a[1] * a[3]) / det]
+    t = [M[3], M[7], M[11]]
+    rows = []
+    for r in range(3):
+        rows += inv[r * 3:r * 3 + 3] + [-(inv[r * 3] * t[0] + inv[r * 3 + 1] * t[1] + inv[r * 3 + 2] * t[2])]
+    return rows
+
+
+# The shape table: one pass reads every shape for a node and frame (walking the 3D graph,
+# combining transforms, inverting), and every knob value then looks it up. Any edit to a 3D
+# node, a Scene's inputs or the node's own inputs starts a new table (see install).
+_cache = {}
+_state = {'edits': 0}
+
+
+def table(n, f):
+    key = (n.fullName(), f, _state['edits'])
+    t = _cache.get(key)
+    if t is None:
+        ss = n['scene_scale'].value() or 1.0
+        t = []
+        for typ, mode, M in shapes(n, f):
+            cols = [(M[c] ** 2 + M[4 + c] ** 2 + M[8 + c] ** 2) ** 0.5 for c in range(3)]
+            t.append((inverse(M), (typ, mode, min(cols) * ss)))
+        if len(_cache) > 512:
+            _cache.clear()
+        _cache[key] = t
+    return t
+
+
+def shape_value(n, slot, what):
+    # what: count; or for shape slot: rN:j (its world-to-unit rows), info:0 type, info:1 mode,
+    # info:2 metres per unit (its smallest size).
+    t = table(n, nuke.frame())
+    if what == 'count':
+        return float(len(t))
+    if slot >= len(t):
+        return 0.0
+    inv, info = t[slot]
+    name, j = what.split(':')
+    if name == 'info':
+        return float(info[int(j)])
+    return inv[int(name[1]) * 4 + int(j)]
+
+
+def _edited():
+    _state['edits'] += 1
+
+
+def install():
+    # Once per session: new tables after any edit of the nodes a shape can come through.
+    for cls in ('Sphere', 'Cube', 'Cylinder', 'TransformGeo', 'Scene', 'MergeGeo', 'MergeGeo2', 'Axis', 'Axis2',
+                'Axis3', 'Dot', 'NoOp', 'Group', 'Gizmo'):
+        nuke.addKnobChanged(_edited, nodeClass=cls)
+    return shape_value
+'''
 
 
 def shape_expr(slot, what):
-    """Expression: one value of the shapes in the holdout and add inputs (see SHAPE_LIB)."""
-    return py("ret = 0\n"
-              "if nuke.thisNode().input(8) is not None or nuke.thisNode().input(9) is not None:\n"
+    """Expression: one value from the shape table (see SHAPE_LIB). The library is loaded once per
+    session, under a name that changes with its text. The count checks the inputs first (nothing
+    plugged in: 0 without the table); every other value runs no Python at all unless its slot
+    holds a shape ('shapes found' is past it), so unused slots cost a plain TCL test."""
+    code = py("f = getattr(nuke, '_ezcg_shape_table_0e47c8aa', None)\n"
+              "if f is None:\n"
               "    g = {'nuke': nuke}\n"
               "    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
               "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n"
-              "    ret = g['shape_value'](nuke.thisNode(), %d, '%s')" % (slot, what))
+              "    f = g['install']()\n"
+              "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\n"
+              "ret = f(nuke.thisNode(), %d, '%s')" % (slot, what))
+    if what == "count":
+        return code.replace("{f = getattr", "{ret = 0\nif nuke.thisNode().input(8) is not None or "
+                            "nuke.thisNode().input(9) is not None:\n  f = getattr", 1).replace(
+            "\nif f is None:\n    g = {'nuke': nuke}\n    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+            "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n    f = g['install']()\n"
+            "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\nret = f(",
+            "\n  if f is None:\n    g = {'nuke': nuke}\n    exec(nuke.thisNode()['box_lib'].getText(), g)\n"
+            "    exec(nuke.thisNode()['shape_lib'].getText(), g)\n    f = g['install']()\n"
+            "    setattr(nuke, '_ezcg_shape_table_0e47c8aa', f)\n  ret = f(")
+    # TCL 'if' runs only the branch it takes, so an empty slot never reaches Python.
+    return "[if {[value shape_count] > %d} {%s} {expr 0}]" % (slot, code[1:-1])
 
 
 def box_expr(layer, what, step=0):
@@ -717,7 +843,7 @@ def build_knobs(g):
 
     add(g, nuke.Text_Knob("shapes_divider", "shapes"))
     add(g, nuke.Text_Knob("shapes_help", "", "Plug a Scene of Spheres, Cubes and Cylinders (or one) into "
-        "<b>holdout</b> to carve cloud away, or into <b>add</b> to grow it. Up to 8 shapes."))
+        "<b>holdout</b> to carve cloud away, or into <b>add</b> to grow it. Up to 32 shapes."))
     k = add(g, nuke.Double_Knob("shape_softness", "shape softness"),
             "How far the shapes' edges feather into the cloud, in metres, either side of their surface. "
             "The cloud's own detail then breaks the edge up.")
@@ -734,7 +860,7 @@ def build_knobs(g):
     k.setExpression(shape_expr(0, "count"))
     k.setEnabled(False)
     k.clearFlag(nuke.STARTLINE)
-    for slot in range(8):
+    for slot in range(32):
         for row in range(3):
             k = hidden(g, nuke.Array_Knob("shape%d_r%d" % (slot, row), "", 4))
             for j in range(4):
@@ -1070,7 +1196,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "shape_softness"].setExpression("parent.shape_softness")
     n[k + "holdout_amount"].setExpression("parent.holdout_amount")
     n[k + "add_amount"].setExpression("parent.add_amount")
-    for slot in range(8):
+    for slot in range(32):
         for row in range(3):
             for j in range(4):
                 n[k + "shape_r%d" % row].setExpression("parent.shape%d_r%d.%d" % (slot, row, j), slot * 4 + j)

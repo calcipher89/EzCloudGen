@@ -99,7 +99,7 @@ cumulus and every volume) or *classic* (crisp cauliflower, for stratiform and ma
 ## Sculpting with 3D shapes
 
 Plug a **Scene** of Spheres, Cubes and Cylinders into **holdout** to carve cloud away, or into
-**add** to grow it (up to 8 shapes; TransformGeos and animation work). Use it to clear a tunnel
+**add** to grow it (up to 32 shapes; TransformGeos and animation work). Use it to clear a tunnel
 along a flight path, keep a gap round a hero, or put a bank exactly where the shot needs it.
 **shape softness** (Air, time & map) feathers the edges in metres, and the cloud's detail breaks
 them up so they don't read as geometry. Add shapes grow cloud only inside a layer's height band
