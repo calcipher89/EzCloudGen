@@ -209,15 +209,15 @@ param:
   float3 otherRow1;
   float3 otherRow2;
   float3 otherPosition;
-  // Shapes ('holdout' and 'add' inputs): up to 8 Spheres, Cubes and Cylinders. Each one's rows
+  // Shapes ('holdout' and 'add' inputs): up to 32 Spheres, Cubes and Cylinders. Each one's rows
   // take a point (scene units, world) into its unit shape (radius 1, half size 1; a cylinder
   // along y). type: 1 sphere, 2 cube, 3 cylinder; mode: 0 holdout, 1 add; scale: metres per unit
   // of the unit shape (its smallest), for the softness.
   int shapeCount;
-  float4 shape_r0[8];
-  float4 shape_r1[8];
-  float4 shape_r2[8];
-  float3 shape_info[8];
+  float4 shape_r0[32];
+  float4 shape_r1[32];
+  float4 shape_r2[32];
+  float3 shape_info[32];
   float shapeSoft;
   float holdAmount;
   float addAmount;
@@ -1085,7 +1085,7 @@ local:
     float3 ws = float3(p.x / sceneScale + camPosition.x, p.y / sceneScale + groundHeight, p.z / sceneScale + camPosition.z);
     float hold = 0.0f;
     float add = 0.0f;
-    for (int k = 0; k < 8; k++) {
+    for (int k = 0; k < 32; k++) {
       if (k >= shapeCount)
         break;
       float3 l = float3(shape_r0[k].x * ws.x + shape_r0[k].y * ws.y + shape_r0[k].z * ws.z + shape_r0[k].w,

@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.40.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.41.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -32,7 +32,7 @@ EzCloudGen). Inputs:
 - **holdout**, **add** (optional): 3D shapes for art direction. Plug a Scene of Spheres, Cubes
   and Cylinders (TransformGeos, parenting and animation all work), or a single one, into
   **holdout** to carve cloud away (a clear tunnel along a flight path, a gap round a hero) or
-  into **add** to grow cloud there. Up to 8 shapes in all. They act on the cloud's form before its
+  into **add** to grow cloud there. Up to 32 shapes in all. They act on the cloud's form before its
   lobes and detail, so the edges are broken up by the cloud's own billows and wisps, and they are
   true 3D: they hold from any angle, through camera moves, and in the lighting (a carved gap lets
   the sun through). 'shape softness' (metres, Air, time & map tab) feathers them; 'holdout' and
