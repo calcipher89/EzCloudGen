@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.43.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.43.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -24,10 +24,10 @@ EzCloudGen). Inputs:
   'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline: each
   sample reads the bg's depth up to that far off its own pixel, so a hard or aliased depth edge
   (a ridge, a building) blends instead of cutting a line. Smoother with more samples.
-  'ground softness' (metres, default 50) thins the clouds over that distance in front of the bg's
-  surface along the view, so fog lying on a valley floor or a deck crossing a mountainside settles onto
-  the terrain instead of stopping in a hard line. 0 is a hard cut. A few tens of metres for fog close by,
-  100-300 m from far off.
+  'ground softness' (metres, default 50) thins the clouds over that much height above the bg's surface,
+  so fog lying on a valley floor or a deck crossing a mountainside settles onto the terrain instead of
+  stopping in a hard line, near or far (the height is the drop to where the view lands, so a far contact
+  seen at a grazing angle fades over a long stretch of the view, up to 5x the setting). 0 is a hard cut.
 - **camera**: the shot camera. Without one the node looks level from 300 m up.
 - **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
   measures in its HDRI light the clouds ('light from' Auto).

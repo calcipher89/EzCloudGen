@@ -222,8 +222,8 @@ param:
   float holdAmount;
   float addAmount;
   float bgEdgeSoft;
-  // Ground contact softness (m): the cloud thins out over this distance in front of the bg's
-  // surface along the ray, so fog meets the plate's terrain softly instead of in a hard line.
+  // Ground contact softness (m): the cloud thins out over this height above the bg's surface,
+  // so fog meets the plate's terrain softly instead of in a hard line.
   float contactSoft;
   int motionBlur;
   float shutter;
@@ -2300,10 +2300,12 @@ local:
         float3 p = o + d * tm;
         // Fade out over the last quarter of maxDistance, so the cap never cuts the deck hard.
         float far = clamp(4.0f * (1.0f - tm / maxDistance), 0.0f, 1.0f);
-        // Ground contact: thin the cloud over the last contactSoft metres before the bg's surface
-        // (smoothstep), so it settles onto the terrain instead of being cut by it.
+        // Ground contact: thin the cloud over its last contactSoft metres of height above the bg's
+        // surface (smoothstep), so it settles onto the terrain instead of being cut by it. The height
+        // is the drop to where the ray lands, as over a level floor there, so a far contact seen at a
+        // grazing angle fades over a long stretch of the ray (at most 5x contactSoft), not a few metres.
         if (contactSoft > 0.0f && sceneT > 0.0f) {
-          float c = clamp((sceneT - tm) / contactSoft, 0.0f, 1.0f);
+          float c = clamp((sceneT - tm) * max(-d.y, 0.2f) / contactSoft, 0.0f, 1.0f);
           far *= c * c * (3.0f - 2.0f * c);
         }
         float sig = 0.0f;

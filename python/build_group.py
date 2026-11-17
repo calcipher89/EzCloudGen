@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.43.0"
+VERSION = "0.43.1"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -708,10 +708,9 @@ def build_knobs(g):
     k.clearFlag(nuke.STARTLINE)
     k = add(g, nuke.Double_Knob("ground_softness", "ground softness"),
             "Where the clouds meet the bg's surface (fog lying on a valley floor, a deck crossing a "
-            "mountainside), they thin out over this many metres in front of it, along the view, so they "
-            "settle onto the terrain instead of stopping in a hard line. Needs the bg's depth and "
-            "'hide behind bg'. 0: a hard cut, as before. A few tens of metres for fog seen from close by, "
-            "100-300 m from far off.")
+            "mountainside), they thin out over this many metres of height above it, so they settle onto "
+            "the terrain instead of stopping in a hard line, near or far. Needs the bg's depth and "
+            "'hide behind bg'. 0: a hard cut.")
     k.setRange(0, 500)
     k.setValue(50)
     c = add(g, nuke.Channel_Knob("depth_channel", "depth"), "The bg channel holding its depth.")
