@@ -19,7 +19,11 @@ and recipes for common looks. The README covers every knob in detail; this guide
    a **sun direction**.
 5. **Pick a type.** On the Layer 1 tab, choose a **type**. Decks (Cumulus, Stratocumulus...) fill
    the sky; volumes (Hero Cumulus, Storm Anvil...) are single clouds placed ahead of the camera.
-6. **Look.** The default **render preset** is *shot*. Switch to *draft* while you work.
+6. **Analyze.** Press **analyze scene** at the top of the EzCloudGen tab. It reads the plate's depth
+   and the camera and sets the depth channel and type, the sky threshold, the ground height and
+   'hide behind bg', and pulls any volume that is out of view in front of the camera. It lists what
+   it found and changed, and what to check (units, sun). Ctrl+Z undoes it.
+7. **Look.** The default **render preset** is *shot*. Switch to *draft* while you work.
 
 If the plate has a **depth** channel, the clouds go behind its mountains and buildings ('hide
 behind bg'): set **depth is** to match your renderer (Planar Z for Arnold, Karma and V-Ray; 1/Z
@@ -146,7 +150,7 @@ time & map) changes the shapes slowly over time. For motion blur, turn on **moti
 | Grainy or speckled edges | raise **sampling**, or **edge steps** to 3 |
 | Far deck shimmers on camera moves | keep **horizon samples** at 4 (the default) |
 | A hard line where clouds meet a ridge or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to a few pixels |
-| Clouds in front of the mountains | check bg depth: **depth**, **depth is**, **units to metres** (EzCloudGen tab) |
+| Clouds in front of the mountains, wrong height, or a volume you can't find | press **analyze scene**, then check **units to metres** (EzCloudGen tab) |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
 | Render too slow | render preset *draft* or **preview** while you work |
 | A straight edge in the shading inside a volume you fly into, with a deck above | **light grid** off (known issue) |

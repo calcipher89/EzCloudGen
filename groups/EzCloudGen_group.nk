@@ -8,6 +8,8 @@ Group {
  label "\[expr \{\[value preview] ? \"PREVIEW\" : \"\"\}]"
  selected true
  addUserKnob {20 ezcloudgen l EzCloudGen}
+ addUserKnob {22 analyze l "analyze scene" t "Sets the node up from its inputs at this frame: finds the bg's depth channel and whether it is Planar Z or 1/Z, where the sky starts in it ('sky beyond'), the ground height under the camera (the lowest ground the depth shows), turns on 'hide behind bg', raises 'max distance' to reach the terrain, and moves any placed volume that is behind the camera, out of frame or behind the terrain to in front of the camera. It reads the depth as numbers on a 32 x 18 grid; no picture leaves the node. Then it lists what it found and changed, and what to check by hand (units, the sun). One undo reverts it. Press it again after changing the camera or 'units to metres'." -STARTLINE T "g = \{'nuke': nuke\}\nexec(nuke.thisNode()\['analyze_lib'].getText(), g)\ng\['analyze'](nuke.thisNode())\n"}
+ addUserKnob {26 analysis l "" +STARTLINE T "Plug in bg (with depth), camera and sun, then press 'analyze scene'."}
  addUserKnob {4 view t "Comp: the clouds over 'bg' (or alone without it). Clouds: the clouds alone, premultiplied. Sun share: the direct sunlight part of the clouds. Depth: Planar Z of the clouds, scene units. Variations: nine seeds of one layer side by side over a plain sky, numbered (see 'variations'). Shadow: the clouds' shadows on the bg (needs its depth), white is shaded." M {Comp Clouds "Sun share" Depth Variations Shadow}}
  addUserKnob {6 preview t "Fast look-dev: half the resolution and the ray march steps, one sample, and only the passes the view needs (no sun share, shadows or motion vectors, so those layers are black). Turn it off for the real thing; the node's label says PREVIEW while it is on." -STARTLINE}
  addUserKnob {6 breakout l "breakout layers" t "Adds the layers cloud (rgba), cloud_sun and cloud_sky (rgb), for re-grading the clouds over the plate, and cloud_shadow (rgb, the shadows on the bg; needs its depth). Takes extra passes per layer." -STARTLINE}
@@ -762,8 +764,10 @@ Group {
  box_lib "\nimport math\n\n\ndef find_box(n, idx):\n    # The 3D transforms in the box input, outermost first: TransformGeos down to the geometry\n    # (a Cube), or one Axis (its world_matrix already holds its parents). Dots pass through.\n    chain = \[]\n    b = n.input(idx)\n    while b is not None:\n        if b.knob('world_matrix') or b.knob('rot_order'):\n            chain.append(b)\n            if b.knob('world_matrix') or b.knob('cube'):\n                break\n        b = b.input(0) if b.maxInputs() else None\n    return chain\n\n\ndef mul(a, c):\n    r = \[0.0] * 16\n    for i in range(4):\n        for j in range(4):\n            r\[i * 4 + j] = sum(a\[i * 4 + k] * c\[k * 4 + j] for k in range(4))\n    return r\n\n\ndef rot(axis, deg):\n    a = math.radians(deg)\n    c, s = math.cos(a), math.sin(a)\n    if axis == 'X':\n        return \[1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1]\n    if axis == 'Y':\n        return \[c, 0, s, 0, 0, 1, 0, 0, -s, 0, c, 0, 0, 0, 0, 1]\n    return \[c, -s, 0, 0, s, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n\n\ndef local_matrix(b, f):\n    # Translate, rotate (rot_order, first letter applied first), scale, in xform_order, about\n    # the pivot: what Nuke's 3D transform knobs do.\n    t = \[b\['translate'].getValueAt(f, i) for i in range(3)]\n    r = \[b\['rotate'].getValueAt(f, i) for i in range(3)] if b.knob('rotate') else \[0, 0, 0]\n    u = b\['uniform_scale'].getValueAt(f) if b.knob('uniform_scale') else 1.0\n    sc = \[b\['scaling'].getValueAt(f, i) * u for i in range(3)] if b.knob('scaling') else \[u, u, u]\n    pv = \[b\['pivot'].getValueAt(f, i) for i in range(3)] if b.knob('pivot') else \[0, 0, 0]\n    T = \[1, 0, 0, t\[0], 0, 1, 0, t\[1], 0, 0, 1, t\[2], 0, 0, 0, 1]\n    S = \[sc\[0], 0, 0, 0, 0, sc\[1], 0, 0, 0, 0, sc\[2], 0, 0, 0, 0, 1]\n    R = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for ax in (b\['rot_order'].value() if b.knob('rot_order') else 'ZXY'):\n        R = mul(rot(ax, r\['XYZ'.index(ax)]), R)\n    parts = \{'S': S, 'R': R, 'T': T\}\n    P = \[1, 0, 0, pv\[0], 0, 1, 0, pv\[1], 0, 0, 1, pv\[2], 0, 0, 0, 1]\n    Pi = \[1, 0, 0, -pv\[0], 0, 1, 0, -pv\[1], 0, 0, 1, -pv\[2], 0, 0, 0, 1]\n    M = Pi\n    for c in (b\['xform_order'].value() if b.knob('xform_order') else 'SRT'):\n        if c == 'T':\n            M = mul(P, M)\n        M = mul(parts\[c], M)\n    return M\n\n\ndef box_matrix(b, f):\n    if b.knob('world_matrix'):\n        return \[b\['world_matrix'].getValueAt(f, i) for i in range(16)]\n    M = local_matrix(b, f)\n    # A parent Axis on the node's axis input (a TransformGeo's input 1; a Cube has none).\n    for i in range(1, b.maxInputs()):\n        p = b.input(i)\n        if p is not None and p.knob('world_matrix'):\n            M = mul(\[p\['world_matrix'].getValueAt(f, j) for j in range(16)], M)\n            break\n    return M\n\n\ndef box_value(n, idx, step, what):\n    # what: found, center (3), axis_x/y/z (3, unit), size (3, metres). One float, index in what.\n    chain = find_box(n, idx)\n    if not chain:\n        return 0.0\n    if what == 'found':\n        return 1.0\n    name, i = what.rsplit(':', 1)\n    i = int(i)\n    M = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    for t in chain:\n        M = mul(M, box_matrix(t, nuke.frame() + step))\n    b = chain\[-1]\n    # The geometry's own extent: a Cube's 'cube' knob, else a unit cube about the origin.\n    e = \[b\['cube'].value(j) for j in range(6)] if b.knob('cube') else \[-0.5, -0.5, -0.5, 0.5, 0.5, 0.5]\n    c = \[(e\[0] + e\[3]) / 2.0, (e\[1] + e\[4]) / 2.0, (e\[2] + e\[5]) / 2.0]\n    if name == 'center':\n        return M\[i * 4] * c\[0] + M\[i * 4 + 1] * c\[1] + M\[i * 4 + 2] * c\[2] + M\[i * 4 + 3]\n    if name.startswith('axis'):\n        j = 'xyz'.index(name\[-1])\n        col = \[M\[j], M\[4 + j], M\[8 + j]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2) or 1.0\n        return col\[i] / l\n    if name == 'size':\n        col = \[M\[i], M\[4 + i], M\[8 + i]]\n        l = math.sqrt(col\[0] ** 2 + col\[1] ** 2 + col\[2] ** 2)\n        return l * abs(e\[3 + i] - e\[i]) * (n\['scene_scale'].value() or 1.0)\n    return 0.0\n"
  addUserKnob {43 shape_lib l "shape lib" +INVISIBLE}
  shape_lib "\nHOLD_INPUT, ADD_INPUT, MAX_SHAPES = 8, 9, 32\n\n\ndef unit_matrix(b):\n    # The unit shape (radius 1, half size 1, centred) to the primitive's own object space.\n    c = b.Class()\n    if c == 'Sphere':\n        r = b\['radius'].value()\n        return \[r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 1.0\n    if c == 'Cube':\n        e = \[b\['cube'].value(j) for j in range(6)]\n        h = \[(e\[3] - e\[0]) / 2.0, (e\[4] - e\[1]) / 2.0, (e\[5] - e\[2]) / 2.0]\n        m = \[(e\[3] + e\[0]) / 2.0, (e\[4] + e\[1]) / 2.0, (e\[5] + e\[2]) / 2.0]\n        return \[h\[0], 0, 0, m\[0], 0, h\[1], 0, m\[1], 0, 0, h\[2], m\[2], 0, 0, 0, 1], 2.0\n    r, hh = b\['radius'].value(), b\['height'].value() / 2.0\n    return \[r, 0, 0, 0, 0, hh, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 3.0\n\n\ndef collect(b, M, f, out):\n    # Scenes and MergeGeos gather, TransformGeos move what is under them, Dots pass through.\n    if b is None or len(out) >= MAX_SHAPES or (b.knob('disable') and b\['disable'].value()):\n        return\n    c = b.Class()\n    if c in ('Scene', 'MergeGeo', 'MergeGeo2'):\n        for i in range(b.inputs()):\n            collect(b.input(i), M, f, out)\n    elif c in ('Dot', 'NoOp'):\n        collect(b.input(0), M, f, out)\n    elif c == 'TransformGeo':\n        collect(b.input(0), mul(M, box_matrix(b, f)), f, out)\n    elif c in ('Sphere', 'Cube', 'Cylinder'):\n        U, t = unit_matrix(b)\n        out.append((t, mul(mul(M, box_matrix(b, f)), U)))\n\n\ndef shapes(n, f):\n    I = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    found = \[]\n    for mode, idx in ((0.0, HOLD_INPUT), (1.0, ADD_INPUT)):\n        got = \[]\n        collect(n.input(idx), I, f, got)\n        found += \[(t, mode, M) for t, M in got]\n    return found\[:MAX_SHAPES]\n\n\ndef inverse(M):\n    # An affine 4x4 (row major): the inverse of its 3x3, and of its translation.\n    a = \[M\[0], M\[1], M\[2], M\[4], M\[5], M\[6], M\[8], M\[9], M\[10]]\n    det = (a\[0] * (a\[4] * a\[8] - a\[5] * a\[7]) - a\[1] * (a\[3] * a\[8] - a\[5] * a\[6])\n           + a\[2] * (a\[3] * a\[7] - a\[4] * a\[6]))\n    if abs(det) < 1e-12:\n        return \[0.0] * 12\n    inv = \[(a\[4] * a\[8] - a\[5] * a\[7]) / det, (a\[2] * a\[7] - a\[1] * a\[8]) / det, (a\[1] * a\[5] - a\[2] * a\[4]) / det,\n           (a\[5] * a\[6] - a\[3] * a\[8]) / det, (a\[0] * a\[8] - a\[2] * a\[6]) / det, (a\[2] * a\[3] - a\[0] * a\[5]) / det,\n           (a\[3] * a\[7] - a\[4] * a\[6]) / det, (a\[1] * a\[6] - a\[0] * a\[7]) / det, (a\[0] * a\[4] - a\[1] * a\[3]) / det]\n    t = \[M\[3], M\[7], M\[11]]\n    rows = \[]\n    for r in range(3):\n        rows += inv\[r * 3:r * 3 + 3] + \[-(inv\[r * 3] * t\[0] + inv\[r * 3 + 1] * t\[1] + inv\[r * 3 + 2] * t\[2])]\n    return rows\n\n\n# The shape table: one pass reads every shape for a node and frame (walking the 3D graph,\n# combining transforms, inverting), and every knob value then looks it up. Any edit to a 3D\n# node, a Scene's inputs or the node's own inputs starts a new table (see install).\n_cache = \{\}\n_state = \{'edits': 0\}\n\n\ndef table(n, f):\n    key = (n.fullName(), f, _state\['edits'])\n    t = _cache.get(key)\n    if t is None:\n        ss = n\['scene_scale'].value() or 1.0\n        t = \[]\n        for typ, mode, M in shapes(n, f):\n            cols = \[(M\[c] ** 2 + M\[4 + c] ** 2 + M\[8 + c] ** 2) ** 0.5 for c in range(3)]\n            t.append((inverse(M), (typ, mode, min(cols) * ss)))\n        if len(_cache) > 512:\n            _cache.clear()\n        _cache\[key] = t\n    return t\n\n\ndef shape_value(n, slot, what):\n    # what: count; or for shape slot: rN:j (its world-to-unit rows), info:0 type, info:1 mode,\n    # info:2 metres per unit (its smallest size).\n    t = table(n, nuke.frame())\n    if what == 'count':\n        return float(len(t))\n    if slot >= len(t):\n        return 0.0\n    inv, info = t\[slot]\n    name, j = what.split(':')\n    if name == 'info':\n        return float(info\[int(j)])\n    return inv\[int(name\[1]) * 4 + int(j)]\n\n\ndef _edited():\n    _state\['edits'] += 1\n\n\ndef install():\n    # Once per session: new tables after any edit of the nodes a shape can come through.\n    for cls in ('Sphere', 'Cube', 'Cylinder', 'TransformGeo', 'Scene', 'MergeGeo', 'MergeGeo2', 'Axis', 'Axis2',\n                'Axis3', 'Dot', 'NoOp', 'Group', 'Gizmo'):\n        nuke.addKnobChanged(_edited, nodeClass=cls)\n    return shape_value\n"
+ addUserKnob {43 analyze_lib l "analyze lib" +INVISIBLE}
+ analyze_lib "# 'analyze scene': reads the node's inputs (the bg's depth as numbers on a coarse grid, the\n# camera, the sun and light inputs) and sets the scene knobs to match. Only numbers are read:\n# no picture leaves the node. Undoable in one step. Writes what it found to 'analysis'.\nimport math\n\nGX, GY = 32, 18\n\n\ndef _find(n, idx, knob):\n    c = n.input(idx)\n    while c is not None and not c.knob(knob):\n        c = c.input(0) if c.inputs() else None\n    return c\n\n\ndef _pct(vals, q):\n    if not vals:\n        return 0.0\n    v = sorted(vals)\n    i = min(len(v) - 1, max(0, int(round(q * (len(v) - 1)))))\n    return v\[i]\n\n\ndef _depth_channel(n, bg):\n    chans = list(bg.channels())\n    cur = n\['depth_channel'].value()\n    cur = \{'depth': 'depth.Z'\}.get(cur, cur)\n    if cur in chans:\n        return cur\n    if 'depth.Z' in chans:\n        return 'depth.Z'\n    for test in (lambda c: c.endswith('.Z') and 'depth' in c.lower(),\n                 lambda c: 'depth' in c.lower(),\n                 lambda c: c.endswith('.Z') or c.endswith('.z')):\n        for c in chans:\n            if test(c):\n                return c\n    return None\n\n\ndef _scanline_on_b(bg):\n    # ScanlineRender (or RayRender) up the B pipe: its depth is 1/Z.\n    x, seen = bg, 0\n    while x is not None and seen < 300:\n        if x.Class() in ('ScanlineRender', 'ScanlineRender2', 'RayRender'):\n            return True\n        x = x.input(0) if x.inputs() else None\n        seen += 1\n    return False\n\n\ndef analyze(n):\n    undo = nuke.Undo()\n    undo.begin('EzCloudGen analyze scene')\n    try:\n        text = _analyze(n)\n    finally:\n        undo.end()\n    n\['analysis'].setValue(text)\n    if nuke.GUI:\n        nuke.message('EzCloudGen: analyze scene\\n\\n' + text)\n    return text\n\n\ndef _analyze(n):\n    found, changed, notes = \[], \[], \[]\n    s = n\['scene_scale'].value() or 0.1\n    f = nuke.frame()\n\n    def setk(name, value, label, fmt='%g'):\n        k = n\[name]\n        old = k.value()\n        if isinstance(value, (int, float)) and isinstance(old, (int, float)):\n            if abs(old - value) <= 1e-6 * max(1.0, abs(value)):\n                return\n            changed.append('%s: %s to %s' % (label, fmt % old, fmt % value))\n        else:\n            if old == value:\n                return\n            changed.append('%s: %s to %s' % (label, old, value))\n        k.setValue(value)\n\n    bg = n.input(0)\n    cam = _find(n, 1, 'focal')\n    atm = _find(n, 2, 'haze_density')\n    axis = _find(n, 3, 'world_matrix')\n\n    # The camera, as the kernel sees it.\n    M = \[n\['cam_world_matrix'].getValueAt(f, i) for i in range(16)]\n    focal = n\['cam_focal'].getValueAt(f) or 24.0\n    hap = n\['cam_haperture'].getValueAt(f) or 36.0\n    cam_y = M\[7]\n    if cam is None:\n        found.append('camera: none plugged in, so the node looks level from 300 m up. Plug in the shot camera.')\n    else:\n        found.append('camera: %s (focal %g, haperture %g)' % (cam.name(), focal, hap))\n\n    def to_world(p):\n        return \[M\[0] * p\[0] + M\[1] * p\[1] + M\[2] * p\[2] + M\[3],\n                M\[4] * p\[0] + M\[5] * p\[1] + M\[6] * p\[2] + M\[7],\n                M\[8] * p\[0] + M\[9] * p\[1] + M\[10] * p\[2] + M\[11]]\n\n    def to_cam(w):\n        r = \[w\[0] - M\[3], w\[1] - M\[7], w\[2] - M\[11]]\n        return \[M\[0] * r\[0] + M\[4] * r\[1] + M\[8] * r\[2],\n                M\[1] * r\[0] + M\[5] * r\[1] + M\[9] * r\[2],\n                M\[2] * r\[0] + M\[6] * r\[1] + M\[10] * r\[2]]\n\n    # The bg's depth.\n    W = H = 0\n    ground = \[]      # (planar or distance raw value, distance in scene units, world point, px, py)\n    sky_raw = \[]\n    mode = int(n\['depth_mode'].getValue())\n    chan = None\n    if bg is None:\n        found.append('bg: none plugged in. The clouds render over black at the root format.')\n    else:\n        fmt = bg.format()\n        W, H = fmt.width(), fmt.height()\n        chan = _depth_channel(n, bg)\n        if chan is None:\n            found.append('bg: %s, %d x %d, no depth channel. Clouds can\\'t go behind anything in the plate '\n                         'and cast no shadows on it.' % (bg.name(), W, H))\n        else:\n            raw = \[]\n            for j in range(GY):\n                for i in range(GX):\n                    px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                    try:\n                        v = bg.sample(chan, px, py, frame=f)\n                    except Exception:\n                        v = 0.0\n                    if not (v == v) or abs(v) == float('inf'):\n                        v = 0.0\n                    raw.append((v, px, py))\n            pos = \[v for v, _, _ in raw if v > 0]\n            # 1/Z: ScanlineRender up the plate's main pipe, or depth that is all under 1 (in scene\n            # units nothing in a shot is that close; 1/Z of anything past 1 unit is).\n            if pos and (_scanline_on_b(bg) or _pct(pos, 0.95) < 1.0):\n                new_mode = 1\n            elif mode == 1 and pos and _pct(pos, 0.5) > 1.0:\n                new_mode = 0\n            else:\n                new_mode = mode\n            if new_mode != mode:\n                setk('depth_mode', \['Planar Z', '1/Z (ScanlineRender)', 'Distance']\[new_mode], 'depth is')\n                mode = new_mode\n            vap = hap * H / float(W)\n            pts = \[]\n            for v, px, py in raw:\n                z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v\n                if z <= 0:\n                    sky_raw.append(0.0)\n                    continue\n                cd = \[(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]\n                l = math.sqrt(cd\[0] ** 2 + cd\[1] ** 2 + 1.0)\n                if mode == 2:\n                    dist, p = z, \[c / l * z for c in cd]\n                else:\n                    dist, p = z * l, \[c * z for c in cd]\n                pts.append((z, dist, to_world(p), px, py))\n            # Sky: a tight cluster of far distances (a sky dome) well past the rest.\n            pts.sort(key=lambda t: t\[1])\n            split = None\n            m = len(pts)\n            best = 0.0\n            for k in range(1, m):\n                lo, hi = pts\[k - 1]\[1], pts\[k]\[1]\n                top = m - k\n                if top < max(3, 0.03 * GX * GY) or k < 3 or lo <= 0:\n                    continue\n                gap = hi / lo\n                tight = pts\[-1]\[1] / hi <= 1.3\n                if (gap >= 1.5 and tight) or gap >= 4.0:\n                    if gap > best:\n                        best, split = gap, k\n            if split is not None:\n                ground = pts\[:split]\n                sky_raw += \[t\[0] for t in pts\[split:]]\n                g_max = max(t\[0] for t in ground)\n                s_min = min(t\[0] for t in pts\[split:])\n                # Just under the dome: terrain between the grid's samples can reach further than\n                # the farthest one sampled.\n                thr = (max(g_max * 1.2, 0.8 * s_min) if s_min > 1.25 * g_max else\n                       math.sqrt(g_max * s_min) if s_min > g_max else 0.5 * (ground\[-1]\[1] + pts\[split]\[1]))\n                setk('sky_depth', round(thr * s / 1000.0, 2), 'sky beyond (km)')\n                found.append('sky in the depth: a far dome at about %.0f km (%d%% of the frame)'\n                             % (pts\[split]\[1] * s / 1000.0, 100 * (m - split) // (GX * GY)))\n            else:\n                ground = pts\n                if ground:\n                    g_max = max(t\[0] for t in ground)\n                    if n\['sky_depth'].value() * 1000.0 / s <= g_max:\n                        setk('sky_depth', round(min(500.0, g_max * 1.5 * s / 1000.0), 2), 'sky beyond (km)')\n            n_sky = sum(1 for v in sky_raw if v == 0)\n            found.append('bg: %s, %d x %d, depth in %s (%s); %d%% of the frame is ground or buildings%s'\n                         % (bg.name(), W, H, chan, \['Planar Z', '1/Z', 'Distance']\[mode],\n                            100 * len(ground) // (GX * GY),\n                            ', %d%% depth 0 (sky)' % (100 * n_sky // (GX * GY)) if n_sky else ''))\n            if chan != \{'depth': 'depth.Z'\}.get(n\['depth_channel'].value(), n\['depth_channel'].value()):\n                setk('depth_channel', chan, 'depth channel')\n                try:\n                    n.node('DepthEnsure')\['channels'].setValue(chan)\n                    n.node('DepthSource')\['from0'].setValue(chan)\n                except Exception:\n                    pass\n            if not n\['occlude'].value():\n                setk('occlude', True, 'hide behind bg')\n\n    # The ground.\n    terrain_km = None\n    if len(ground) >= 8:\n        ys = \[t\[2]\[1] for t in ground]\n        gh = _pct(ys, 0.05)\n        if gh < cam_y:\n            setk('ground_height', round(gh, 3), 'ground height (scene units)')\n        else:\n            notes.append('Everything in the depth is at or above the camera, so the ground height was left '\n                         'as it was.')\n        d = \[t\[1] * s / 1000.0 for t in ground]\n        terrain_km = (_pct(d, 0.1), _pct(d, 0.5), _pct(d, 0.9))\n        found.append('ground: lowest visible ground at %g scene units; terrain %.2f / %.2f / %.2f km away '\n                     '(near / middle / far)' % (round(gh, 3), terrain_km\[0], terrain_km\[1], terrain_km\[2]))\n        if terrain_km\[2] > 0.8 * n\['max_distance'].value():\n            setk('max_distance', round(min(500.0, terrain_km\[2] * 1.5), 1), 'max distance (km)')\n    elif n\['ground_height'].value() >= cam_y:\n        setk('ground_height', 0.0, 'ground height (scene units)')\n        notes.append('The camera was below the ground; ground height reset to 0.')\n    cam_alt = (cam_y - n\['ground_height'].value()) * s\n    found.append('camera height: %.0f m above the ground' % cam_alt)\n\n    # Units sanity.\n    if terrain_km is not None and (terrain_km\[1] < 0.02 or terrain_km\[1] > 300):\n        notes.append('The terrain comes out %.3g km away at its middle. If that is wrong, check '\n                     '\\'units to metres\\' (now %g: 0.1 for decimetres, 1 for metres, 0.01 for centimetres) and '\n                     'press analyze again.' % (terrain_km\[1], s))\n    if cam_alt > 30000 or cam_alt < -1:\n        notes.append('A camera %.0f m above the ground looks wrong: check \\'units to metres\\' (now %g) '\n                     'and the camera.' % (cam_alt, s))\n\n    # Sun and light.\n    src = int(n\['sun_source'].getValueAt(f))\n    if src == 1:\n        found.append('sun: from the Axis %s' % (axis.name() if axis else ''))\n    elif src == 2:\n        found.append('sun: from the EzAtmosScatter %s' % (atm.name() if atm else ''))\n    else:\n        sd = n\['sun_direction'].value()\n        found.append('sun: the typed sun direction (%.2f, %.2f, %.2f)' % tuple(sd))\n        if n\['sun_from'].value() == 'Auto':\n            notes.append('No sun Axis or EzAtmosScatter is plugged in. For the plate\\'s own sun, plug the '\n                         'scene\\'s sun Axis into \\'sun\\' or its EzAtmosScatter into \\'atmos\\'.')\n    if int(n\['light_source'].getValueAt(f)):\n        found.append('light: sun and sky colour measured by the EzAtmosScatter')\n    else:\n        found.append('light: the Light tab\\'s sun and sky colours (Manual)')\n        if atm is not None and n\['light_from'].value() == 'Auto':\n            notes.append('The EzAtmosScatter is plugged in but measured no light (self lit?), so the '\n                         'Light tab\\'s colours are used.')\n\n    # The layers.\n    vap = hap * (H / float(W) if W else 9 / 16.0)\n    for i in (1, 2, 3):\n        p = 'l%d_' % i\n        if not n\[p + 'enable'].value():\n            continue\n        t = n\[p + 'type'].value()\n        if n\[p + 'volume'].value() < 0.5:\n            base = n\[p + 'base'].value()\n            top = base + n\[p + 'thickness'].value()\n            where = ('inside it' if base <= cam_alt <= top else\n                     'above it, looking down on it' if cam_alt > top else 'below it')\n            found.append('layer %d: %s deck, %.0f to %.0f m above the ground; the camera is %s'\n                         % (i, t, base, top, where))\n            continue\n        if n\[p + 'box_found'].value() > 0.5:\n            found.append('layer %d: %s volume, following the 3D box in box%d' % (i, t, i))\n            continue\n        pos = n\[p + 'vol_position'].value()\n        size = n\[p + 'vol_size'].value()\n        c = to_cam(\[pos\[0], pos\[1] + size\[1] / s / 2.0, pos\[2]])\n        reason = None\n        if c\[2] > -1e-6:\n            reason = 'behind the camera'\n        else:\n            u = c\[0] / -c\[2] * focal / hap\n            v = c\[1] / -c\[2] * focal / vap\n            if abs(u) > 0.65 or abs(v) > 0.65:\n                reason = 'out of frame'\n            elif ground and W:\n                # Hidden behind the plate's terrain?\n                px, py = (u + 0.5) * W, (v + 0.5) * H\n                near = min(ground, key=lambda tt: (tt\[3] - px) ** 2 + (tt\[4] - py) ** 2)\n                d_vol = math.sqrt(c\[0] ** 2 + c\[1] ** 2 + c\[2] ** 2) - 0.5 * max(size) / s\n                if (near\[3] - px) ** 2 + (near\[4] - py) ** 2 < (1.5 * W / GX) ** 2 and near\[1] < d_vol:\n                    reason = 'behind the plate\\'s terrain'\n        if reason is None:\n            found.append('layer %d: %s volume, in view' % (i, t))\n            continue\n        if n\[p + 'vol_position'].isAnimated():\n            notes.append('Layer %d (%s) is %s, but its position is animated, so it was left alone.'\n                         % (i, t, reason))\n            continue\n        km = n\[p + 'place_km'].value()\n        if terrain_km is not None:\n            km = max(0.2, min(km, 0.7 * terrain_km\[1]))\n        n\[p + 'place_km'].setValue(round(km, 2))\n        # The layer's own 'place in front of camera' code, run on this node.\n        exec(n\[p + 'place'].value().replace('nuke.thisNode()', '_n'), \{'nuke': nuke, '_n': n\})\n        changed.append('layer %d (%s) was %s: placed %.2f km in front of the camera' % (i, t, reason, km))\n\n    if n\['preview'].value():\n        notes.append('preview is on: half resolution, one sample. Turn it off for the real look.')\n\n    out = 'Found:\\n' + '\\n'.join('  ' + x for x in found)\n    out += '\\n\\nChanged:\\n' + ('\\n'.join('  ' + x for x in changed) if changed else '  nothing, it already matched')\n    if notes:\n        out += '\\n\\nCheck:\\n' + '\\n'.join('  ' + x for x in notes)\n    return out\n"
  addUserKnob {20 about l About}
- addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.41.0"}
+ addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.42.0"}
  addUserKnob {78 cam_world_matrix l "camera matrix" +INVISIBLE n 16}
  cam_world_matrix {{"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 0) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 1) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 2) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 3) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 4) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 5) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 6) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 7) if c is not None else 3000\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 8) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 9) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 10) if c is not None else 1\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 11) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 12) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 13) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 14) if c is not None else 0\}]"} {"\[python -execlocal \{c = nuke.thisNode().input(1)\nwhile c is not None and not c.knob('focal'):\n    c = c.input(0) if c.inputs() else None\nret = c\['world_matrix'].getValueAt(nuke.frame(), 15) if c is not None else 1\}]"}}
  addUserKnob {7 cam_focal +INVISIBLE}
@@ -983,7 +987,7 @@ Group {
   name bg
   xpos 180
  }
-set Nc81a8000 [stack 0]
+set N38128000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -1011,14 +1015,14 @@ set Nc81a8000 [stack 0]
   xpos 0
   ypos 180
  }
-set Nc81c1000 [stack 0]
+set N38141000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $Nc81c1000
+push $N38141000
  Merge2 {
   inputs 2
   operation plus
@@ -1035,7 +1039,7 @@ push $Nc81c1000
   xpos 0
   ypos 360
  }
-set Nc81c1c00 [stack 0]
+set N38141c00 [stack 0]
  Dot {
   name LayoutDot14
   xpos 86
@@ -1046,32 +1050,32 @@ set Nc81c1c00 [stack 0]
   xpos 86
   ypos 795
  }
-set N8bb30000 [stack 0]
+set N7acb0000 [stack 0]
  Dot {
   name LayoutDot21
   xpos 86
   ypos 1323
  }
-set N8bb31800 [stack 0]
+set N7acb1800 [stack 0]
  Dot {
   name LayoutDot22
   xpos 394
   ypos 1323
  }
-set N8bb31c00 [stack 0]
-push $Nc81c1000
+set N7acb1c00 [stack 0]
+push $N38141000
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set N8bae2800 [stack 0]
+set N7ac62800 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set N8bae2c00 [stack 0]
+set N7ac62c00 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -1094,29 +1098,29 @@ set N8bae2c00 [stack 0]
   xpos 626
   ypos 567
  }
-set Naa6d7c00 [stack 0]
+set N7ad17c00 [stack 0]
  Dot {
   name LayoutDot58
   xpos 626
   ypos 945
  }
-set Naa6f2c00 [stack 0]
+set N7ad32c00 [stack 0]
  Dot {
   name LayoutDot59
   xpos 610
   ypos 945
  }
-set Naa6f3000 [stack 0]
+set N7ad33000 [stack 0]
  Dot {
   name LayoutDot60
   xpos 430
   ypos 945
  }
-set Naa6f3400 [stack 0]
-push $Naa6f3400
-push $Naa6f3400
-push $Naa6f3400
-push $Nc81a8000
+set N7ad33400 [stack 0]
+push $N7ad33400
+push $N7ad33400
+push $N7ad33400
+push $N38128000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -1133,7 +1137,7 @@ push $Nc81a8000
   xpos 290
   ypos 243
  }
-push $N8bae2800
+push $N7ac62800
  Copy {
   inputs 2
   from0 depth.Z
@@ -1161,7 +1165,7 @@ push $N8bae2800
   xpos 470
   ypos 885
  }
-set N8bb7f800 [stack 0]
+set N7acff800 [stack 0]
  Dot {
   name LayoutDot47
   xpos 376
@@ -1195,26 +1199,26 @@ set N8bb7f800 [stack 0]
   xpos 446
   ypos 537
  }
-set N8bb4d800 [stack 0]
+set N7accd800 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
   ypos 855
  }
-set N8bb62800 [stack 0]
+set N7ace2800 [stack 0]
  Dot {
   name LayoutDot34
   xpos 412
   ypos 855
  }
-set N8bb62c00 [stack 0]
-push $N8bb30000
+set N7ace2c00 [stack 0]
+push $N7acb0000
  Dot {
   name LayoutDot16
   xpos 394
   ypos 795
  }
-set N8bb30400 [stack 0]
+set N7acb0400 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1432,13 +1436,13 @@ set N8bb30400 [stack 0]
   xpos 446
   ypos 1971
  }
-set Naa78c400 [stack 0]
+set N7adcc400 [stack 0]
  Dot {
   name LayoutDot106
   xpos 446
   ypos 2667
  }
-set Naa78cc00 [stack 0]
+set N7adccc00 [stack 0]
  Dot {
   name LayoutDot109
   xpos 446
@@ -1449,113 +1453,113 @@ set Naa78cc00 [stack 0]
   xpos 772
   ypos 3585
  }
-push $N8bb31c00
+push $N7acb1c00
  Dot {
   name LayoutDot23
   xpos 574
   ypos 1323
  }
-set N8bb4c000 [stack 0]
+set N7accc000 [stack 0]
  Dot {
   name LayoutDot24
   xpos 754
   ypos 1323
  }
-set N8bb4c400 [stack 0]
+set N7accc400 [stack 0]
  Dot {
   name LayoutDot25
   xpos 934
   ypos 1323
  }
-set N8bb4c800 [stack 0]
+set N7accc800 [stack 0]
  Dot {
   name LayoutDot26
   xpos 1114
   ypos 1323
  }
-push $Naa6f2c00
+push $N7ad32c00
  Dot {
   name LayoutDot61
   xpos 970
   ypos 945
  }
-set Naa6f3800 [stack 0]
+set N7ad33800 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1150
   ypos 945
  }
-set Naa6f3c00 [stack 0]
-push $Naa6f3c00
-push $Naa6f3c00
-push $Naa6f3c00
-push $N8bb7f800
+set N7ad33c00 [stack 0]
+push $N7ad33c00
+push $N7ad33c00
+push $N7ad33c00
+push $N7acff800
  Dot {
   name LayoutDot46
   xpos 556
   ypos 885
  }
-set N8bb7fc00 [stack 0]
+set N7acffc00 [stack 0]
  Dot {
   name LayoutDot48
   xpos 790
   ypos 885
  }
-set Naa6d6400 [stack 0]
+set N7ad16400 [stack 0]
  Dot {
   name LayoutDot49
   xpos 916
   ypos 885
  }
-set Naa6d6800 [stack 0]
+set N7ad16800 [stack 0]
  Dot {
   name LayoutDot50
   xpos 1096
   ypos 885
  }
-push $N8bb62800
+push $N7ace2800
  Dot {
   name LayoutDot35
   xpos 592
   ypos 855
  }
-set N8bb63000 [stack 0]
+set N7ace3000 [stack 0]
  Dot {
   name LayoutDot37
   xpos 736
   ypos 855
  }
-set N8bb63800 [stack 0]
+set N7ace3800 [stack 0]
  Dot {
   name LayoutDot38
   xpos 952
   ypos 855
  }
-set N8bb63c00 [stack 0]
+set N7ace3c00 [stack 0]
  Dot {
   name LayoutDot39
   xpos 1132
   ypos 855
  }
-push $N8bb30400
+push $N7acb0400
  Dot {
   name LayoutDot17
   xpos 574
   ypos 795
  }
-set N8bb30800 [stack 0]
+set N7acb0800 [stack 0]
  Dot {
   name LayoutDot18
   xpos 754
   ypos 795
  }
-set N8bb30c00 [stack 0]
+set N7acb0c00 [stack 0]
  Dot {
   name LayoutDot19
   xpos 934
   ypos 795
  }
-set N8bb31000 [stack 0]
+set N7acb1000 [stack 0]
  Dot {
   name LayoutDot20
   xpos 1114
@@ -1796,14 +1800,14 @@ set N8bb31000 [stack 0]
   xpos 470
   ypos 3291
  }
-push $N8bb4c800
-push $Naa6f3800
-push $Naa6f3800
-push $Naa6f3800
-push $Naa6f3800
-push $Naa6d6800
-push $N8bb63c00
-push $N8bb31000
+push $N7accc800
+push $N7ad33800
+push $N7ad33800
+push $N7ad33800
+push $N7ad33800
+push $N7ad16800
+push $N7ace3c00
+push $N7acb1000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2039,24 +2043,24 @@ push $N8bb31000
   xpos 314
   ypos 3231
  }
-push $Naa6d7c00
+push $N7ad17c00
  Dot {
   name LayoutDot55
   xpos 592
   ypos 567
  }
-set Naa6f2000 [stack 0]
-push $Naa6f2000
-push $Naa6f2000
-push $Naa6f2000
-push $Naa6f2000
-push $N8bb4d800
+set N7ad32000 [stack 0]
+push $N7ad32000
+push $N7ad32000
+push $N7ad32000
+push $N7ad32000
+push $N7accd800
  Dot {
   name LayoutDot31
   xpos 574
   ypos 537
  }
-push $Naa6f2000
+push $N7ad32000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2243,13 +2247,13 @@ push $Naa6f2000
   xpos 650
   ypos 975
  }
-set Naa73ec00 [stack 0]
+set N7ad7ec00 [stack 0]
  Dot {
   name LayoutDot85
   xpos 650
   ypos 1119
  }
-set Naa73f800 [stack 0]
+set N7ad7f800 [stack 0]
  Dot {
   name LayoutDot86
   xpos 650
@@ -2265,25 +2269,25 @@ set Naa73f800 [stack 0]
   xpos 626
   ypos 2103
  }
-push $Naa6f2000
+push $N7ad32000
  Dot {
   name LayoutDot56
   xpos 412
   ypos 567
  }
-set Naa6f2400 [stack 0]
-push $Naa6f2400
-push $Naa6f2400
-push $Naa6f2400
-push $Naa6f2400
-push $N8bb4d800
+set N7ad32400 [stack 0]
+push $N7ad32400
+push $N7ad32400
+push $N7ad32400
+push $N7ad32400
+push $N7accd800
  Dot {
   name LayoutDot30
   xpos 394
   ypos 537
  }
-set N8bb4dc00 [stack 0]
-push $Naa6f2400
+set N7accdc00 [stack 0]
+push $N7ad32400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2470,13 +2474,13 @@ push $Naa6f2400
   xpos 494
   ypos 915
  }
-set Naa726800 [stack 0]
+set N7ad66800 [stack 0]
  Dot {
   name LayoutDot76
   xpos 494
   ypos 1024
  }
-set Naa727400 [stack 0]
+set N7ad67400 [stack 0]
  Dot {
   name LayoutDot79
   xpos 494
@@ -2487,24 +2491,24 @@ set Naa727400 [stack 0]
   xpos 592
   ypos 1941
  }
-push $Naa6f2400
+push $N7ad32400
  Dot {
   name LayoutDot57
   xpos 232
   ypos 567
  }
-set Naa6f2800 [stack 0]
-push $Naa6f2800
-push $Naa6f2800
-push $Naa6f2800
-push $Naa6f2800
-push $N8bb4dc00
+set N7ad32800 [stack 0]
+push $N7ad32800
+push $N7ad32800
+push $N7ad32800
+push $N7ad32800
+push $N7accdc00
  Dot {
   name LayoutDot32
   xpos 214
   ypos 537
  }
-push $Naa6f2800
+push $N7ad32800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2691,13 +2695,13 @@ push $Naa6f2800
   xpos 290
   ypos 825
  }
-set Naa708400 [stack 0]
+set N7ad48400 [stack 0]
  Dot {
   name LayoutDot67
   xpos 290
   ypos 1038
  }
-set Naa709000 [stack 0]
+set N7ad49000 [stack 0]
  Dot {
   name LayoutDot70
   xpos 290
@@ -2768,7 +2772,7 @@ set Naa709000 [stack 0]
   xpos 338
   ypos 3111
  }
-push $Naa78cc00
+push $N7adccc00
  Dot {
   name LayoutDot107
   xpos 266
@@ -2779,33 +2783,33 @@ push $Naa78cc00
   xpos 266
   ypos 3051
  }
-push $N8bb31800
+push $N7acb1800
  Dot {
   name LayoutDot27
   xpos 86
   ypos 1506
  }
-push $Naa708400
+push $N7ad48400
  Dot {
   name LayoutDot65
   xpos 214
   ypos 825
  }
-set Naa708800 [stack 0]
-push $Naa73ec00
+set N7ad48800 [stack 0]
+push $N7ad7ec00
  Dot {
   name LayoutDot84
   xpos 250
   ypos 975
  }
-push $Naa726800
+push $N7ad66800
  Dot {
   name LayoutDot75
   xpos 196
   ypos 915
  }
-push $Naa708800
-push $N8bae2c00
+push $N7ad48800
+push $N7ac62c00
  Dot {
   name LayoutDot3
   xpos 754
@@ -2838,14 +2842,14 @@ push $N8bae2c00
   xpos 178
   ypos 1005
  }
-set Naa759000 [stack 0]
-push $N8bb62c00
+set N7ad99000 [stack 0]
+push $N7ace2c00
  Dot {
   name LayoutDot36
   xpos 232
   ypos 855
  }
-push $Naa759000
+push $N7ad99000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3021,14 +3025,14 @@ push $Naa759000
   ypos 1056
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set Nc8225400 [stack 0]
+set N381a7400 [stack 0]
  Dot {
   name LayoutDot159
   xpos 46
   ypos 1059
  }
-push $Naa73f800
-push $Naa727400
+push $N7ad7f800
+push $N7ad67400
  Dot {
   name LayoutDot77
   xpos 134
@@ -3039,7 +3043,7 @@ push $Naa727400
   xpos 134
   ypos 1119
  }
-push $Naa709000
+push $N7ad49000
  Dot {
   name LayoutDot68
   xpos 110
@@ -3050,7 +3054,7 @@ push $Naa709000
   xpos 110
   ypos 1107
  }
-push $N8bb7f800
+push $N7acff800
  Dot {
   name LayoutDot51
   xpos 470
@@ -3061,7 +3065,7 @@ push $N8bb7f800
   xpos 124
   ypos 1084
  }
-push $N8bb62800
+push $N7ace2800
  Dot {
   name LayoutDot40
   xpos 446
@@ -3072,7 +3076,7 @@ push $N8bb62800
   xpos 124
   ypos 1098
  }
-push $Nc81c1c00
+push $N38141c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3264,7 +3268,7 @@ push $Nc81c1c00
   xpos 0
   ypos 1584
  }
-set Na7669400 [stack 0]
+set Na1d9400 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -3281,40 +3285,40 @@ set Na7669400 [stack 0]
   xpos 180
   ypos 1644
  }
-set N8b87c800 [stack 0]
+set Nc21c800 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 1647
  }
-push $N8bb4c400
-push $Nc8225400
+push $N7accc400
+push $N381a7400
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1107
  }
-push $Naa73ec00
+push $N7ad7ec00
  Dot {
   name LayoutDot83
   xpos 808
   ypos 975
  }
-push $Naa726800
+push $N7ad66800
  Dot {
   name LayoutDot74
   xpos 718
   ypos 915
  }
-push $Naa708400
+push $N7ad48400
  Dot {
   name LayoutDot66
   xpos 772
   ypos 825
  }
-push $Naa6d6400
-push $N8bb63800
-push $N8bb30c00
+push $N7ad16400
+push $N7ace3800
+push $N7acb0c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3541,15 +3545,15 @@ push $N8bb30c00
   xpos 806
   ypos 2697
  }
-set Naa7c1c00 [stack 0]
+set N7ae01c00 [stack 0]
  Dot {
   name LayoutDot127
   xpos 412
   ypos 2697
  }
-set Naa7dc000 [stack 0]
-push $N8b87c800
-push $Na7669400
+set N7ae1c000 [stack 0]
+push $Nc21c800
+push $Na1d9400
  Merge2 {
   inputs 2
   operation multiply
@@ -3559,7 +3563,7 @@ push $Na7669400
   ypos 1704
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N8b87cc00 [stack 0]
+set Nc21cc00 [stack 0]
  Dot {
   name LayoutDot92
   xpos 86
@@ -3570,19 +3574,19 @@ set N8b87cc00 [stack 0]
   xpos 86
   ypos 2289
  }
-set Naa759800 [stack 0]
+set N7ad99800 [stack 0]
  Dot {
   name LayoutDot95
   xpos 86
   ypos 2607
  }
-set Naa770000 [stack 0]
+set N7adb2000 [stack 0]
  Dot {
   name LayoutDot96
   xpos 214
   ypos 2607
  }
-set Naa770400 [stack 0]
+set N7adb2400 [stack 0]
  Dot {
   name LayoutDot97
   xpos 394
@@ -3601,7 +3605,7 @@ set Naa770400 [stack 0]
   xpos 394
   ypos 2991
  }
-push $Naa7dc000
+push $N7ae1c000
  Dot {
   name LayoutDot128
   xpos 290
@@ -3612,15 +3616,15 @@ push $Naa7dc000
   xpos 290
   ypos 2931
  }
-push $Naa770400
-push $N8bb4c000
-push $Naa6f3000
-push $Naa6f3000
-push $Naa6f3000
-push $Naa6f3000
-push $N8bb7fc00
-push $N8bb63000
-push $N8bb30800
+push $N7adb2400
+push $N7accc000
+push $N7ad33000
+push $N7ad33000
+push $N7ad33000
+push $N7ad33000
+push $N7acffc00
+push $N7ace3000
+push $N7acb0800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3839,19 +3843,19 @@ push $N8bb30800
   xpos 674
   ypos 2790
  }
-set Naa7a7c00 [stack 0]
+set N7ade7c00 [stack 0]
  Dot {
   name LayoutDot119
   xpos 110
   ypos 2790
  }
-push $Naa759800
+push $N7ad99800
  Dot {
   name LayoutDot94
   xpos 214
   ypos 2289
  }
-push $Naa78c400
+push $N7adcc400
  Dot {
   name LayoutDot105
   xpos 214
@@ -3867,7 +3871,7 @@ push $Naa78c400
   xpos 180
   ypos 2052
  }
-push $Nc81a8000
+push $N38128000
  Dot {
   name LayoutDot11
   xpos 266
@@ -3913,7 +3917,7 @@ push $Nc81a8000
   xpos 180
   ypos 2370
  }
-push $N8b87cc00
+push $Nc21cc00
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -3930,7 +3934,7 @@ push $N8b87cc00
   xpos 0
   ypos 2808
  }
-set N8b8d9800 [stack 0]
+set Nc279800 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -3999,7 +4003,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3108
   disable {{!parent.sun_map_out}}
  }
-push $N8b8d9800
+push $Nc279800
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -4008,7 +4012,7 @@ push $N8b8d9800
   xpos 0
   ypos 3168
  }
-set Nc81f7e00 [stack 0]
+set N38177e00 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -4029,7 +4033,7 @@ set Nc81f7e00 [stack 0]
   xpos 180
   ypos 3288
  }
-push $Nc81f7e00
+push $N38177e00
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -4038,7 +4042,7 @@ push $Nc81f7e00
   xpos 0
   ypos 3348
  }
-set Nc81f8300 [stack 0]
+set N38178300 [stack 0]
  Dot {
   name LayoutDot153
   xpos 110
@@ -4054,19 +4058,19 @@ set Nc81f8300 [stack 0]
   xpos 232
   ypos 3555
  }
-set Naa827000 [stack 0]
+set N7ae69000 [stack 0]
  Dot {
   name LayoutDot156
   xpos 394
   ypos 3555
  }
-set Naa827400 [stack 0]
+set N7ae69400 [stack 0]
  Dot {
   name LayoutDot157
   xpos 574
   ypos 3555
  }
-set Naa827800 [stack 0]
+set N7ae69800 [stack 0]
  Dot {
   name LayoutDot158
   xpos 754
@@ -4084,7 +4088,7 @@ set Naa827800 [stack 0]
   xpos 754
   ypos 4359
  }
-push $Naa770000
+push $N7adb2000
  Dot {
   name LayoutDot98
   xpos 86
@@ -4095,7 +4099,7 @@ push $Naa770000
   xpos 214
   ypos 3525
  }
-push $Naa827000
+push $N7ae69000
  Copy {
   inputs 2
   channels rgba
@@ -4103,7 +4107,7 @@ push $Naa827000
   xpos 180
   ypos 3696
  }
-set N8b96cc00 [stack 0]
+set Nd2ccc00 [stack 0]
  Expression {
   expr0 r+(1-a)*0.14
   expr1 g+(1-a)*0.22
@@ -4303,7 +4307,7 @@ set N8b96cc00 [stack 0]
   xpos 180
   ypos 4296
  }
-push $Naa7a7c00
+push $N7ade7c00
  Dot {
   name LayoutDot120
   xpos 674
@@ -4314,7 +4318,7 @@ push $Naa7a7c00
   xpos 592
   ypos 3615
  }
-push $Naa827800
+push $N7ae69800
  Copy {
   inputs 2
   channels rgba
@@ -4327,7 +4331,7 @@ push $Naa827800
   xpos 574
   ypos 4359
  }
-push $Naa7c1c00
+push $N7ae01c00
  Dot {
   name LayoutDot130
   xpos 806
@@ -4338,7 +4342,7 @@ push $Naa7c1c00
   xpos 412
   ypos 3645
  }
-push $Naa827400
+push $N7ae69400
  Copy {
   inputs 2
   channels rgba
@@ -4351,13 +4355,13 @@ push $Naa827400
   xpos 394
   ypos 4347
  }
-push $N8b96cc00
+push $Nd2ccc00
  Dot {
   name LayoutDot7
   xpos 46
   ypos 3699
  }
-push $Nc81f8300
+push $N38178300
  Switch {
   inputs 6
   which {{parent.view}}
