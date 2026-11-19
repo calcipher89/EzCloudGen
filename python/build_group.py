@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.45.0"
+VERSION = "0.45.1"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -492,6 +492,7 @@ def knob_changed():
             "    n['samples'].setEnabled(n['sampling'].value() == 'Manual')\n"
             "if k.name() in ('debug', 'showPanel'):\n"
             "    n['print_debug'].setVisible(bool(n['debug'].value()))\n"
+            "    n['position_pass'].setVisible(bool(n['debug'].value()))\n"
             "if k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -1036,6 +1037,12 @@ def build_knobs(g):
     k = add(g, nuke.PyScript_Knob("print_debug", "print debug report", DEBUG_BUTTON),
             "Prints the debug report for this frame to the Script Editor.")
     k.clearFlag(nuke.STARTLINE)
+    k.setVisible(False)
+    k = add(g, nuke.Channel_Knob("position_pass", "position pass", 3),
+            "The bg's world-position layer for the debug report, when it isn't found by name (Pworld, "
+            "P_world, a custom AOV...). none: look for P, Pworld, P_world, position and similar. The "
+            "report compares it with the world positions from the depth and camera.")
+    k.setValue("none")
     k.setVisible(False)
 
     # Hidden: the camera, atmos and Axis through any Dots or NoOps in their inputs.

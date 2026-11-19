@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.45.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.45.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -74,7 +74,10 @@ position pass (P, Pworld, position...) compared with the world positions from th
 catches a wrong depth mode, film back, overscan or units; each layer's key knobs, where the camera sits and
 how much of the terrain is below, inside and above it; and the sun and light in use. Numbers only, so it is
 safe to share for a studio plate. Turn on 'debug report' and press 'print debug report'; while it is on,
-'analyze scene' prints it too.
+'analyze scene' prints it too. 'position pass' (shown with 'debug report') picks the bg's world-position
+layer when it isn't found by name (Pworld, P_world, a custom AOV); 'none' looks for P, Pworld, P_world,
+position and similar. The report says whether the layer was picked or found, and warns when it looks like
+a normal or reference pass (values within -1..1) or doesn't match the depth and camera at all.
 
 The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
 lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three

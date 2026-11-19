@@ -460,6 +460,21 @@ def main():
     dbg = lib["debug_report"](g)
     if "end of EzCloudGen debug report" not in dbg or "error in this section" in dbg:
         raise RuntimeError("debug report failed:\n" + dbg)
+    # 'position pass' picked by hand: a layer named Pworld (here a constant in -1..1, which the
+    # report should call out as not world positions).
+    nuke.Layer("Pworld", ["Pworld.red", "Pworld.green", "Pworld.blue"])
+    pw = nuke.nodes.Expression(name="TestPworld", channel0="Pworld.red", expr0="0.3",
+                               channel1="Pworld.green", expr1="0.2", channel2="Pworld.blue", expr2="0.1",
+                               channel3="none")
+    pw.setInput(0, ground)
+    g.setInput(0, pw)
+    g["position_pass"].setValue("Pworld")
+    dbg = lib["debug_report"](g)
+    if ("Pworld" not in dbg or "picked" not in dbg or "-1..1" not in dbg
+            or "error in this section" in dbg):
+        raise RuntimeError("debug report with a picked position pass failed:\n" + dbg)
+    g["position_pass"].setValue("none")
+    g.setInput(0, ground)
     if abs(g["ground_height"].value() - 200) > 20:
         raise RuntimeError("analyze: ground height %g, not 200" % g["ground_height"].value())
     if not 40 < g["sky_depth"].value() < 95:
