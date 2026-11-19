@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.44.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.45.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -63,6 +63,18 @@ front of the camera (no further than 0.7 of the middle terrain distance). It rea
 numbers on a 32 x 18 grid, so no picture leaves the node, then lists what it found and changed, and what
 to check by hand: 'units to metres' (it can't tell the scene's units) and the sun (plug the scene's sun
 Axis or EzAtmosScatter). One undo reverts it. Press it again after changing the camera or the units.
+
+**debug report** (About tab, off by default) prints a plain-text report of what the node sees to the Script
+Editor: the inputs and the bg's format, bbox (overscan flagged), B-pipe node classes and layers; the camera
+(matrix, translate/rotate, focal, apertures, window and projection knobs, flagging what EzCloudGen ignores or
+derives differently: a vaperture other than haperture x height / width, win_translate, win_scale, winroll);
+the scene and render knobs with the samples per pixel in use; the depth's statistics, a distance histogram,
+the share of >2x depth jumps and coarse 16 x 9 maps of distance and of height above 'ground height'; a
+position pass (P, Pworld, position...) compared with the world positions from the depth and camera, which
+catches a wrong depth mode, film back, overscan or units; each layer's key knobs, where the camera sits and
+how much of the terrain is below, inside and above it; and the sun and light in use. Numbers only, so it is
+safe to share for a studio plate. Turn on 'debug report' and press 'print debug report'; while it is on,
+'analyze scene' prints it too.
 
 The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
 lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three

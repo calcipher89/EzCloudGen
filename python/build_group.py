@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.44.0"
+VERSION = "0.45.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -490,6 +490,8 @@ def knob_changed():
             "        n['render_preset'].setValue('custom')\n"
             "if k.name() in ('sampling', 'showPanel'):\n"
             "    n['samples'].setEnabled(n['sampling'].value() == 'Manual')\n"
+            "if k.name() in ('debug', 'showPanel'):\n"
+            "    n['print_debug'].setVisible(bool(n['debug'].value()))\n"
             "if k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -603,6 +605,9 @@ def hidden(g, knob):
 
 # 'analyze scene': python/analyze_lib.py, stored in the hidden 'analyze_lib' knob.
 ANALYZE_LIB = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "analyze_lib.py")).read()
+DEBUG_BUTTON = ("g = {'nuke': nuke}\n"
+                "exec(nuke.thisNode()['analyze_lib'].getText(), g)\n"
+                "g['debug_report'](nuke.thisNode())\n")
 ANALYZE_BUTTON = ("g = {'nuke': nuke}\n"
                   "exec(nuke.thisNode()['analyze_lib'].getText(), g)\n"
                   "g['analyze'](nuke.thisNode())\n")
@@ -1022,6 +1027,16 @@ def build_knobs(g):
     k.setValue(ANALYZE_LIB)
     add(g, nuke.Tab_Knob("about", "About"))
     add(g, nuke.Text_Knob("version", "", "EzCloudGen v%s" % VERSION))
+    add(g, nuke.Boolean_Knob("debug", "debug report"),
+        "Prints a plain-text report of what the node sees to the Script Editor: the inputs, the bg's format, "
+        "bbox and layers, the camera (and settings EzCloudGen ignores, such as win_translate), the depth "
+        "(statistics, a histogram and coarse maps of distance and height), a position pass compared with the "
+        "depth and camera, each layer against the terrain, and the sun and light. Numbers only: no picture "
+        "leaves the node, so it is safe to share for a studio plate. While on, 'analyze scene' prints it too.")
+    k = add(g, nuke.PyScript_Knob("print_debug", "print debug report", DEBUG_BUTTON),
+            "Prints the debug report for this frame to the Script Editor.")
+    k.clearFlag(nuke.STARTLINE)
+    k.setVisible(False)
 
     # Hidden: the camera, atmos and Axis through any Dots or NoOps in their inputs.
     m = hidden(g, nuke.Array_Knob("cam_world_matrix", "camera matrix", 16))
