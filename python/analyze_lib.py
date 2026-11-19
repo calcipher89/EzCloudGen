@@ -623,12 +623,22 @@ def debug_report(n):
         section('position pass')
         if bg is None:
             return
-        pl = _find_p_layer(bg)
-        if pl is None:
-            w('  none found on the bg (looked for P, Pworld, P_world, position, ...)')
-            return
+        picked = n['position_pass'].value() if n.knob('position_pass') is not None else 'none'
+        if picked and picked not in ('none', 'all'):
+            pl, how = picked, 'picked in \'position pass\''
+            if _rgb_channels(bg, pl) is None:
+                w('  layer %s (picked) is not on the bg, or has fewer than 3 channels' % pl)
+                flags.append('\'position pass\' is set to %s, which the bg does not have.' % pl)
+                return
+        else:
+            pl, how = _find_p_layer(bg), 'auto-detected'
+            if pl is None:
+                w('  none found on the bg (looked for P, Pworld, P_world, position, ...); pick it in '
+                  '\'position pass\' (About tab) if it has another name')
+                return
         ch = _rgb_channels(bg, pl)
-        w('  layer %s (%s)' % (pl, ', '.join(ch)))
+        w('  layer %s (%s), %s' % (pl, ', '.join(ch), how))
+        absmax = []
         pts = grid.get('pts', {})
         errs, rel, pys, near_ys, ratio = [], [], [], [], []
         dmid = _pct([d for d, _ in pts.values()], 0.5) if pts else 0
@@ -643,6 +653,7 @@ def debug_report(n):
                 if not all(v == v and abs(v) != float('inf') for v in P) or (P[0] == 0 and P[1] == 0 and P[2] == 0):
                     continue
                 pys.append(P[1])
+                absmax.append(max(abs(v) for v in P))
                 t = pts.get((i, j))
                 if t is None:
                     continue
@@ -655,6 +666,10 @@ def debug_report(n):
                 if d <= dmid:
                     near_ys.append(P[1])
         w('  %d grid points with P; %d also with depth' % (len(pys), len(errs)))
+        if absmax and _pct(absmax, 0.95) <= 1.05:
+            w('  ! its values stay within -1..1: this looks like a normal pass or a normalised / reference '
+              'position (Pref), not world positions')
+            flags.append('Position pass %s has values within -1..1: probably not a world-position pass.' % pl)
         if pys:
             w('  P.y: p5 %.6g, p50 %.6g, p95 %.6g (scene units)' % (_pct(pys, .05), _pct(pys, .5), _pct(pys, .95)))
         if near_ys:
@@ -666,6 +681,10 @@ def debug_report(n):
               % (_pct(errs, .5), _pct(errs, .9), _pct(rel, .5), _pct(rel, .9)))
             r = _pct(ratio, 0.5)
             w('  |P - camera| / depth distance: median %.4g' % r)
+            if _pct(rel, .5) > 20.0:
+                w('  ! P and the depth+camera positions are far apart (median %.0f%% of distance): if this '
+                  'layer is not world position in the camera\'s space (Pref, object space, camera space), '
+                  'pick the world one in \'position pass\'' % _pct(rel, .5))
             if _pct(rel, .5) > 2.0:
                 hint = []
                 if abs(r - 1) > 0.05:
