@@ -2096,7 +2096,34 @@ local:
       // outline they feather over that width instead of stopping on one pixel's line.
       float ejx = 0.0f;
       float ejy = 0.0f;
-      if (bgEdgeSoft > 0.0f && occlude == 1 && tiles <= 1 && output != 5) {
+      // Without motion blur, 'edge softness' reads the depth at 12 points over a disc of that radius
+      // round the pixel (the same for every sample, so it is smooth, not grain), and each march step
+      // counts how many of them are still behind it: the clouds fade out across the bg's outline in
+      // proportion to how much of the disc is in front, like an anti-aliased, blurred holdout.
+      // With motion blur, each sample instead jitters its own lookup across the disc (below).
+      float tapT[12];
+      int nTap = 0;
+      if (bgEdgeSoft > 0.0f && !mbActive && occlude == 1 && tiles <= 1 && output != 5) {
+        nTap = 12;
+        float far0 = -1.0f;
+        for (int k = 0; k < 12; k++) {
+          float a = 2.3999632f * float(k);
+          float r = bgEdgeSoft * sqrt((float(k) + 0.5f) / 12.0f);
+          int ix = int(floor(float(pos.x) + r * cos(a) + 0.5f));
+          int iy = int(floor(float(pos.y) + r * sin(a) + 0.5f));
+          float z = zin(ix, iy).x;
+          if (depthMode == 1)
+            z = z > 0.0f ? 1.0f / z : 0.0f;
+          float tk = 1e30f;
+          if (z > 0.0f && z < skyDepth)
+            tk = depthMode == 2 ? z * sceneScale : z * sceneScale / zPer;
+          tapT[k] = tk;
+          far0 = max(far0, tk);
+        }
+        // March on to the farthest of them (sky: no limit).
+        sceneT = far0 >= 1e29f ? -1.0f : far0;
+      }
+      if (bgEdgeSoft > 0.0f && mbActive && occlude == 1 && tiles <= 1 && output != 5) {
         float ea = 6.2831853f * fr(radInv(s + 1, 2) + hash3(pos.x + 7.7f, pos.y + 2.9f, 3.0f));
         float er = bgEdgeSoft * sqrt(fr(radInv(s + 1, 3) + hash3(pos.y + 5.1f, pos.x + 1.3f, 9.0f)));
         ejx = er * cos(ea);
@@ -2304,7 +2331,24 @@ local:
         // surface (smoothstep), so it settles onto the terrain instead of being cut by it. The height
         // is the drop to where the ray lands, as over a level floor there, so a far contact seen at a
         // grazing angle fades over a long stretch of the ray (at most 5x contactSoft), not a few metres.
-        if (contactSoft > 0.0f && sceneT > 0.0f) {
+        if (nTap > 0) {
+          // 'edge softness': the share of the disc's depth points still behind this step, each
+          // with the ground contact fade.
+          float cov = 0.0f;
+          for (int k = 0; k < 12; k++) {
+            float c = 1.0f;
+            if (tapT[k] < 1e29f) {
+              if (contactSoft > 0.0f) {
+                c = clamp((tapT[k] - tm) * max(-d.y, 0.2f) / contactSoft, 0.0f, 1.0f);
+                c = c * c * (3.0f - 2.0f * c);
+              } else {
+                c = tapT[k] > tm ? 1.0f : 0.0f;
+              }
+            }
+            cov += c;
+          }
+          far *= cov / 12.0f;
+        } else if (contactSoft > 0.0f && sceneT > 0.0f) {
           float c = clamp((sceneT - tm) * max(-d.y, 0.2f) / contactSoft, 0.0f, 1.0f);
           far *= c * c * (3.0f - 2.0f * c);
         }

@@ -57,6 +57,8 @@ def analyze(n):
     finally:
         undo.end()
     n['analysis'].setValue(text)
+    if n.knob('debug') is not None and n['debug'].value():
+        debug_report(n)
     if nuke.GUI:
         nuke.message('EzCloudGen: analyze scene\n\n' + text)
     return text
@@ -342,3 +344,415 @@ def _analyze(n):
     if notes:
         out += '\n\nCheck:\n' + '\n'.join('  ' + x for x in notes)
     return out
+
+
+# ---------------------------------------------------------------------------------------------
+# 'debug report' (About tab): a plain-text dump of what the node sees, printed to the Script
+# Editor, for debugging a shot without sharing the plate. Numbers only: no picture leaves the node.
+
+_P_NAMES = ('p', 'pworld', 'p_world', 'pw', 'wp', 'position', 'world_position', 'worldposition',
+            'p_w', 'pos', 'worldpos', 'ppass', 'p_pass', 'position_world')
+
+
+def _rgb_channels(bg, layer):
+    chans = [c for c in bg.channels() if c.split('.')[0] == layer]
+    order = {'red': 0, 'x': 0, 'r': 0, 'green': 1, 'y': 1, 'g': 1, 'blue': 2, 'z': 2, 'b': 2}
+    chans = sorted(chans, key=lambda c: order.get(c.split('.')[-1].lower(), 9))
+    return chans[:3] if len(chans) >= 3 else None
+
+
+def _find_p_layer(bg):
+    layers = []
+    for c in bg.channels():
+        l = c.split('.')[0]
+        if l not in layers:
+            layers.append(l)
+    for l in layers:
+        if l.lower() in _P_NAMES and _rgb_channels(bg, l):
+            return l
+    for l in layers:
+        ll = l.lower()
+        if ('position' in ll or ll.startswith('pworld') or ll.startswith('p_')) and _rgb_channels(bg, l):
+            return l
+    return None
+
+
+def _fmt_list(vals, fmt='%.3g'):
+    return ' / '.join(fmt % v for v in vals)
+
+
+def debug_report(n):
+    out = []
+    w = out.append
+    f = nuke.frame()
+    s = n['scene_scale'].value() or 0.1
+
+    def section(title):
+        w('')
+        w('-- %s ' % title + '-' * max(4, 70 - len(title)))
+
+    def safe(fn):
+        try:
+            fn()
+        except Exception as e:
+            w('  (error in this section: %s: %s)' % (type(e).__name__, e))
+
+    ver = n['version'].value() if n.knob('version') else '?'
+    w('==== EzCloudGen debug report ' + '=' * 50)
+    w('%s, node %s, frame %d, Nuke %s' % (ver, n.fullName(), f, nuke.NUKE_VERSION_STRING))
+    rf = nuke.root().format()
+    w('root format %d x %d (pixel aspect %g), fps %g' % (rf.width(), rf.height(), rf.pixelAspect(),
+                                                          nuke.root()['fps'].value()))
+
+    bg = n.input(0)
+    cam = _find(n, 1, 'focal')
+    atm = _find(n, 2, 'haze_density')
+    axis = _find(n, 3, 'world_matrix')
+    M = [n['cam_world_matrix'].getValueAt(f, i) for i in range(16)]
+    focal = n['cam_focal'].getValueAt(f) or 24.0
+    hap = n['cam_haperture'].getValueAt(f) or 36.0
+    gh = n['ground_height'].value()
+    W = H = 0
+    if bg is not None:
+        W, H = bg.format().width(), bg.format().height()
+    vap = hap * (H / float(W) if W else 9 / 16.0)
+    flags = []
+
+    def to_world(p):
+        return [M[0] * p[0] + M[1] * p[1] + M[2] * p[2] + M[3],
+                M[4] * p[0] + M[5] * p[1] + M[6] * p[2] + M[7],
+                M[8] * p[0] + M[9] * p[1] + M[10] * p[2] + M[11]]
+
+    # ---- inputs
+    def inputs():
+        section('inputs')
+        names = ['bg', 'camera', 'atmos', 'sun', 'map', 'box1', 'box2', 'box3', 'holdout', 'add']
+        for i, nm in enumerate(names):
+            x = n.input(i) if i < n.inputs() or n.input(i) is not None else None
+            w('  %-8s %s' % (nm, '%s (%s)' % (x.name(), x.Class()) if x is not None else '-'))
+        if bg is None:
+            return
+        fm = bg.format()
+        w('  bg format %d x %d (pixel aspect %g); bbox %d %d %d %d'
+          % (fm.width(), fm.height(), fm.pixelAspect(), bg.bbox().x(), bg.bbox().y(), bg.bbox().w(), bg.bbox().h()))
+        bb = bg.bbox()
+        if bb.x() < 0 or bb.y() < 0 or bb.x() + bb.w() > fm.width() or bb.y() + bb.h() > fm.height():
+            flags.append('bg has overscan (bbox outside the format): the camera must match the FORMAT, '
+                         'not the overscan area.')
+            w('  ! bbox reaches outside the format (overscan)')
+        chain, x, k = [], bg, 0
+        while x is not None and k < 15:
+            chain.append(x.Class())
+            x = x.input(0) if x.inputs() else None
+            k += 1
+        w('  B pipe up from bg: ' + ' < '.join(chain))
+        layers = []
+        for c in bg.channels():
+            l = c.split('.')[0]
+            if l not in layers:
+                layers.append(l)
+        w('  bg layers: ' + ', '.join(layers))
+    safe(inputs)
+
+    # ---- camera
+    def camera():
+        section('camera')
+        if cam is None:
+            w('  none plugged in (the node uses a level camera 300 m up)')
+            return
+        w('  %s (%s)' % (cam.name(), cam.Class()))
+        w('  world matrix rows: ' + ' | '.join(_fmt_list(M[4 * r:4 * r + 4], '%.6g') for r in range(4)))
+        for kn in ('translate', 'rotate', 'rot_order', 'focal', 'haperture', 'vaperture', 'near', 'far',
+                   'win_translate', 'win_scale', 'winroll', 'projection_mode', 'focal_point', 'fstop'):
+            kk = cam.knob(kn)
+            if kk is None:
+                continue
+            try:
+                v = kk.getValueAt(f) if kk.arraySize() == 1 else [kk.getValueAt(f, i) for i in range(kk.arraySize())]
+            except Exception:
+                v = kk.value()
+            anim = ' (animated)' if hasattr(kk, 'isAnimated') and kk.isAnimated() else ''
+            w('  %-15s %s%s' % (kn, v, anim))
+        cv = cam.knob('vaperture').getValueAt(f) if cam.knob('vaperture') else None
+        if cv and W and abs(cv - vap) > 0.01 * vap:
+            flags.append('camera vaperture %.4g differs from haperture x bg height/width = %.4g: EzCloudGen derives '
+                         'the vertical aperture from the format, so the clouds may be stretched vertically '
+                         'against the plate.' % (cv, vap))
+        if cam.knob('win_translate'):
+            wt = [cam['win_translate'].getValueAt(f, i) for i in range(2)]
+            if abs(wt[0]) > 1e-6 or abs(wt[1]) > 1e-6:
+                flags.append('camera win_translate %s is not 0: EzCloudGen ignores it, so the clouds are offset '
+                             'from the plate.' % wt)
+        if cam.knob('win_scale'):
+            ws = [cam['win_scale'].getValueAt(f, i) for i in range(2)]
+            if abs(ws[0] - 1) > 1e-6 or abs(ws[1] - 1) > 1e-6:
+                flags.append('camera win_scale %s is not 1: EzCloudGen ignores it.' % ws)
+        if cam.knob('winroll') and abs(cam['winroll'].getValueAt(f)) > 1e-6:
+            flags.append('camera winroll is not 0: EzCloudGen ignores it.')
+        for kn in ('focal', 'haperture'):
+            if cam.knob(kn) and cam[kn].isAnimated():
+                flags.append('camera %s is animated (fine, it is read per frame; just so you know).' % kn)
+        if cam.knob('projection_mode') and cam['projection_mode'].value() not in ('perspective', 0, '0'):
+            flags.append('camera projection is %s: EzCloudGen assumes perspective.' % cam['projection_mode'].value())
+        fwd = [-M[2], -M[6], -M[10]]
+        l = math.sqrt(sum(c * c for c in fwd)) or 1.0
+        fwd = [c / l for c in fwd]
+        pitch = math.degrees(math.asin(max(-1.0, min(1.0, fwd[1]))))
+        head = math.degrees(math.atan2(fwd[0], -fwd[2]))
+        w('  as used: focal %g, haperture %g, vaperture (from format) %.4g; position %s scene units; '
+          'looking %.1f deg %s level, heading %.1f deg'
+          % (focal, hap, vap, _fmt_list(M[3:12:4], '%.6g'), abs(pitch), 'below' if pitch < 0 else 'above', head))
+        w('  camera height above ground height: %.1f m' % ((M[7] - gh) * s))
+        try:
+            P = [n['cam_prev_matrix'].getValueAt(f, i) for i in range(16)]
+            N = [n['cam_next_matrix'].getValueAt(f, i) for i in range(16)]
+            mv = math.sqrt(sum((N[i] - P[i]) ** 2 for i in (3, 7, 11))) * s / 2.0
+            w('  camera moves %.2f m per frame (from the frames either side)' % mv)
+        except Exception:
+            pass
+    safe(camera)
+
+    # ---- scene knobs
+    def scene():
+        section('scene knobs')
+        for kn in ('scene_scale', 'ground_height', 'earth', 'occlude', 'depth_channel', 'depth_mode', 'sky_depth',
+                   'bg_edge_softness', 'ground_softness', 'max_distance', 'render_preset', 'resolution', 'quality',
+                   'edge_steps', 'sampling', 'samples', 'preview', 'motion_blur', 'haze_distance', 'horizon_haze',
+                   'light_grid', 'view'):
+            if n.knob(kn) is not None:
+                w('  %-17s %s' % (kn, n[kn].value()))
+        try:
+            cc = n.node('Clouds_Color')
+            spp = cc['EzCloudGen_samples'].value()
+            w('  samples per pixel in use: %g' % spp)
+        except Exception:
+            pass
+    safe(scene)
+
+    # ---- depth, terrain, P
+    grid = {}
+
+    def depth():
+        section('depth (bg, %dx%d grid)' % (GX, GY))
+        if bg is None:
+            w('  no bg')
+            return
+        chan = _depth_channel(n, bg)
+        mode = int(n['depth_mode'].getValue())
+        w('  channel %s, read as %s' % (chan, ['Planar Z', '1/Z', 'Distance'][mode]))
+        if chan is None:
+            return
+        raw, bad = [], 0
+        for j in range(GY):
+            for i in range(GX):
+                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY
+                try:
+                    v = bg.sample(chan, px, py, frame=f)
+                except Exception:
+                    v = 0.0
+                if not (v == v) or abs(v) == float('inf'):
+                    bad += 1
+                    v = 0.0
+                raw.append(v)
+        pos = [v for v in raw if v > 0]
+        w('  raw: min %.6g, p5 %.6g, p50 %.6g, p95 %.6g, max %.6g; %d%% zero, %d%% NaN/inf, %d%% negative'
+          % (min(pos) if pos else 0, _pct(pos, .05), _pct(pos, .5), _pct(pos, .95), max(pos) if pos else 0,
+             100 * sum(1 for v in raw if v == 0) // len(raw), 100 * bad // len(raw),
+             100 * sum(1 for v in raw if v < 0) // len(raw)))
+        if _scanline_on_b(bg) and mode != 1:
+            flags.append('A ScanlineRender/RayRender is up the bg pipe but depth is read as %s; its depth is 1/Z.'
+                         % ['Planar Z', '1/Z', 'Distance'][mode])
+        sky_su = n['sky_depth'].value() * 1000.0 / s
+        pts = {}
+        for idx, v in enumerate(raw):
+            j, i = divmod(idx, GX)
+            px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY
+            z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v
+            if z <= 0 or z >= sky_su:
+                continue
+            cd = [(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]
+            l = math.sqrt(cd[0] ** 2 + cd[1] ** 2 + 1.0)
+            if mode == 2:
+                dist, p = z, [c / l * z for c in cd]
+            else:
+                dist, p = z * l, [c * z for c in cd]
+            pts[(i, j)] = (dist, to_world(p))
+        grid['pts'] = pts
+        w('  %d%% beyond \'sky beyond\' (%.4g km) or zero = sky' % (100 - 100 * len(pts) // len(raw),
+                                                                   n['sky_depth'].value()))
+        if not pts:
+            return
+        dk = [d * s / 1000.0 for d, _ in pts.values()]
+        bins = [0.1, 0.3, 1, 3, 10, 30, 100, 300, 1e9]
+        hist, lo = [], 0.0
+        for b in bins:
+            c = sum(1 for d in dk if lo <= d < b)
+            hist.append('%s-%s km: %d' % (('%g' % lo), ('%g' % b) if b < 1e8 else 'inf', c))
+            lo = b
+        w('  distance histogram: ' + ', '.join(hist))
+        # Edges: neighbours with a >2x depth jump.
+        jumps = tot = 0
+        for (i, j), (d, _) in pts.items():
+            for di, dj in ((1, 0), (0, 1)):
+                q = pts.get((i + di, j + dj))
+                if q is None:
+                    continue
+                tot += 1
+                if max(d, q[0]) / max(min(d, q[0]), 1e-9) > 2.0:
+                    jumps += 1
+        w('  depth edges: %d of %d grid neighbours (%.0f%%) jump more than 2x in depth' % (jumps, tot,
+                                                                                          100.0 * jumps / max(tot, 1)))
+        # Coarse maps, 16x9: distance (km) and height above 'ground height' (m). Top row = top of frame.
+        def cmap(val, title, fmt):
+            w('  %s (16x9, top of frame first; . = sky):' % title)
+            for jj in range(8, -1, -1):
+                row = []
+                for ii in range(16):
+                    vs = [val(pts[(2 * ii + a, 2 * jj + b)]) for a in (0, 1) for b in (0, 1)
+                          if (2 * ii + a, 2 * jj + b) in pts]
+                    row.append(fmt % (sorted(vs)[len(vs) // 2]) if vs else '      .')
+                w('   ' + ''.join(row))
+        cmap(lambda t: t[0] * s / 1000.0, 'distance km', '%7.2f')
+        cmap(lambda t: (t[1][1] - gh) * s, 'height above ground height, m', '%7.0f')
+        hs = [(t[1][1] - gh) * s for t in pts.values()]
+        w('  heights above ground height (m): p5 %.0f, p25 %.0f, p50 %.0f, p75 %.0f, p95 %.0f'
+          % (_pct(hs, .05), _pct(hs, .25), _pct(hs, .5), _pct(hs, .75), _pct(hs, .95)))
+    safe(depth)
+
+    def ppass():
+        section('position pass')
+        if bg is None:
+            return
+        pl = _find_p_layer(bg)
+        if pl is None:
+            w('  none found on the bg (looked for P, Pworld, P_world, position, ...)')
+            return
+        ch = _rgb_channels(bg, pl)
+        w('  layer %s (%s)' % (pl, ', '.join(ch)))
+        pts = grid.get('pts', {})
+        errs, rel, pys, near_ys, ratio = [], [], [], [], []
+        dmid = _pct([d for d, _ in pts.values()], 0.5) if pts else 0
+        camp = [M[3], M[7], M[11]]
+        for j in range(GY):
+            for i in range(GX):
+                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY
+                try:
+                    P = [bg.sample(c, px, py, frame=f) for c in ch]
+                except Exception:
+                    continue
+                if not all(v == v and abs(v) != float('inf') for v in P) or (P[0] == 0 and P[1] == 0 and P[2] == 0):
+                    continue
+                pys.append(P[1])
+                t = pts.get((i, j))
+                if t is None:
+                    continue
+                d, wp = t
+                e = math.sqrt(sum((P[k] - wp[k]) ** 2 for k in range(3)))
+                errs.append(e * s)
+                rel.append(100.0 * e / max(d, 1e-9))
+                dp = math.sqrt(sum((P[k] - camp[k]) ** 2 for k in range(3)))
+                ratio.append(dp / max(d, 1e-9))
+                if d <= dmid:
+                    near_ys.append(P[1])
+        w('  %d grid points with P; %d also with depth' % (len(pys), len(errs)))
+        if pys:
+            w('  P.y: p5 %.6g, p50 %.6g, p95 %.6g (scene units)' % (_pct(pys, .05), _pct(pys, .5), _pct(pys, .95)))
+        if near_ys:
+            pg = _pct(near_ys, 0.05)
+            w('  ground from P (5th pct of the nearer half): %.6g scene units; ground height knob %.6g (%+.1f m)'
+              % (pg, gh, (gh - pg) * s))
+        if errs:
+            w('  P vs depth+camera world position: error median %.2f m, p90 %.2f m; %.2f%% / %.2f%% of distance'
+              % (_pct(errs, .5), _pct(errs, .9), _pct(rel, .5), _pct(rel, .9)))
+            r = _pct(ratio, 0.5)
+            w('  |P - camera| / depth distance: median %.4g' % r)
+            if _pct(rel, .5) > 2.0:
+                hint = []
+                if abs(r - 1) > 0.05:
+                    hint.append('distances differ by a factor %.3g: wrong \'depth is\' mode or units '
+                                '(P and depth in different units?)' % r)
+                else:
+                    hint.append('distances agree but positions do not: the camera does not match the render '
+                                '(film back / vaperture, win_translate, overscan, or a different camera)')
+                flags.append('Position pass and depth disagree (median %.1f%% of distance): ' % _pct(rel, .5) +
+                             '; '.join(hint))
+            else:
+                w('  -> depth, depth mode, camera and units agree with the position pass')
+    safe(ppass)
+
+    # ---- layers
+    def layers():
+        section('layers')
+        cam_alt = (M[7] - gh) * s
+        hs = [(t[1][1] - gh) * s for t in grid.get('pts', {}).values()]
+        for i in (1, 2, 3):
+            p = 'l%d_' % i
+            if not n[p + 'enable'].value():
+                w('  layer %d: off' % i)
+                continue
+            vol = n[p + 'volume'].value() > 0.5
+            sd = n[p + 'sigma'].value() * n[p + 'density'].value()
+            w('  layer %d: %s, %s; coverage %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '
+              'edge %g, model %s, wind %g deg %g m/s'
+              % (i, n[p + 'type'].value(), 'volume' if vol else 'deck', n[p + 'coverage'].value(), sd,
+                 n[p + 'scale_km'].value(), n[p + 'detail_size'].value(), n[p + 'erosion'].value(),
+                 n[p + 'edge'].value(), n[p + 'detail_model'].value(), n[p + 'wind_deg'].value(),
+                 n[p + 'wind_speed'].value()))
+            if not vol:
+                base = n[p + 'base'].value()
+                top = base + n[p + 'thickness'].value()
+                where = 'inside' if base <= cam_alt <= top else 'above' if cam_alt > top else 'below'
+                w('    base %.0f m, top %.0f m above ground height (scene y %.6g to %.6g); camera %s it'
+                  % (base, top, gh + base / s, gh + top / s, where))
+                if hs:
+                    below = sum(1 for h in hs if h < base)
+                    inside = sum(1 for h in hs if base <= h <= top)
+                    above = len(hs) - below - inside
+                    w('    terrain in view: %d%% below the base, %d%% inside the layer (fog meets ground there), '
+                      '%d%% above the top' % (100 * below // len(hs), 100 * inside // len(hs), 100 * above // len(hs)))
+            else:
+                if n[p + 'box_found'].value() > 0.5:
+                    w('    follows the 3D box in box%d: centre %s, size %s'
+                      % (i, _fmt_list([n[p + 'box_center'].value(k) for k in range(3)], '%.6g'),
+                         _fmt_list([n[p + 'box_size'].value(k) for k in range(3)], '%.6g')))
+                else:
+                    w('    position %s (scene units), size %s m, shape %s'
+                      % (_fmt_list(n[p + 'vol_position'].value(), '%.6g'), _fmt_list(n[p + 'vol_size'].value(), '%g'),
+                         n[p + 'vol_shape'].value()))
+    safe(layers)
+
+    # ---- sun and light
+    def light():
+        section('sun and light')
+        w('  sun from %s, light from %s; atmos %s, sun axis %s'
+          % (n['sun_from'].value(), n['light_from'].value(), atm.name() if atm else '-', axis.name() if axis else '-'))
+        src = int(n['sun_source'].getValueAt(f))
+        sv = [n['sun_in_use'].getValueAt(f, i) for i in range(3)]
+        l = math.sqrt(sum(c * c for c in sv)) or 1.0
+        sv = [c / l for c in sv]
+        elev = math.degrees(math.asin(max(-1.0, min(1.0, sv[1]))))
+        fwd = [-M[2], -M[10]]
+        az = math.degrees(math.atan2(sv[0] * fwd[1] - sv[2] * fwd[0], sv[0] * fwd[0] + sv[2] * fwd[1]))
+        w('  source in use: %s; direction %s, %.1f deg up, %.1f deg %s of the camera heading'
+          % (['typed', 'Axis', 'EzAtmosScatter'][src] if 0 <= src <= 2 else src, _fmt_list(sv, '%.3f'), elev,
+             abs(az), 'right' if az < 0 else 'left'))
+        w('  light source: %s; sun colour in use %s; sky colour in use %s'
+          % ('EzAtmosScatter' if int(n['light_source'].getValueAt(f)) else 'Manual (Light tab)',
+             _fmt_list([n['sun_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g'),
+             _fmt_list([n['sky_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g')))
+    safe(light)
+
+    section('flags')
+    if flags:
+        for x in flags:
+            w('  ! ' + x)
+    else:
+        w('  none')
+    if n.knob('analysis') and n['analysis'].value():
+        section('last analyze scene text')
+        for line in n['analysis'].value().splitlines():
+            w('  ' + line)
+    w('==== end of EzCloudGen debug report ' + '=' * 43)
+    text = '\n'.join(out)
+    print(text)
+    return text

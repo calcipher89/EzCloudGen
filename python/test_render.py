@@ -456,6 +456,10 @@ def main():
     exec(g["analyze_lib"].getText(), lib)
     report = lib["analyze"](g)
     print("analyze scene:\n" + report)
+    # The debug report (About tab): runs headless and every section completes.
+    dbg = lib["debug_report"](g)
+    if "end of EzCloudGen debug report" not in dbg or "error in this section" in dbg:
+        raise RuntimeError("debug report failed:\n" + dbg)
     if abs(g["ground_height"].value() - 200) > 20:
         raise RuntimeError("analyze: ground height %g, not 200" % g["ground_height"].value())
     if not 40 < g["sky_depth"].value() < 95:
