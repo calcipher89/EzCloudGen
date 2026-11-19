@@ -150,7 +150,7 @@ time & map) changes the shapes slowly over time. For motion blur, turn on **moti
 | Grainy or speckled edges | raise **sampling**, or **edge steps** to 3 |
 | Far deck shimmers on camera moves | keep **horizon samples** at 4 (the default) |
 | Fog ends in a hard line where it meets the valley floor or a slope | raise **ground softness** (EzCloudGen tab, metres of height above the terrain) |
-| A hard line where clouds meet a ridge or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to a few pixels |
+| A hard or stair-stepped line where clouds meet a ridge, tree line or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to 2-6 pixels |
 | Clouds in front of the mountains, wrong height, or a volume you can't find | press **analyze scene**, then check **units to metres** (EzCloudGen tab) |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
 | Render too slow | render preset *draft* or **preview** while you work |

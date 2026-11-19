@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.43.1"
+VERSION = "0.44.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -701,9 +701,10 @@ def build_knobs(g):
         "onto it (cloud_shadow, and the Shadow view). Without a depth channel on the bg, nothing is "
         "hidden.").setValue(True)
     k = add(g, nuke.Double_Knob("bg_edge_softness", "edge softness"),
-            "Feathers where the clouds meet the bg's outline (a ridge, a building), in pixels of the plate: "
-            "each sample reads the bg's depth up to this far off its own pixel. Softens a hard or aliased "
-            "depth edge, with or without motion blur; smoother with more samples. 0: the pixel's own depth.")
+            "Feathers where the clouds meet the bg's outline (a ridge, a tree line, a building), in pixels of "
+            "the plate: each pixel reads the bg's depth at 12 points over a disc this wide, and the clouds fade "
+            "by how much of it is in front of them, a smooth, anti-aliased holdout (no grain). With motion blur "
+            "each sample jitters its lookup over the disc instead. 0: the pixel's own depth, a hard cut.")
     k.setRange(0, 20)
     k.clearFlag(nuke.STARTLINE)
     k = add(g, nuke.Double_Knob("ground_softness", "ground softness"),

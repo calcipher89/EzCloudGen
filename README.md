@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.43.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.44.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -21,9 +21,11 @@ EzCloudGen). Inputs:
   channel (depth.Z by default; 'depth is' Planar Z, ScanlineRender's 1/Z or distance), the
   clouds go behind its mountains and buildings, and their shadows fall on it ('hide behind bg').
   Depth of 0, or beyond 'sky beyond' (km), is sky.
-  'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline: each
-  sample reads the bg's depth up to that far off its own pixel, so a hard or aliased depth edge
-  (a ridge, a building) blends instead of cutting a line. Smoother with more samples.
+  'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline (a ridge, a
+  tree line, a building): each pixel reads the bg's depth at 12 points over a disc that wide, and the
+  clouds fade by the share of those points in front of them, so the unanti-aliased depth edge blends
+  smoothly instead of cutting a stair-stepped line. It is the same for every sample, so it adds no
+  grain. With motion blur on, each sample jitters its lookup over the disc instead.
   'ground softness' (metres, default 50) thins the clouds over that much height above the bg's surface,
   so fog lying on a valley floor or a deck crossing a mountainside settles onto the terrain instead of
   stopping in a hard line, near or far (the height is the drop to where the view lands, so a far contact
