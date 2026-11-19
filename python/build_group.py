@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.42.0"
+VERSION = "0.43.1"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -706,6 +706,13 @@ def build_knobs(g):
             "depth edge, with or without motion blur; smoother with more samples. 0: the pixel's own depth.")
     k.setRange(0, 20)
     k.clearFlag(nuke.STARTLINE)
+    k = add(g, nuke.Double_Knob("ground_softness", "ground softness"),
+            "Where the clouds meet the bg's surface (fog lying on a valley floor, a deck crossing a "
+            "mountainside), they thin out over this many metres of height above it, so they settle onto "
+            "the terrain instead of stopping in a hard line, near or far. Needs the bg's depth and "
+            "'hide behind bg'. 0: a hard cut.")
+    k.setRange(0, 500)
+    k.setValue(50)
     c = add(g, nuke.Channel_Knob("depth_channel", "depth"), "The bg channel holding its depth.")
     c.setValue("depth.Z")
     m = add(g, nuke.Enumeration_Knob("depth_mode", "depth is", DEPTH_MODES),
@@ -1221,6 +1228,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
         for j in range(3):
             n[k + "shape_info"].setExpression("parent.shape%d_info.%d" % (slot, j), slot * 3 + j)
     n[k + "bg_edge_softness"].setExpression("parent.bg_edge_softness * parent.work_scale")
+    n[k + "ground_softness"].setExpression("parent.ground_softness")
     n[k + "motion_blur"].setExpression("parent.motion_blur && !parent.preview")
     n[k + "shutter"].setExpression("parent.shutter")
     n[k + "sky_shading"].setExpression("parent.sky_shading")

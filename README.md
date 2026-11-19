@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.42.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.43.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -24,6 +24,10 @@ EzCloudGen). Inputs:
   'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline: each
   sample reads the bg's depth up to that far off its own pixel, so a hard or aliased depth edge
   (a ridge, a building) blends instead of cutting a line. Smoother with more samples.
+  'ground softness' (metres, default 50) thins the clouds over that much height above the bg's surface,
+  so fog lying on a valley floor or a deck crossing a mountainside settles onto the terrain instead of
+  stopping in a hard line, near or far (the height is the drop to where the view lands, so a far contact
+  seen at a grazing angle fades over a long stretch of the view, up to 5x the setting). 0 is a hard cut.
 - **camera**: the shot camera. Without one the node looks level from 300 m up.
 - **atmos** (optional): an EzAtmosScatter. The sun direction and the sun and sky light it
   measures in its HDRI light the clouds ('light from' Auto).
@@ -48,8 +52,10 @@ EzCloudGen). Inputs:
 
 **analyze scene** (top of the EzCloudGen tab) sets the node up from its inputs at the current frame. It finds
 the bg's depth channel and whether it is Planar Z or 1/Z (a ScanlineRender up the plate's B pipe, or depth
-that is all under 1), where a sky dome starts in it ('sky beyond'), and the ground height (the lowest ground
-the depth shows under the camera). It turns on 'hide behind bg', raises 'max distance' to reach the
+that is all under 1), where a sky dome starts in it ('sky beyond'), and the ground height (the valley floor: the
+lowest ground in the nearer half of the terrain, so a far basin or the earth's curve in the render doesn't pull
+it down). It reports the terrain's heights above that floor and warns when a deck's base is below the ridges
+or a dense deck is seen from far above. It turns on 'hide behind bg', raises 'max distance' to reach the
 terrain, and moves any placed volume that is behind the camera, out of frame or behind the terrain to in
 front of the camera (no further than 0.7 of the middle terrain distance). It reads the depth only as
 numbers on a 32 x 18 grid, so no picture leaves the node, then lists what it found and changed, and what

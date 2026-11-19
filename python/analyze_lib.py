@@ -207,11 +207,19 @@ def _analyze(n):
             if not n['occlude'].value():
                 setk('occlude', True, 'hide behind bg')
 
-    # The ground.
+    # The ground: the low ground in the nearer half of the terrain (the valley the shot looks into).
+    # Far terrain can lie well below it (a distant basin, the earth's curve in the render) and would
+    # put every deck too low for the valley in view.
     terrain_km = None
+    relief = None
     if len(ground) >= 8:
-        ys = [t[2][1] for t in ground]
+        d_mid = _pct([t[1] for t in ground], 0.5)
+        near = [t for t in ground if t[1] <= d_mid]
+        if len(near) < 8:
+            near = ground
+        ys = [t[2][1] for t in near]
         gh = _pct(ys, 0.05)
+        low_all = _pct([t[2][1] for t in ground], 0.05)
         if gh < cam_y:
             setk('ground_height', round(gh, 3), 'ground height (scene units)')
         else:
@@ -219,8 +227,14 @@ def _analyze(n):
                          'as it was.')
         d = [t[1] * s / 1000.0 for t in ground]
         terrain_km = (_pct(d, 0.1), _pct(d, 0.5), _pct(d, 0.9))
-        found.append('ground: lowest visible ground at %g scene units; terrain %.2f / %.2f / %.2f km away '
-                     '(near / middle / far)' % (round(gh, 3), terrain_km[0], terrain_km[1], terrain_km[2]))
+        relief = ((_pct(ys, 0.5) - gh) * s, (_pct(ys, 0.95) - gh) * s)
+        found.append('ground: valley floor (lowest ground in the nearer half) at %g scene units; terrain %.2f / '
+                     '%.2f / %.2f km away (near / middle / far)'
+                     % (round(gh, 3), terrain_km[0], terrain_km[1], terrain_km[2]))
+        found.append('terrain heights above that floor: middle %.0f m, ridges up to %.0f m' % relief)
+        if (gh - low_all) * s > 50:
+            found.append('far terrain goes %.0f m lower than that floor (not used for the ground height)'
+                         % ((gh - low_all) * s))
         if terrain_km[2] > 0.8 * n['max_distance'].value():
             setk('max_distance', round(min(500.0, terrain_km[2] * 1.5), 1), 'max distance (km)')
     elif n['ground_height'].value() >= cam_y:
@@ -272,6 +286,17 @@ def _analyze(n):
                      'above it, looking down on it' if cam_alt > top else 'below it')
             found.append('layer %d: %s deck, %.0f to %.0f m above the ground; the camera is %s'
                          % (i, t, base, top, where))
+            if relief is not None and base < relief[1]:
+                notes.append('Layer %d\'s base (%.0f m) is below the ridges in view (up to %.0f m above the floor): '
+                             'the terrain rises through the deck and the clouds stop at it. That is right for '
+                             'valley fog (set its base just above the valley floor, so the fog fills the low '
+                             'ground); for a deck that should float over the terrain, raise its base above %.0f m.'
+                             % (i, base, relief[1], relief[1]))
+            if n[p + 'sigma'].value() * n[p + 'density'].value() >= 0.01 and cam_alt > top + 300:
+                notes.append('Layer %d is seen from %.0f m above its top: at this density (sigma x density %.3g) '
+                             'it reads as a solid, smooth sheet. For fog with breakup use the Valley Fog type '
+                             '(0.0035), or lower density and coverage.'
+                             % (i, cam_alt - top, n[p + 'sigma'].value() * n[p + 'density'].value()))
             continue
         if n[p + 'box_found'].value() > 0.5:
             found.append('layer %d: %s volume, following the 3D box in box%d' % (i, t, i))
