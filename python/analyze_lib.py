@@ -147,7 +147,7 @@ def _analyze(n):
             if new_mode != mode:
                 setk('depth_mode', ['Planar Z', '1/Z (ScanlineRender)', 'Distance'][new_mode], 'depth is')
                 mode = new_mode
-            vap = hap * H / float(W)
+            vap = hap * H / (float(W) * (bg.format().pixelAspect() or 1.0))
             pts = []
             for v, px, py in raw:
                 z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v
@@ -275,7 +275,8 @@ def _analyze(n):
                          'Light tab\'s colours are used.')
 
     # The layers.
-    vap = hap * (H / float(W) if W else 9 / 16.0)
+    pa = (bg.format().pixelAspect() or 1.0) if bg is not None else 1.0
+    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)
     for i in (1, 2, 3):
         p = 'l%d_' % i
         if not n[p + 'enable'].value():
@@ -413,9 +414,11 @@ def debug_report(n):
     hap = n['cam_haperture'].getValueAt(f) or 36.0
     gh = n['ground_height'].value()
     W = H = 0
+    pa = 1.0
     if bg is not None:
         W, H = bg.format().width(), bg.format().height()
-    vap = hap * (H / float(W) if W else 9 / 16.0)
+        pa = bg.format().pixelAspect() or 1.0
+    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)
     flags = []
 
     def to_world(p):
@@ -475,9 +478,9 @@ def debug_report(n):
             w('  %-15s %s%s' % (kn, v, anim))
         cv = cam.knob('vaperture').getValueAt(f) if cam.knob('vaperture') else None
         if cv and W and abs(cv - vap) > 0.01 * vap:
-            flags.append('camera vaperture %.4g differs from haperture x bg height/width = %.4g: EzCloudGen derives '
-                         'the vertical aperture from the format, so the clouds may be stretched vertically '
-                         'against the plate.' % (cv, vap))
+            flags.append('camera vaperture %.4g differs from haperture x bg height / (width x pixel aspect) = %.4g: EzCloudGen derives '
+                         'the vertical aperture from the format and its pixel aspect, so the clouds may be '
+                         'stretched vertically against the plate.' % (cv, vap))
         if cam.knob('win_translate'):
             wt = [cam['win_translate'].getValueAt(f, i) for i in range(2)]
             if abs(wt[0]) > 1e-6 or abs(wt[1]) > 1e-6:
@@ -499,9 +502,9 @@ def debug_report(n):
         fwd = [c / l for c in fwd]
         pitch = math.degrees(math.asin(max(-1.0, min(1.0, fwd[1]))))
         head = math.degrees(math.atan2(fwd[0], -fwd[2]))
-        w('  as used: focal %g, haperture %g, vaperture (from format) %.4g; position %s scene units; '
+        w('  as used: focal %g, haperture %g, vaperture (from format, pixel aspect %g) %.4g; position %s scene units; '
           'looking %.1f deg %s level, heading %.1f deg'
-          % (focal, hap, vap, _fmt_list(M[3:12:4], '%.6g'), abs(pitch), 'below' if pitch < 0 else 'above', head))
+          % (focal, hap, pa, vap, _fmt_list(M[3:12:4], '%.6g'), abs(pitch), 'below' if pitch < 0 else 'above', head))
         w('  camera height above ground height: %.1f m' % ((M[7] - gh) * s))
         try:
             P = [n['cam_prev_matrix'].getValueAt(f, i) for i in range(16)]

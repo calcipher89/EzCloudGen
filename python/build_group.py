@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.45.2"
+VERSION = "0.45.3"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -1077,6 +1077,11 @@ def build_knobs(g):
         k = hidden(g, nuke.Double_Knob("map_cam_" + name))
         k.setExpression(py(FIND_CAMERA + "ret = c['%s'].getValueAt(nuke.thisNode()['map_frame'].value()) "
                                          "if c is not None else %g" % (name, default)))
+    # The bg's pixel aspect (2 for a 2x anamorphic plate): the vertical aperture is
+    # haperture x height / (width x pixel aspect), as Nuke's own renderers do.
+    k = hidden(g, nuke.Double_Knob("bg_pixel_aspect"))
+    k.setExpression(py("b = nuke.thisNode().input(0)\n"
+                       "ret = b.format().pixelAspect() if b is not None else nuke.root().format().pixelAspect()"))
     k = hidden(g, nuke.Int_Knob("map_found"))
     k.setExpression(py("ret = 1 if nuke.thisNode().input(4) is not None else 0"))
     k = hidden(g, nuke.Int_Knob("atm_found"))
@@ -1178,6 +1183,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     # The camera frame is the work format.
     n[k + "frame_size"].setExpression("width", 0)
     n[k + "frame_size"].setExpression("height", 1)
+    n[k + "pixel_aspect"].setExpression("parent.bg_pixel_aspect")
     n[k + "scene_scale"].setExpression("parent.scene_scale")
     n[k + "ground_height"].setExpression("parent.ground_height")
     n[k + "earth_curvature"].setExpression("parent.earth")

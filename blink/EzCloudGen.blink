@@ -88,6 +88,9 @@ param:
   float focal;
   float haperture;
   float2 frameSize;
+  // Pixel aspect of the camera frame (2 for a 2x anamorphic plate): the frame is frameSize.x x
+  // pixelAspect wide in square units, so the vertical aperture is haperture x height / (width x it).
+  float pixelAspect;
   float sceneScale;
   float groundHeight;
   float3 sunDirection;
@@ -288,6 +291,7 @@ local:
     defineParam(focal, "focal", 24.0f);
     defineParam(haperture, "haperture", 36.0f);
     defineParam(frameSize, "frame_size", float2(1920.0f, 1080.0f));
+    defineParam(pixelAspect, "pixel_aspect", 1.0f);
     defineParam(sceneScale, "scene_scale", 0.1f);
     defineParam(groundHeight, "ground_height", 0.0f);
     defineParam(sunDirection, "sun_direction", float3(0.0f, 0.5f, -1.0f));
@@ -716,7 +720,7 @@ local:
       return -1.0f;
     float hap = max(mapHaperture, 1e-3f);
     float u = cx / -cz * mapFocal / hap + 0.5f;
-    float t = cy / -cz * mapFocal / (hap * h / w) + 0.5f;
+    float t = cy / -cz * mapFocal / (hap * h / (w * pixelAspect)) + 0.5f;
     float4 m = bilinear(cmap, cmap.bounds.x1 + u * w - 0.5f, cmap.bounds.y1 + t * h - 0.5f);
     float c = map_channel[lyr] == 1 ? m.x : map_channel[lyr] == 2 ? m.y : map_channel[lyr] == 3 ? m.z : map_channel[lyr] == 4 ? m.w
                                                                                      : 0.2126f * m.x + 0.7152f * m.y + 0.0722f * m.z;
@@ -1775,7 +1779,7 @@ local:
     if (cz > -1.0f)
       return false;
     float hap = haperture;
-    float vap = haperture * frameSize.y / frameSize.x;
+    float vap = haperture * frameSize.y / (frameSize.x * pixelAspect);
     float u = cx / -cz * focal / hap;
     float v = cy / -cz * focal / vap;
     gx = (u / gridMargin + 0.5f) * float(gridW) - 0.5f;
@@ -1850,7 +1854,7 @@ local:
     float j = float(pos.y - ty * gridH);
     float nd = float(gridTX * gridTY);
     float hap = haperture;
-    float vap = haperture * frameSize.y / frameSize.x;
+    float vap = haperture * frameSize.y / (frameSize.x * pixelAspect);
     float u = ((i + 0.5f) / float(gridW) - 0.5f) * gridMargin;
     float v = ((j + 0.5f) / float(gridH) - 0.5f) * gridMargin;
     float3 cd = float3(u * hap / focal, v * vap / focal, -1.0f);
@@ -1903,7 +1907,7 @@ local:
     if (cz >= -1.0f)
       return float2(0.0f, 0.0f);
     float ohap = otherHaperture;
-    float ovap = otherHaperture * frameSize.y / frameSize.x;
+    float ovap = otherHaperture * frameSize.y / (frameSize.x * pixelAspect);
     float ou = cx / -cz * otherFocal / ohap + 0.5f;
     float ov = cy / -cz * otherFocal / ovap + 0.5f;
     return float2((ou - u) * frameSize.x, (ov - v) * frameSize.y);
@@ -1914,7 +1918,7 @@ local:
   bool bgSurface(float x, float y, float3 &S)
   {
     float hap = haperture;
-    float vap = haperture * frameSize.y / frameSize.x;
+    float vap = haperture * frameSize.y / (frameSize.x * pixelAspect);
     int ix = int(floor(x + 0.5f));
     int iy = int(floor(y + 0.5f));
     float3 cd = float3(((float(ix) + 0.5f) / frameSize.x - 0.5f) * hap / focal,
@@ -1939,7 +1943,7 @@ local:
     }
     float3 cam = float3(0.0f, camAlt, 0.0f);
     float hap = haperture;
-    float vap = haperture * frameSize.y / frameSize.x;
+    float vap = haperture * frameSize.y / (frameSize.x * pixelAspect);
     // The sun map is also what EzCloudShafts casts its rays from, so it keeps the clouds'
     // outlines: a footprint of 6 m per km along the sun ray, and steps to match.
     float pixAng = output == 5 ? 0.006f : hap / focal / frameSize.x;
@@ -2138,7 +2142,7 @@ local:
         float t = sceneT > 0.0f ? sceneT : 2000.0f;
         bool hit = false;
         float hap0 = haperture;
-        float vap0 = haperture * frameSize.y / frameSize.x;
+        float vap0 = haperture * frameSize.y / (frameSize.x * pixelAspect);
         for (int k = 0; k < 4; k++) {
           float3 q = o + d * t - float3(0.0f, camAlt, 0.0f);
           float cx = camRow0.x * q.x + camRow1.x * q.y + camRow2.x * q.z;
