@@ -490,6 +490,29 @@ def main():
         raise RuntimeError("analyze: 1/Z depth not recognised (%s, ground %g)"
                            % (g["depth_mode"].value(), g["ground_height"].value()))
     g["depth_mode"].setValue("Planar Z")
+    # A 2x anamorphic plate (pixel aspect 2): the same ground seen through a vertical aperture of
+    # haperture x height / (width x 2). Analyze must still find it at 200, and the node must
+    # pass the pixel aspect to its kernels.
+    ana_const = nuke.nodes.Constant(name="TestAnamorphicPlate", channels="rgba")
+    ana_const["format"].setValue(nuke.addFormat("480 270 2 EzCloudGenTestAnamorphic"))
+    ana = nuke.nodes.Expression(
+        name="TestAnamorphicGround", temp_name0="cx", temp_expr0="((x + 0.5) / width - 0.5) * %g / 24" % hap,
+        temp_name1="cy", temp_expr1="((y + 0.5) / height - 0.5) * %g * height / width / 2 / 24" % hap,
+        temp_name2="l", temp_expr2="sqrt(cx * cx + cy * cy + 1)",
+        temp_name3="dy", temp_expr3="cy * %r + %r" % (math.cos(math.radians(-8)), math.sin(math.radians(-8))),
+        channel0="depth", expr0="dy < 0 && -2800 / dy * l < 400000 ? -2800 / dy : 950000 / l",
+        channel1="none", channel2="none", channel3="none")
+    ana.setInput(0, ana_const)
+    g.setInput(0, ana)
+    g["ground_height"].setValue(0)
+    lib["analyze"](g)
+    pa = g["bg_pixel_aspect"].value()
+    if abs(pa - 2) > 1e-6 or abs(g.node("Clouds_Color")["EzCloudGen_pixel_aspect"].value() - 2) > 1e-6:
+        raise RuntimeError("anamorphic: pixel aspect not passed on (%g)" % pa)
+    if abs(g["ground_height"].value() - 200) > 20:
+        raise RuntimeError("analyze: anamorphic ground at %g, not 200" % g["ground_height"].value())
+    print("anamorphic: pixel aspect %g, ground %g" % (pa, g["ground_height"].value()))
+    g.setInput(0, ground)
     g["l2_enable"].setValue(False)
     g["ground_height"].setValue(0)
     g["sky_depth"].setValue(50)

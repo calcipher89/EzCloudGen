@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.45.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.45.3: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -21,6 +21,8 @@ EzCloudGen). Inputs:
   channel (depth.Z by default; 'depth is' Planar Z, ScanlineRender's 1/Z or distance), the
   clouds go behind its mountains and buildings, and their shadows fall on it ('hide behind bg').
   Depth of 0, or beyond 'sky beyond' (km), is sky.
+  Anamorphic plates work: the camera's vertical aperture is taken as haperture x height / (width x
+  pixel aspect), as Nuke's own renderers do, so a 2x squeezed plate lines up with its depth.
   'edge softness' (pixels of the plate) feathers where the clouds meet the bg's outline (a ridge, a
   tree line, a building): each pixel reads the bg's depth at 12 points over a disc that wide, and the
   clouds fade by the share of those points in front of them, so the unanti-aliased depth edge blends
@@ -352,7 +354,8 @@ and sky colours are simple stand-ins; in Nuke they come from EzAtmosScatter.
 - Below the horizon the node draws no ground. 'horizon haze' (by 'haze distance', default 1) lays
   the haze over the far ground, thick at the horizon and thinning towards the camera, so the decks
   sink into haze instead of ending on a straight line; turn it off over a plate that has its own
-  ground and no depth. 'max distance' (default 400 km) fades the clouds out towards it, so it never
+  ground and no depth. Where the bg has depth, its terrain is the ground: the flat ground plane
+  and the horizon haze apply only where the plate has no depth (sky). 'max distance' (default 400 km) fades the clouds out towards it, so it never
   cuts them hard. A deck's base ('vary') has a broad and a fine height variation, so seen at eye
   level it is a ragged edge, not a ruled line.
 - Stratus and Altostratus are too flat; Cirrus needs finer fibres; Congestus is grainy up close.
