@@ -2164,16 +2164,23 @@ local:
         tmax = min(tmax, sceneT);
       float g0 = 0.0f;
       float g1 = 0.0f;
-      // Where the ray ends on the bare ground (no plate in front of it).
+      // Where the ray ends on the bare ground (no plate in front of it). Where the plate has depth
+      // here, its surface is the ground: the flat ground plane at 'ground height' is only a stand-in
+      // for a plate without depth. Over real terrain that dips below 'ground height' (a far basin,
+      // the earth's curve in the render) the plane cut the clouds off and the horizon haze painted a
+      // flat sheet with the higher terrain poking through it in hard-edged islands.
+      bool plateHit = sceneT > 0.0f;
+      for (int k = 0; k < nTap; k++)
+        plateHit = plateHit || tapT[k] < 1e29f;
       bool onGround = false;
-      if (sphere(o, d, 0.0f, g0, g1) && g0 > 0.0f) {
+      if (!plateHit && sphere(o, d, 0.0f, g0, g1) && g0 > 0.0f) {
         onGround = g0 < tmax;
         tmax = min(tmax, g0);
       }
       // On flat ground a ray just above the horizon never lands, and a deck fades out at
       // maxDistance: count it as the far ground too while it is still in the decks' heights
       // there, or a sliver of bare sky shows between the deck and the hazy ground.
-      if (anyDeck && !onGround && tmax >= maxDistance && altitude(o + d * maxDistance) < deckTop)
+      if (anyDeck && !onGround && !plateHit && tmax >= maxDistance && altitude(o + d * maxDistance) < deckTop)
         onGround = true;
 
       // Every layer's stretches of the ray: 2 per layer (empty where end <= start).

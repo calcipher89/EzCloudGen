@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.45.1"
+VERSION = "0.45.2"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -838,6 +838,7 @@ def build_knobs(g):
     add(g, nuke.Double_Knob("horizon_haze", "horizon haze"),
         "Lays the haze over the far ground too (thick at the horizon, thinning towards the camera), so the "
         "decks sink into haze there instead of ending on a straight line when the plate has no ground. "
+        "Where the bg has depth, its terrain is the ground and this does nothing there. "
         "0: off (for a plate with its own ground and no depth).").setValue(1)
     g["horizon_haze"].setRange(0, 1)
     c = add(g, nuke.Color_Knob("haze_color", "haze color"),
