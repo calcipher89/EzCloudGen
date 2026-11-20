@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.46.1"
+VERSION = "0.46.2"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -493,6 +493,15 @@ def knob_changed():
             "if k.name() in ('debug', 'showPanel'):\n"
             "    n['print_debug'].setVisible(bool(n['debug'].value()))\n"
             "    n['position_pass'].setVisible(bool(n['debug'].value()))\n"
+            "# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n"
+            "# opens or a ramp changes.\n"
+            "if k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n"
+            "    for i in (1, 2, 3):\n"
+            "        kr = n.node('L%%d_DepthRamp' %% i)\n"
+            "        if kr is not None:\n"
+            "            top = max(kr['range'].value(3) * 1.25, 1000.0)\n"
+            "            if k.name() == 'showPanel' or not (0.5 * kr['range'].max() < top <= kr['range'].max()):\n"
+            "                kr['range'].setRange(0, top)\n"
             "if k.name() == 'showPanel':\n"
             "    layers = ['l1_', 'l2_', 'l3_']\n"
             "for p in layers:\n"
@@ -971,11 +980,13 @@ def build_knobs(g):
                 "bg (cloud_shadow), on the other layers, in this layer's own shading and in the light grid. "
                 "Off: they are only hidden from the camera.")
         k.clearFlag(nuke.STARTLINE)
-        k = add(g, nuke.Keyer_Knob(p + "depth_ramp", ""),
-                "A, B, C, D: Planar Z from the camera in scene units, as in the bg's depth pass. Clear "
-                "before A, full from B to C, clear past D.")
-        k.setRange(0, 200000)
-        k.setValue([0, 5000, 50000, 80000])
+        # The ramp's graph is a Keyer's 'range' (a hidden Keyer inside the group, L<n>_DepthRamp),
+        # shown here through a link: a user knob of that class draws no graph.
+        k = nuke.Link_Knob(p + "depth_ramp", "")
+        k.makeLink("L%d_DepthRamp" % (i + 1), "range")
+        k.setTooltip("A, B, C, D: Planar Z from the camera in scene units, as in the bg's depth pass. Clear "
+                     "before A, full from B to C, clear past D. Drag the handles in the graph or type the values.")
+        g.addKnob(k)
         add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
         k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
                 "The volume's overall shape, before lumps and erosion break it up.")
@@ -1295,10 +1306,11 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
 
         one("layer_on", layer_on(layer))
         # The ramp's knob is in scene units (the depth pass's numbers); the kernel works in metres.
-        one("depth_ramp_a", "%sdepth_ramp_on ? %sdepth_ramp.0 * parent.scene_scale : -1" % (p, p))
-        one("depth_ramp_b", "%sdepth_ramp.1 * parent.scene_scale" % p)
-        one("depth_ramp_c", "%sdepth_ramp.2 * parent.scene_scale" % p)
-        one("depth_ramp_d", "%sdepth_ramp.3 * parent.scene_scale" % p)
+        r = "L%d_DepthRamp.range" % layer
+        one("depth_ramp_a", "%sdepth_ramp_on ? %s.0 * parent.scene_scale : -1" % (p, r))
+        one("depth_ramp_b", "%s.1 * parent.scene_scale" % r)
+        one("depth_ramp_c", "%s.2 * parent.scene_scale" % r)
+        one("depth_ramp_d", "%s.3 * parent.scene_scale" % r)
         one("depth_ramp_sh", "%sdepth_ramp_shadows" % p)
         one("layer_seed", "parent.seed + %sseed" % p)
         # Drift with the wind: the field is sampled upwind.
@@ -1441,6 +1453,13 @@ def build():
         # The map, or a black stand-in without one (the kernels need input 1 connected; use_map
         # is 0 then, so they never read it).
         nomap = nuke.nodes.Constant(name="MapNone", channels="rgba", color=0)
+        # 'depth ramp' graphs: one Keyer per layer, never rendered, only for its range knob (linked
+        # onto the Layer tabs). The kernels read the values from them.
+        for layer in (1, 2, 3):
+            kr = nuke.nodes.Keyer(name="L%d_DepthRamp" % layer,
+                                  label="depth ramp of layer %d (UI only, not rendered)" % layer)
+            kr["range"].setValue([0, 5000, 50000, 80000])
+            kr["range"].setRange(0, 100000)
         mapsrc = nuke.nodes.Switch(name="MapSource")
         mapsrc.setInput(0, nomap)
         mapsrc.setInput(1, mp)
@@ -1709,6 +1728,7 @@ def build():
 MODULES = [
     ("Inputs", 0x4a5a6aff, r"(bg|camera|atmos|sun|map|box\d|holdout|add|RootFormat|FormatSource|MapNone|MapSource|WorkClear|WorkBlack|FormatBox|WorkArea|WorkFormat|DepthEnsure|DepthSource|DepthWork|SunMapFormat|LightGridFormat)"),
     ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
+    ("Depth ramp graphs (UI only)", 0x444444ff, r"(L\d_DepthRamp)"),
     ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
     ("Back to full size", 0x444444ff, r"(ColorUp.*|SunUp.*|DepthUp.*|ShadowUp.*|FwdUp.*|BwdUp.*|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
     ("Shadows", 0x4a4a3aff, r"(Shadow_.*|SunMap_All.*)"),
