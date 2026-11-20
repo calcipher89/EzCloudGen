@@ -98,8 +98,25 @@ def main():
         g.node(p.upper()[:2] + "_DepthRamp")["range"].setValue([0, 0, 1e7, 1e7])
     render("depth_ramp_all")
     all_alpha = mean_alpha()
+    # 'falloff': a fade-out over the decks' depths (0 to 15 km) renders differently
+    # linear and smooth; with hard cuts (C = D) the two are the same.
+    fades = {}
+    for ramp, tag in (([0, 0, 0, 150000], "fade"), ([0, 0, 150000, 150000], "cut")):
+        for fall in ("linear", "smooth"):
+            for p in ("l1_", "l2_", "l3_"):
+                g.node(p.upper()[:2] + "_DepthRamp")["range"].setValue(ramp)
+                g[p + "depth_ramp_falloff"].setValue(fall)
+            render("depth_ramp_%s_%s" % (tag, fall))
+            fades[(tag, fall)] = mean_alpha()
     for p in ("l1_", "l2_", "l3_"):
+        g[p + "depth_ramp_falloff"].setValue("linear")
         g[p + "depth_ramp_on"].setValue(False)
+    print("depth ramp falloff: fade %.4f linear, %.4f smooth; hard cut %.4f linear, %.4f smooth"
+          % (fades[("fade", "linear")], fades[("fade", "smooth")], fades[("cut", "linear")], fades[("cut", "smooth")]))
+    if abs(fades[("fade", "linear")] - fades[("fade", "smooth")]) < 0.003:
+        raise RuntimeError("depth ramp falloff: smooth renders like linear on a long fade")
+    if abs(fades[("cut", "linear")] - fades[("cut", "smooth")]) > 1e-4:
+        raise RuntimeError("depth ramp falloff: smooth changed a hard cut")
     print("depth ramp: alpha %.3f without, %.3f hidden, %.3f with an all-covering band"
           % (full_alpha, hidden_alpha, all_alpha))
     if full_alpha < 0.05 or hidden_alpha > 0.02 or abs(all_alpha - full_alpha) > 0.01:

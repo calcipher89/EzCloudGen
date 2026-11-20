@@ -258,6 +258,8 @@ param:
   float depth_ramp_d[3];
   // 1: the ramp also hides those clouds' shadows and light (see rampW).
   int depth_ramp_sh[3];
+  // 1: the ramp's fades ease in and out (smoothstep) instead of straight lines.
+  int depth_ramp_smooth[3];
   float sil_depth[3];
   float layer_seed[3];
   int onlyLayer;
@@ -1611,6 +1613,10 @@ local:
     float rd = max(depth_ramp_d[L], rc);
     float up = rb > ra ? clamp((pz - ra) / (rb - ra), 0.0f, 1.0f) : (pz >= ra ? 1.0f : 0.0f);
     float dw = rd > rc ? clamp((rd - pz) / (rd - rc), 0.0f, 1.0f) : (pz <= rd ? 1.0f : 0.0f);
+    if (depth_ramp_smooth[L] == 1) {
+      up = up * up * (3.0f - 2.0f * up);
+      dw = dw * dw * (3.0f - 2.0f * dw);
+    }
     return up * dw;
   }
 

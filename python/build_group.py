@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.46.2"
+VERSION = "0.46.3"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -107,7 +107,7 @@ VOLUME = [
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
-             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth", "depth_ramp_on", "depth_ramp_shadows", "depth_ramp"]
+             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth", "depth_ramp_on", "depth_ramp_shadows", "depth_ramp_falloff", "depth_ramp"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
             "release_box", "fade_top", "fade_bottom", "fade_left", "fade_right",
@@ -980,6 +980,11 @@ def build_knobs(g):
                 "bg (cloud_shadow), on the other layers, in this layer's own shading and in the light grid. "
                 "Off: they are only hidden from the camera.")
         k.clearFlag(nuke.STARTLINE)
+        k = add(g, nuke.Enumeration_Knob(p + "depth_ramp_falloff", "falloff", ["linear", "smooth"]),
+                "How the ramp fades from A to B and from C to D. linear: straight lines, as the graph draws "
+                "them. smooth: eases in and out at each handle (smoothstep), so there is no crease where a fade "
+                "starts or ends. Hard cuts (A = B, C = D) stay hard.")
+        k.clearFlag(nuke.STARTLINE)
         # The ramp's graph is a Keyer's 'range' (a hidden Keyer inside the group, L<n>_DepthRamp),
         # shown here through a link: a user knob of that class draws no graph.
         k = nuke.Link_Knob(p + "depth_ramp", "")
@@ -1312,6 +1317,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
         one("depth_ramp_c", "%s.2 * parent.scene_scale" % r)
         one("depth_ramp_d", "%s.3 * parent.scene_scale" % r)
         one("depth_ramp_sh", "%sdepth_ramp_shadows" % p)
+        one("depth_ramp_smooth", "%sdepth_ramp_falloff" % p)
         one("layer_seed", "parent.seed + %sseed" % p)
         # Drift with the wind: the field is sampled upwind.
         vec("offset", ("-%swind_speed * parent.time_s * sin(radians(%swind_deg))" % (p, p),
