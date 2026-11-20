@@ -250,6 +250,14 @@ param:
   // Each layer's detail: 0 classic, 1 soft billows.
   int detail_model[3];
   float sil_distance[3];
+  // 'depth ramp' (decks only): a trapezoid over Planar Z from the camera, in metres. Clear before
+  // a, full from b to c, clear again past d. a < 0: off.
+  float depth_ramp_a[3];
+  float depth_ramp_b[3];
+  float depth_ramp_c[3];
+  float depth_ramp_d[3];
+  // 1: the ramp also hides those clouds' shadows and light (see rampW).
+  int depth_ramp_sh[3];
   float sil_depth[3];
   float layer_seed[3];
   int onlyLayer;
@@ -1588,6 +1596,24 @@ local:
   }
 
   // How much of the sun this layer blocks at p (on the bg's surface): 0 lit .. 1 shaded.
+  // 'depth ramp' weight of layer L at kernel-frame point p: the trapezoid over p's Planar Z from
+  // the camera (metres). light: the sample is for shadow or light (sun marches, sun maps, ground
+  // shadows, the light grid), which the ramp only touches with 'hide shadows too'.
+  float rampW(float3 p, int L, bool light)
+  {
+    if (depth_ramp_a[L] < 0.0f || volume[L] != 0 || (light && depth_ramp_sh[L] != 1))
+      return 1.0f;
+    float3 rel = p - float3(0.0f, camAlt, 0.0f);
+    float pz = -(camRow0.z * rel.x + camRow1.z * rel.y + camRow2.z * rel.z);
+    float ra = depth_ramp_a[L];
+    float rb = max(depth_ramp_b[L], ra);
+    float rc = max(depth_ramp_c[L], rb);
+    float rd = max(depth_ramp_d[L], rc);
+    float up = rb > ra ? clamp((pz - ra) / (rb - ra), 0.0f, 1.0f) : (pz >= ra ? 1.0f : 0.0f);
+    float dw = rd > rc ? clamp((rd - pz) / (rd - rc), 0.0f, 1.0f) : (pz <= rd ? 1.0f : 0.0f);
+    return up * dw;
+  }
+
   float groundShadow(float3 p, float jit, float sd, int lyr)
   {
     float t0 = 0.0f;
@@ -1619,7 +1645,9 @@ local:
       float t = s0 + (float(i) + jit) * dt;
       // A wide footprint: soft shadows, and no fine noise to pay for.
       float bd = 0.0f;
+      float odWas = od;
       od += cloud(p + sun * t, max(dt * 0.5f, 20.0f), true, sd, lyr, bd) * dt;
+      od = odWas + (od - odWas) * rampW(p + sun * t, lyr, true);
     }
     return 1.0f - exp(-od * sigma[lyr] * density[lyr]);
   }
@@ -1877,7 +1905,9 @@ local:
         float len = t - prev;
         prev = t;
         float bd = 0.0f;
+        float odWas = odL[L];
         odL[L] += cloud(p + sun * t, max(cell, t * 0.02f), true, layer_seed[L], L, bd) * len * sig0;
+        odL[L] = odWas + (odL[L] - odWas) * rampW(p + sun * t, L, true);
       }
     }
     return float3(odL[0], odL[1], odL[2]);
@@ -2429,6 +2459,9 @@ local:
           float bd = 0.0f;
           q += mShift[L];
           float dn = cloud(q, fq, cheap, sdL[L], L, bd);
+          // 'depth ramp': what the camera sees always; the light and the sun map only with
+          // 'hide shadows too'.
+          dn *= rampW(q - mShift[L], L, i >= 0 || output == 5);
           if (i < 0) {
             sigL[L] = dn * far * sig0[L];
             sig += sigL[L];

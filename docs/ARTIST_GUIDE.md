@@ -152,6 +152,7 @@ time & map) changes the shapes slowly over time. For motion blur, turn on **moti
 | Fog ends in a hard line where it meets the valley floor or a slope | raise **ground softness** (EzCloudGen tab, metres of height above the terrain) |
 | A hard or stair-stepped line where clouds meet a ridge, tree line or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to 2-6 pixels |
 | Clouds in front of the mountains, wrong height, or a volume you can't find | press **analyze scene**, then check **units to metres** (EzCloudGen tab) |
+| Clouds should only show at some distances (only far, only a mid band, not over the foreground) | the layer's **depth ramp** (Layer tab, decks only): A-B fade in, C-D fade out, in the depth pass's own numbers; tick **hide shadows too** if the hidden clouds' shadows should go as well |
 | Still can't see why, or asking for help on a studio plate | **About** tab: turn on **debug report** and press **print debug report**; copy the text from the Script Editor (numbers only, no picture). If your world-position AOV isn't called P, pick it in **position pass** |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
 | Render too slow | render preset *draft* or **preview** while you work |

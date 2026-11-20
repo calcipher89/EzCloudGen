@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.45.4: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.46.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -65,6 +65,13 @@ front of the camera (no further than 0.7 of the middle terrain distance). It rea
 numbers on a 32 x 18 grid, so no picture leaves the node, then lists what it found and changed, and what
 to check by hand: 'units to metres' (it can't tell the scene's units) and the sun (plug the scene's sun
 Axis or EzAtmosScatter). One undo reverts it. Press it again after changing the camera or the units.
+
+**depth ramp** (each Layer tab, decks only, off by default) shows a deck only over a band of depth from the
+camera, in scene units of Planar Z: the same numbers as the bg's depth pass, so you can type what you read from
+it. Clear before A, fading in to full at B, full to C, gone at D, like a Keyer's range. Use it to split a deck
+into near and far passes or keep clouds out of a foreground. By itself it changes only what the camera sees;
+'hide shadows too' (next to it, off by default) also takes the hidden clouds out of the light: their shadows
+on the bg, on the other layers, in the layer's own shading and in the light grid.
 
 **debug report** (About tab, off by default) prints a plain-text report of what the node sees to the Script
 Editor: the inputs and the bg's format, bbox (overscan flagged), B-pipe node classes and layers; the camera
