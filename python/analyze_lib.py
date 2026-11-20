@@ -723,8 +723,9 @@ def debug_report(n):
             if not vol and n.knob(p + 'depth_ramp_on') is not None and n[p + 'depth_ramp_on'].value():
                 kr = n.node('L%d_DepthRamp' % i)
                 rv = [kr['range'].value(k) for k in range(4)] if kr is not None else [0, 0, 0, 0]
-                w('    depth ramp (Planar Z): %s scene units = %s m; %s'
+                w('    depth ramp (Planar Z): %s scene units = %s m; %s falloff; %s'
                   % (_fmt_list(rv, '%g'), _fmt_list([v * s for v in rv], '%g'),
+                     n[p + 'depth_ramp_falloff'].value() if n.knob(p + 'depth_ramp_falloff') is not None else 'linear',
                      'hides shadows too' if n.knob(p + 'depth_ramp_shadows') is not None
                      and n[p + 'depth_ramp_shadows'].value() else 'shadows kept'))
             if not vol:
