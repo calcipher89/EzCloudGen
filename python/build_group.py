@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.45.4"
+VERSION = "0.46.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -107,7 +107,7 @@ VOLUME = [
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
 DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
-             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth"]
+             "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth", "depth_ramp_on", "depth_ramp"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",
             "release_box", "fade_top", "fade_bottom", "fade_left", "fade_right",
@@ -960,6 +960,16 @@ def build_knobs(g):
                 "How deep the painted mass is, front to back, in km ('map use' silhouette).")
         k.setRange(0.2, 20)
         k.setValue(5)
+        k = add(g, nuke.Boolean_Knob(p + "depth_ramp_on", "depth ramp"),
+                "Shows this deck only over a band of depth from the camera (Planar Z, in metres, as in the "
+                "plate's depth x 'units to metres'): clear before A, fading in to full at B, full to C, gone "
+                "at D. Decks only, not volumes. It changes what the camera sees, not the light: clouds "
+                "outside the band still cast their shadows.")
+        k = add(g, nuke.Keyer_Knob(p + "depth_ramp", ""),
+                "A, B, C, D: Planar Z from the camera in metres. Clear before A, full from B to C, clear "
+                "past D.")
+        k.setRange(0, 20000)
+        k.setValue([0, 500, 5000, 8000])
         add(g, nuke.Text_Knob(p + "vol_divider", "volume"))
         k = add(g, nuke.Enumeration_Knob(p + "vol_shape", "shape", VOL_SHAPES),
                 "The volume's overall shape, before lumps and erosion break it up.")
@@ -1278,6 +1288,10 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
                 n[k + knob].setExpression(e, i * len(exprs) + c)
 
         one("layer_on", layer_on(layer))
+        one("depth_ramp_a", "%sdepth_ramp_on ? %sdepth_ramp.0 : -1" % (p, p))
+        one("depth_ramp_b", "%sdepth_ramp.1" % p)
+        one("depth_ramp_c", "%sdepth_ramp.2" % p)
+        one("depth_ramp_d", "%sdepth_ramp.3" % p)
         one("layer_seed", "parent.seed + %sseed" % p)
         # Drift with the wind: the field is sampled upwind.
         vec("offset", ("-%swind_speed * parent.time_s * sin(radians(%swind_deg))" % (p, p),

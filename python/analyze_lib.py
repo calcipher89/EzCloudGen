@@ -720,6 +720,8 @@ def debug_report(n):
                  n[p + 'scale_km'].value(), n[p + 'detail_size'].value(), n[p + 'erosion'].value(),
                  n[p + 'edge'].value(), n[p + 'detail_model'].value(), n[p + 'wind_deg'].value(),
                  n[p + 'wind_speed'].value()))
+            if not vol and n.knob(p + 'depth_ramp_on') is not None and n[p + 'depth_ramp_on'].value():
+                w('    depth ramp (Planar Z, m): %s' % _fmt_list([n[p + 'depth_ramp'].value(k) for k in range(4)], '%g'))
             if not vol:
                 base = n[p + 'base'].value()
                 top = base + n[p + 'thickness'].value()

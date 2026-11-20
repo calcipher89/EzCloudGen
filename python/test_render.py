@@ -86,6 +86,25 @@ def main():
         grade["white"].setValue(0.8)
     g["view"].setValue("Comp")
 
+    # 'depth ramp' on the decks: a band ending 1 m from the camera hides them; a band from 0 to
+    # far beyond everything changes nothing.
+    full_alpha = mean_alpha()
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "depth_ramp_on"].setValue(True)
+        g[p + "depth_ramp"].setValue([0, 0, 1, 1])
+    render("depth_ramp_hidden")
+    hidden_alpha = mean_alpha()
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "depth_ramp"].setValue([0, 0, 1e7, 1e7])
+    render("depth_ramp_all")
+    all_alpha = mean_alpha()
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "depth_ramp_on"].setValue(False)
+    print("depth ramp: alpha %.3f without, %.3f hidden, %.3f with an all-covering band"
+          % (full_alpha, hidden_alpha, all_alpha))
+    if full_alpha < 0.05 or hidden_alpha > 0.02 or abs(all_alpha - full_alpha) > 0.01:
+        raise RuntimeError("depth ramp: alpha %.3f / %.3f / %.3f" % (full_alpha, hidden_alpha, all_alpha))
+
     def set_type(p, tname):
         g[p + "type"].setValue(tname)
         # The type menu fills the knobs from knobChanged; set them here too so the test does not lean on it.
