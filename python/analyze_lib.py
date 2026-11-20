@@ -764,6 +764,37 @@ def debug_report(n):
              _fmt_list([n['sky_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g')))
     safe(light)
 
+    # ---- GPU
+    def gpu():
+        section('gpu')
+        import platform
+        w('  %s, %s; Nuke %s mode' % (platform.system(), platform.machine(),
+                                     'GUI' if nuke.env.get('gui') else 'terminal'))
+        names = []
+        for nd in n.nodes():
+            if nd.Class() == 'BlinkScript' and nd.knob('gpuName') is not None:
+                names.append((nd.name(), nd['gpuName'].value(), nd['useGPUIfAvailable'].value(),
+                              nd['disable'].value() if nd.knob('disable') else False))
+        devices = sorted(set(g for _, g, _, _ in names))
+        w('  BlinkScript GPU: %s' % (', '.join(devices) if devices else '?'))
+        off = [nm for nm, _, use, _ in names if not use]
+        if off:
+            w("  'use GPU if available' is off on: " + ', '.join(off))
+            flags.append("'use GPU if available' is off on %s inside the node: they render on the CPU." % ', '.join(off))
+        if any('not available' in g.lower() for g in devices):
+            flags.append('Nuke has no usable GPU here (BlinkScript says "Not available"), so EzCloudGen renders on the '
+                         'CPU: much slower, and the first frame compiles for a long time. Check Preferences > '
+                         'Performance > Hardware (GPU device), the NVIDIA driver, and, for terminal or farm renders, '
+                         'that Nuke is started with --gpu.')
+        try:
+            pr = nuke.toNode('preferences')
+            for kn in ('selectedGPUDeviceName', 'selectedGPUDeviceIndex', 'enableMultiGPU'):
+                if pr.knob(kn) is not None:
+                    w('  pref %s: %s' % (kn, pr[kn].value()))
+        except Exception:
+            pass
+    safe(gpu)
+
     section('flags')
     if flags:
         for x in flags:
