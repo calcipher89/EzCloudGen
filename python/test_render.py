@@ -122,6 +122,28 @@ def main():
     if full_alpha < 0.05 or hidden_alpha > 0.02 or abs(all_alpha - full_alpha) > 0.01:
         raise RuntimeError("depth ramp: alpha %.3f / %.3f / %.3f" % (full_alpha, hidden_alpha, all_alpha))
 
+    # 'wisp stretch': 1 renders exactly as before (the views above); 6 draws the detail out along
+    # the wind, so the same frame changes.
+    base_alpha = mean_alpha()
+    g["view"].setValue("Comp")
+    w["file"].setValue("%s/%s.png" % (OUT, "wisp_stretch_1"))
+    nuke.execute(w, 1001, 1001)
+    a1 = mean_alpha()
+    def grid(ch):
+        return [g.sample(ch, x + 0.5, y + 0.5, frame=1001)
+                for y in range(H // 60, H, H // 30) for x in range(W // 96, W, W // 48)]
+    s1 = grid("cloud.alpha")
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "wisp_stretch"].setValue(6.0)
+    render("wisp_stretch_6")
+    s6 = grid("cloud.alpha")
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "wisp_stretch"].setValue(1.0)
+    diff = sum(abs(a - b) for a, b in zip(s6, s1)) / max(len(s1), 1)
+    print("wisp stretch: mean |alpha 6 - alpha 1| %.4f (alpha %.3f at 1)" % (diff, a1))
+    if diff < 0.005:
+        raise RuntimeError("wisp stretch 6 changed nothing (%.4f)" % diff)
+
     def set_type(p, tname):
         g[p + "type"].setValue(tname)
         # The type menu fills the knobs from knobChanged; set them here too so the test does not lean on it.

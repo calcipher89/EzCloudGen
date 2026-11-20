@@ -715,11 +715,12 @@ def debug_report(n):
             vol = n[p + 'volume'].value() > 0.5
             sd = n[p + 'sigma'].value() * n[p + 'density'].value()
             w('  layer %d: %s, %s; coverage %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '
-              'edge %g, model %s, wind %g deg %g m/s'
+              'edge %g, model %s, wind %g deg %g m/s, wisp stretch %g'
               % (i, n[p + 'type'].value(), 'volume' if vol else 'deck', n[p + 'coverage'].value(), sd,
                  n[p + 'scale_km'].value(), n[p + 'detail_size'].value(), n[p + 'erosion'].value(),
                  n[p + 'edge'].value(), n[p + 'detail_model'].value(), n[p + 'wind_deg'].value(),
-                 n[p + 'wind_speed'].value()))
+                 n[p + 'wind_speed'].value(),
+                 n[p + 'wisp_stretch'].value() if n.knob(p + 'wisp_stretch') is not None else 1.0))
             if not vol and n.knob(p + 'depth_ramp_on') is not None and n[p + 'depth_ramp_on'].value():
                 kr = n.node('L%d_DepthRamp' % i)
                 rv = [kr['range'].value(k) for k in range(4)] if kr is not None else [0, 0, 0, 0]
