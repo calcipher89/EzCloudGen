@@ -91,11 +91,11 @@ def main():
     full_alpha = mean_alpha()
     for p in ("l1_", "l2_", "l3_"):
         g[p + "depth_ramp_on"].setValue(True)
-        g[p + "depth_ramp"].setValue([0, 0, 1, 1])
+        g.node(p.upper()[:2] + "_DepthRamp")["range"].setValue([0, 0, 1, 1])
     render("depth_ramp_hidden")
     hidden_alpha = mean_alpha()
     for p in ("l1_", "l2_", "l3_"):
-        g[p + "depth_ramp"].setValue([0, 0, 1e7, 1e7])
+        g.node(p.upper()[:2] + "_DepthRamp")["range"].setValue([0, 0, 1e7, 1e7])
     render("depth_ramp_all")
     all_alpha = mean_alpha()
     for p in ("l1_", "l2_", "l3_"):
@@ -419,7 +419,7 @@ def main():
         raise RuntimeError("cloud shadow on the sky")
     # 'depth ramp' hiding the whole deck: its shadow stays unless 'hide shadows too' is on.
     g["l1_depth_ramp_on"].setValue(True)
-    g["l1_depth_ramp"].setValue([0, 0, 1, 1])
+    g.node("L1_DepthRamp")["range"].setValue([0, 0, 1, 1])
     render("ramp_shadow_kept")
     kept = region_mean("cloud_shadow.red", True)
     g["l1_depth_ramp_shadows"].setValue(True)

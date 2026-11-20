@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.46.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.46.2: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -71,7 +71,9 @@ camera, in scene units of Planar Z: the same numbers as the bg's depth pass, so 
 it. Clear before A, fading in to full at B, full to C, gone at D, like a Keyer's range. Use it to split a deck
 into near and far passes or keep clouds out of a foreground. By itself it changes only what the camera sees;
 'hide shadows too' (next to it, off by default) also takes the hidden clouds out of the light: their shadows
-on the bg, on the other layers, in the layer's own shading and in the light grid.
+on the bg, on the other layers, in the layer's own shading and in the light grid. The ramp is a Keyer-style graph
+(a hidden Keyer per layer inside the group, L1-3_DepthRamp, linked onto the Layer tab): drag A to D or type
+them; the graph's '+' and '-' buttons zoom its view, which Nuke doesn't save with the script.
 
 **debug report** (About tab, off by default) prints a plain-text report of what the node sees to the Script
 Editor: the inputs and the bg's format, bbox (overscan flagged), B-pipe node classes and layers; the camera
