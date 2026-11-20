@@ -417,6 +417,19 @@ def main():
         raise RuntimeError("no believable cloud shadow on the ridge")
     if region_mean("cloud_shadow.red", False) > 1e-4:
         raise RuntimeError("cloud shadow on the sky")
+    # 'depth ramp' hiding the whole deck: its shadow stays unless 'hide shadows too' is on.
+    g["l1_depth_ramp_on"].setValue(True)
+    g["l1_depth_ramp"].setValue([0, 0, 1, 1])
+    render("ramp_shadow_kept")
+    kept = region_mean("cloud_shadow.red", True)
+    g["l1_depth_ramp_shadows"].setValue(True)
+    render("ramp_shadow_hidden")
+    gone = region_mean("cloud_shadow.red", True)
+    g["l1_depth_ramp_shadows"].setValue(False)
+    g["l1_depth_ramp_on"].setValue(False)
+    print("depth ramp shadows: %.3f without the ramp, %.3f kept, %.3f with 'hide shadows too'" % (shade, kept, gone))
+    if abs(kept - shade) > 0.01 or gone > 0.005:
+        raise RuntimeError("depth ramp shadows: %.3f / %.3f / %.3f" % (shade, kept, gone))
     g["view"].setValue("Shadow")
     render("shadow_view")
     g["view"].setValue("Comp")
