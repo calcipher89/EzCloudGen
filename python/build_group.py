@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.46.3"
+VERSION = "0.47.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -86,6 +86,10 @@ EROSION = [
     ("crumble", "crumble", "Bites chunks out of the thin edges, for torn, ragged cloud and fog.", 0, 1),
     ("crumble_size", "crumble size", "Size of the chunks crumble bites out, in metres.", 5, 1000),
     ("shear", "wind shear", "Leans the tops downwind (along 'wind direction').", -1, 1),
+    ("wisp_stretch", "wisp stretch", "Draws the fine detail (billows, wisps, grain and swirls) out along the "
+                                     "wind ('wind direction') into filaments that follow the flow: 1 is round, "
+                                     "4-10 gives streaks, for fog a camera flies through, combed mist or "
+                                     "fibrous cirrus. The layer-scale shapes are set by 'stretch'.", 1, 12),
 ]
 # A placed volume (types with volume on).
 VOLUME = [

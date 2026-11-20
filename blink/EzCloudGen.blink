@@ -192,6 +192,8 @@ param:
   float crumble[3];
   float crumble_size[3];
   float shear[3];
+  // 'wisp stretch': the fine detail (billows, wisps, grain, swirl) drawn out along the wind, 1 = round.
+  float wisp_stretch[3];
   // Coverage map.
   int useMap;
   float map_amount[3];
@@ -1355,6 +1357,16 @@ local:
       wx += ux * sw * 2.0f;
       wy += uy * sw * 2.0f;
       wz += uz * sw * 2.0f;
+    }
+    // 'wisp stretch': squeeze the detail's coordinates along the wind (-sa, ca), so everything
+    // looked up from them below (billows, wisps, grain) is drawn out into filaments that follow
+    // the flow. Exactly as before at 1.
+    if (wisp_stretch[lyr] > 1.0f) {
+      float along = -wx * sa[lyr] + wz * ca[lyr];
+      float across = wx * ca[lyr] + wz * sa[lyr];
+      along /= wisp_stretch[lyr];
+      wx = across * ca[lyr] - along * sa[lyr];
+      wz = across * sa[lyr] + along * ca[lyr];
     }
     // An anvil's top is a smooth, spreading ice sheet: fewer billows there.
     float softErode = 0.0f;
