@@ -12,7 +12,7 @@ DEFAULTS = dict(base=1500, thick=1000, coverage=0.5, scale=2.0, stretch=1.0, win
                 volume=0, vol_shape=1, vol_size=(3000, 1800, 3000), lumps=0.0, lump_size=600, small_lumps=0.0, skirt=0.0, place_km=10,
                 # Erosion stack (billows are detail/erosion above).
                 wisp_size=60, wisp_amount=0.0, grain_size=15, grain_amount=0.0, swirl=0.0, swirl_size=400,
-                turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0, wisp_stretch=1.0,
+                turbulence=0.0, crumble=0.0, crumble_size=120, shear=0.0, wisp_stretch=1.0, shape_3d=0.0,
                 # Per-side fades of a volume's box, 0..1 of the box in from that face.
                 fade_top=0.0, fade_bottom=0.0, fade_left=0.0, fade_right=0.0, fade_front=0.0, fade_back=0.0,
                 # Fine detail: "soft billows" (cumulus and volumes) or "classic" (stratiform and mackerel
@@ -27,7 +27,7 @@ KERNEL = dict(base="base", thick="thickness", coverage="coverage", scale="scale_
               lumps="lumps", lump_size="lump_size", small_lumps="small_lumps", skirt="skirt", place_km="place_km", wisp_size="wisp_size",
               wisp_amount="wisp_amount", grain_size="grain_size", grain_amount="grain_amount", swirl="swirl",
               swirl_size="swirl_size", turbulence="turbulence", crumble="crumble", crumble_size="crumble_size",
-              shear="shear", wisp_stretch="wisp_stretch", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
+              shear="shear", wisp_stretch="wisp_stretch", shape_3d="shape_3d", fade_top="fade_top", fade_bottom="fade_bottom", fade_left="fade_left",
               fade_right="fade_right", fade_front="fade_front", fade_back="fade_back", model="detail_model")
 
 TYPES = {

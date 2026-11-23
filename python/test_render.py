@@ -144,6 +144,19 @@ def main():
     if diff < 0.005:
         raise RuntimeError("wisp stretch 6 changed nothing (%.4f)" % diff)
 
+    # '3D shape': 0 renders exactly as before (the views above); 1 lets the deck shapes vary
+    # with height, so the same frame changes.
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "shape_3d"].setValue(1.0)
+    render("shape_3d_1")
+    s3 = grid("cloud.alpha")
+    for p in ("l1_", "l2_", "l3_"):
+        g[p + "shape_3d"].setValue(0.0)
+    diff3 = sum(abs(a - b) for a, b in zip(s3, s1)) / max(len(s1), 1)
+    print("3D shape: mean |alpha 1 - alpha 0| %.4f" % diff3)
+    if diff3 < 0.005:
+        raise RuntimeError("3D shape 1 changed nothing (%.4f)" % diff3)
+
     def set_type(p, tname):
         g[p + "type"].setValue(tname)
         # The type menu fills the knobs from knobChanged; set them here too so the test does not lean on it.

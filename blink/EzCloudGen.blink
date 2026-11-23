@@ -194,6 +194,9 @@ param:
   float shear[3];
   // 'wisp stretch': the fine detail (billows, wisps, grain, swirl) drawn out along the wind, 1 = round.
   float wisp_stretch[3];
+  // '3D shape' (decks): 0 draws the shapes from a 2D field seen from above and runs them up
+  // through the layer's height; 1 makes them vary with height too (round blobs, not columns).
+  float shape_3d[3];
   // Coverage map.
   int useMap;
   float map_amount[3];
@@ -530,6 +533,29 @@ local:
     return s / max(tot, 1e-6f);
   }
 
+  // fbm2's 3D sibling for '3D shape': x and z turn as in fbm2, the height axis y doubles.
+  float fbm3(float x, float y, float z, float oct, float sd)
+  {
+    float s = 0.0f;
+    float amp = 0.5f;
+    float tot = 0.0f;
+    y += 17.31f + sd * 1.37f;
+    int n = int(floor(oct));
+    for (int i = 0; i <= n; i++) {
+      float w = i < n ? 1.0f : oct - float(n);
+      if (w <= 0.0f)
+        break;
+      s += amp * w * vnoise3(x, y, z);
+      tot += amp * w;
+      amp *= 0.5f;
+      float nx = 1.6f * x + 1.2f * z + 13.7f;
+      z = -1.2f * x + 1.6f * z + 7.3f;
+      x = nx;
+      y = 2.0f * y + 3.1f;
+    }
+    return s / max(tot, 1e-6f);
+  }
+
   float ridged2(float x, float y, float oct, float sd)
   {
     float s = 0.0f;
@@ -763,6 +789,13 @@ local:
       f = ridged2(u2, v2, oct, sd) * (0.55f + 0.9f * fbm2(u * 0.3f + 40.0f, v * 0.3f, 3.0f, sd));
     else
       f = fbm2(u2, v2, oct, sd);
+    if (shape_3d[lyr] > 0.0f) {
+      // The same field with height as a third axis (at the shape size), blended in: a deck that
+      // is thin against its pattern keeps its look; small shapes in a deep layer become blobs
+      // instead of columns running through the whole thickness.
+      float f3 = fbm3(u2, altitude(p) / sc, v2, oct, sd);
+      f += (f3 - f) * min(shape_3d[lyr], 1.0f);
+    }
     float cov = coverage[lyr];
     float silBack = 0.0f;
     float silW = 0.0f;

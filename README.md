@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.47.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.48.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -70,6 +70,12 @@ Axis or EzAtmosScatter). One undo reverts it. Press it again after changing the 
 (billows, wisps, grain and swirls) out along its 'wind direction' into filaments that follow the flow. 4-10 gives
 streaks: fog a camera flies through, mist combed by wind, fibrous cirrus. 'stretch' does the same for the
 layer-scale shapes. Costs nothing.
+
+**3D shape** (each Layer tab, decks only, 0 by default = as before) makes a deck's shapes vary with height
+too. A deck's pattern is drawn on the ground plan and runs straight up through the layer, which is right for a
+wide, flat deck but turns small shapes in a deep layer into tall columns: streaks when a diving camera looks
+down through them. At 1 the same pattern is 3D, round blobs; use it for small puffs and fog a camera flies
+through. A deck much wider than it is thick looks about the same either way.
 
 **depth ramp** (each Layer tab, decks only, off by default) shows a deck only over a band of depth from the
 camera, in scene units of Planar Z: the same numbers as the bg's depth pass, so you can type what you read from
