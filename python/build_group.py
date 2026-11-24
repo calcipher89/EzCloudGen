@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.47.0"
+VERSION = "0.48.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -68,6 +68,10 @@ SHAPE = [
     ("billow", "billows", "1: billowy cauliflower detail. 0: soft wisps.", 0, 1),
     ("streaks", "streaks", "1: fibrous streaks (cirrus).", 0, 1),
     ("vary", "height variation", "How much the base and top move up and down across the deck.", 0, 0.5),
+    ("shape_3d", "3D shape", "0: the shapes are drawn on the ground plan and run straight up through the layer, "
+                             "so small shapes in a deep layer become tall columns (streaks when you look down "
+                             "through them). 1: the shapes vary with height too, round blobs; for small puffs "
+                             "or fog a camera flies through. Big, flat decks look the same either way.", 0, 1),
 ]
 
 # The erosion stack, shown on each layer.
@@ -110,7 +114,7 @@ VOLUME = [
 ]
 VOL_SHAPES = ["Ellipsoid", "Dome", "Anvil", "Box", "Towers", "Shelf"]
 # Knobs shown only for decks, and only for volumes.
-DECK_ONLY = ["thickness", "scale_km", "stretch", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
+DECK_ONLY = ["thickness", "scale_km", "stretch", "shape_3d", "taper", "top_round", "cells", "cell_km", "warp", "streaks", "vary",
              "map_amount", "map_channel", "map_use", "sil_distance", "sil_depth", "depth_ramp_on", "depth_ramp_shadows", "depth_ramp_falloff", "depth_ramp"]
 MAP_CHANNELS = ["luminance", "red", "green", "blue", "alpha"]
 VOL_ONLY = ["vol_divider", "vol_shape", "vol_position", "vol_rotate", "vol_size", "place", "place_km", "make_box",

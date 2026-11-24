@@ -153,6 +153,7 @@ time & map) changes the shapes slowly over time. For motion blur, turn on **moti
 | A hard or stair-stepped line where clouds meet a ridge, tree line or building | raise **edge softness** (EzCloudGen tab, next to hide behind bg) to 2-6 pixels |
 | Clouds in front of the mountains, wrong height, or a volume you can't find | press **analyze scene**, then check **units to metres** (EzCloudGen tab) |
 | Wisps look curly or hazy when they should stream past (fly-throughs, wind-combed mist) | raise the layer's **wisp stretch** (Layer tab, 4-10): the fine detail draws out along the wind |
+| Small puffs or fog near the camera look like tall columns or streaks, worst when looking down | set the layer's **3D shape** to 1 (Layer tab): the shapes vary with height too, round blobs instead of columns |
 | Clouds should only show at some distances (only far, only a mid band, not over the foreground) | the layer's **depth ramp** (Layer tab, decks only): A-B fade in, C-D fade out, in the depth pass's own numbers; tick **hide shadows too** if the hidden clouds' shadows should go as well; **falloff** smooth for soft fades without a crease |
 | Still can't see why, or asking for help on a studio plate | **About** tab: turn on **debug report** and press **print debug report**; copy the text from the Script Editor (numbers only, no picture). If your world-position AOV isn't called P, pick it in **position pass** |
 | Clouds blown out near the sun | **highlight rolloff** 0.15 to 0.3 |
