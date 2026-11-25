@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.48.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.49.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -179,6 +179,16 @@ a few times inside the cloud travelling mostly forward, as it does in real cloud
 with depth: looking towards the sun, the edges and thinner cloud within about 30 degrees of it glow
 and the light wraps round the outline, as in a backlit photo, while the same cloud seen side on is a
 touch darker. It acts only with 'light diffusion' on.
+Low sun on a deck (v0.49.0): with the sun within about 17 degrees of the horizon, how much of that
+forward direction the light keeps goes by the deck's depth along a slant of about 17 degrees (the
+short way the scattered light leaves a deck), not along the sun ray, which at a low sun runs
+kilometres slantwise through the layer. Before, the forward glow died at a low sun and a deck's
+underside was no brighter towards the sun than away from it, whatever 'forward scatter' or 'sun
+glow'. Now the underside near the sun glows: for a thin sunset deck (Altostratus 400 m at 6.5 km,
+sun 5 degrees) 'light diffusion' 0.3, 'wrap light' 1.5 and 'exposure' about -2.2 give an
+underside about twice as bright near the sun as 25 degrees away from it, with the deck darker
+than the clear sky away from the sun. A higher sun, placed volumes and 'light diffusion' 0 are
+unchanged.
 'light grid' (by 'billow shrink', on by default; off = as before) bakes each layer's shadow from the sun
 once per frame, on a grid fitted to the camera's view (192 x 108 cells across the frame plus a margin,
 64 slices in distance from 200 m to 80 km, log spaced, marched 48 steps and 25 km towards the sun),

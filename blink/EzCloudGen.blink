@@ -1803,7 +1803,14 @@ local:
       // within some 30 degrees of it glow, and the light wraps round the cloud's outline, while
       // the same cloud seen side on is a touch darker (the same light, sent another way). The
       // forward bias fades with depth. 0: spread evenly, as before.
-      float wg = 0.7f * clamp(wrapLight, 0.0f, 1.5f) * exp(-0.12f * od);
+      // Low sun on a deck: od runs kilometres slantwise through the layer along the sun ray (at 5
+      // degrees, 11 times its depth straight up), but light scattered a few times leaves a deck
+      // by its short way down, so how much of its forward direction it keeps goes by the depth
+      // along a slant of at least about 17 degrees. Without this the forward bias died at a low
+      // sun, and a deck's underside glowed no brighter towards the sun than away from it. The
+      // brightness itself still goes by od. High sun (above 17 degrees) and volumes: unchanged.
+      float odWrap = volume[lyr] == 0 ? od * min(1.0f, max(sun.y, 0.05f) / 0.3f) : od;
+      float wg = 0.7f * clamp(wrapLight, 0.0f, 1.5f) * exp(-0.12f * odWrap);
       if (wg > 0.0f)
         many *= 12.566f * hg(min(wg, 0.9f), cosT);
       float3 soft = sunColor * (single + many);
