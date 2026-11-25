@@ -179,6 +179,7 @@ a few times inside the cloud travelling mostly forward, as it does in real cloud
 with depth: looking towards the sun, the edges and thinner cloud within about 30 degrees of it glow
 and the light wraps round the outline, as in a backlit photo, while the same cloud seen side on is a
 touch darker. It acts only with 'light diffusion' on.
+Flat decks seen at a grazing angle (v0.50.0): one pixel covers a strip of a sheet-like deck (stratus, altostratus, cirrus, altocumulus: thin for the size of its clouds) about 1 / sin(elevation) times longer along the view than across it, and the detail finer than that strip aliased into rows of speckle, worst in thin see-through edges near the horizon. Below 30 degrees the detail of such decks is now drawn for that longer footprint (x2 at 14.5 degrees, at most x10), so it fades instead; heaped clouds (cumulus, stratocumulus, valley fog) are unchanged.
 Light from a self-lit EzAtmosScatter 1.1+ (v0.49.1): the sun reaching the clouds now also loses the atmos's ozone, as the atmos's own white balance assumes. Before, a white-balanced low sun came out yellow-green (the ozone it divides out was never taken off again), so sunset decks looked olive.
 Low sun on a deck (v0.49.0): with the sun within about 17 degrees of the horizon, how much of that
 forward direction the light keeps goes by the deck's depth along a slant of about 17 degrees (the

@@ -2485,6 +2485,18 @@ local:
           if (i < 0) {
             if (act[L] != 1)
               continue;
+            // A flat deck seen at a grazing angle: one pixel covers a strip of the sheet about
+            // 1 / sin(elevation) times longer along the view than across it, and octaves of detail
+            // finer than that strip aliased into rows of speckle (worst in thin, see-through
+            // edges). Above 30 degrees nothing changes; below, the footprint the detail is drawn
+            // for grows with the strip (x2 at 14.5 degrees, at most x10), so those octaves fade.
+            // Only sheet-like decks (thin for the size of their clouds: stratus, altostratus,
+            // cirrus...): heaped clouds' billows face the camera and aren't squashed.
+            if (volume[L] == 0) {
+              float flat = clamp((0.3f - thickness[L] / max(scale_km[L] * 1000.0f, 1.0f)) / 0.15f, 0.0f, 1.0f);
+              float graze = min(max(1.0f, 0.5f / max(fabs(d.y), 1e-3f)), 10.0f);
+              fq = foot * (1.0f + flat * (graze - 1.0f));
+            }
           } else {
             if (sigL[L] <= 0.0f)
               continue;
