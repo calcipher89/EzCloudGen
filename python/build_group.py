@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.49.1"
+VERSION = "0.50.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -831,6 +831,29 @@ def build_knobs(g):
         "round the outline, as in a backlit photo; side on and from behind the sun, a cloud is a touch "
         "darker. 0: as before.").setValue(1)
     g["wrap_light"].setRange(0, 1.5)
+    c = add(g, nuke.Color_Knob("forward_warmth", "forward warmth"),
+            "Tints only the light the clouds send forward towards the camera near the sun (the glow of lit "
+            "undersides and edges, from 'forward scatter', 'sun glow' and 'wrap light'), not the evenly spread "
+            "light of the shaded tops, so at sunset the undersides can glow warm while the tops stay neutral "
+            "grey. White: as before.")
+    c.setValue([1.0, 1.0, 1.0])
+    add(g, nuke.Boolean_Knob("forward_warmth_from_atmos", "warmth from atmos"),
+        "Multiplies 'forward warmth' by the colour the atmos's white balance took out of its sun (its "
+        "'sun color' over 'sun color in use', at the same brightness): the lit undersides keep the sun's "
+        "real colour while the rest of the cloud is white balanced. Needs a self-lit EzAtmosScatter.").setValue(False)
+    k = hidden(g, nuke.Color_Knob("forward_warmth_in_use"))
+    for i, ch in enumerate("rgb"):
+        k.setExpression(py(FIND_ATMOS +
+                           "f = nuke.thisNode()\n"
+                           "ret = f['forward_warmth'].value(%d)\n"
+                           "if f['forward_warmth_from_atmos'].value() and a is not None and a.knob('sun_color_in_use') is not None:\n"
+                           "    raw = a['sun_color']\n"
+                           "    bal = a['sun_color_in_use']\n"
+                           "    r0 = raw.value(0) / max(bal.value(0), 1e-6)\n"
+                           "    r1 = raw.value(1) / max(bal.value(1), 1e-6)\n"
+                           "    r2 = raw.value(2) / max(bal.value(2), 1e-6)\n"
+                           "    lum = 0.2126 * r0 + 0.7152 * r1 + 0.0722 * r2\n"
+                           "    ret = ret * (r0, r1, r2)[%d] / max(lum, 1e-6)\n" % (i, i)), i)
     add(g, nuke.Text_Knob("look_divider", "look"))
     add(g, nuke.Double_Knob("detail_sharpness", "detail sharpness"),
         "Crisper billows: keeps more of the finer detail octaves and hardens the cloud's surface, for the "
@@ -1309,6 +1332,8 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     n[k + "sun_glow"].setExpression("parent.sun_glow")
     n[k + "diffusion"].setExpression("parent.diffusion")
     n[k + "wrap_light"].setExpression("parent.wrap_light")
+    for j, ch in enumerate("rgb"):
+        n[k + "forward_warmth"].setExpression("parent.forward_warmth_in_use.%s" % ch, j)
     n[k + "detail_sharpness"].setExpression("parent.detail_sharpness")
     n[k + "billow_light"].setExpression("parent.billow_light")
     n[k + "billow_shrink"].setExpression("parent.billow_shrink")

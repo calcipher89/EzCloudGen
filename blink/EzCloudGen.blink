@@ -134,6 +134,7 @@ param:
   float shadow_depth[3];
   float sunGlow;
   float wrapLight;
+  float3 forwardWarmth;
   float diffusion;
   float detailSharpness;
   float billowLight;
@@ -328,6 +329,7 @@ local:
     defineParam(gapSize, "gap_size", 2000.0f);
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(wrapLight, "wrap_light", 0.0f);
+    defineParam(forwardWarmth, "forward_warmth", float3(1.0f, 1.0f, 1.0f));
     defineParam(diffusion, "diffusion", 0.0f);
     defineParam(detailSharpness, "detail_sharpness", 0.0f);
     defineParam(billowLight, "billow_light", 0.0f);
@@ -1769,6 +1771,15 @@ local:
     // sees a fraction of the optical depth: 0.3 (shadow depth 0) lets light glow through
     // the whole cloud, 0.6 (shadow depth 1) keeps the folds and the core in deep shadow.
     float ms = 0.0f;
+    // 'forward warmth': the part of the sunlight sent towards the camera by the forward peaks
+    // (the phase above its average over all directions: the glow of lit undersides and edges
+    // near the sun) can take its own tint, while the evenly spread light (the shaded tops) keeps
+    // the sun's colour. That light reached the camera along the longer, redder path near the sun.
+    // Only the narrow peak takes it: the tint grows from 4 to 24 times the average phase (with
+    // 'forward scatter' 0.85, within about 10 degrees of the sun), so cloud 20-30 degrees away
+    // stays neutral. White: as before.
+    float msFwd = 0.0f;
+    float phIso = (1.0f + sunGlow) / (4.0f * pi);
     float oaK = 0.3f + 0.3f * clamp(shadow_depth[lyr], 0.0f, 1.0f);
     float oa = 1.0f;
     float ob = 1.0f;
@@ -1779,6 +1790,7 @@ local:
       float ph = 0.75f * hg(forward[lyr] * oc, cosT) + 0.25f * hg(-0.25f * oc, cosT)
                  + sunGlow * hg(0.93f * oc, cosT);
       ms += ob * exp(-od * oa) * ph;
+      msFwd += ob * exp(-od * oa) * max(ph - phIso, 0.0f) * clamp((ph / phIso - 4.0f) / 20.0f, 0.0f, 1.0f);
       oa *= oaK;
       ob *= 0.6f;
       oc *= 0.5f;
@@ -1787,15 +1799,17 @@ local:
     // sun it fades, so backlit edges keep their silver lining.
     float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
     powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
-    direct = sunColor * (ms * powder);
+    float3 warmK = forwardWarmth - float3(1.0f);
+    direct = sunColor * (ms * powder) + sunColor * warmK * (msFwd * powder);
     if (diffusion > 0.0f) {
       // Light diffusion: what a thick cloud really does with sunlight. Single
       // scattering keeps the forward peak (the silver lining), and the many times
       // scattered light follows diffusion theory: it falls off as 1 / (1 + k tau),
       // not exponentially, so the sunlit side is bright white, billows shade off
       // gradually round their sides, and even the far side of a tower still glows.
-      float single = exp(-od) * (0.75f * hg(forward[lyr], cosT) + 0.25f * hg(-0.25f, cosT)
-                                 + sunGlow * hg(0.93f, cosT));
+      float phS = 0.75f * hg(forward[lyr], cosT) + 0.25f * hg(-0.25f, cosT) + sunGlow * hg(0.93f, cosT);
+      float single = exp(-od) * phS;
+      float fwd = exp(-od) * max(phS - phIso, 0.0f) * clamp((phS / phIso - 4.0f) / 20.0f, 0.0f, 1.0f);
       float many = 0.2865f / (1.0f + 0.75f * (1.0f - forward[lyr]) * od);
       // Wrap light: light scattered a few times in cloud still travels mostly forward (a droplet
       // throws most of its light within some 20 degrees of straight on), and only deep in does it
@@ -1811,9 +1825,12 @@ local:
       // brightness itself still goes by od. High sun (above 17 degrees) and volumes: unchanged.
       float odWrap = volume[lyr] == 0 ? od * min(1.0f, max(sun.y, 0.05f) / 0.3f) : od;
       float wg = 0.7f * clamp(wrapLight, 0.0f, 1.5f) * exp(-0.12f * odWrap);
-      if (wg > 0.0f)
-        many *= 12.566f * hg(min(wg, 0.9f), cosT);
-      float3 soft = sunColor * (single + many);
+      if (wg > 0.0f) {
+        float wrapK = 12.566f * hg(min(wg, 0.9f), cosT);
+        fwd += many * max(wrapK - 1.0f, 0.0f) * clamp((wrapK - 4.0f) / 20.0f, 0.0f, 1.0f);
+        many *= wrapK;
+      }
+      float3 soft = sunColor * (single + many) + sunColor * warmK * fwd;
       direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
     }
     // Sky light from above, ground bounce from below.
