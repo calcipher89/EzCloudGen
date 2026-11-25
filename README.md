@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.49.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.50.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -179,6 +179,8 @@ a few times inside the cloud travelling mostly forward, as it does in real cloud
 with depth: looking towards the sun, the edges and thinner cloud within about 30 degrees of it glow
 and the light wraps round the outline, as in a backlit photo, while the same cloud seen side on is a
 touch darker. It acts only with 'light diffusion' on.
+Flat decks seen at a grazing angle (v0.50.0): one pixel covers a strip of a sheet-like deck (stratus, altostratus, cirrus, altocumulus: thin for the size of its clouds) about 1 / sin(elevation) times longer along the view than across it, and the detail finer than that strip aliased into rows of speckle, worst in thin see-through edges near the horizon. Below 30 degrees the detail of such decks is now drawn for that longer footprint (x2 at 14.5 degrees, at most x10), so it fades instead; heaped clouds (cumulus, stratocumulus, valley fog) are unchanged.
+'forward warmth' (v0.50.0, by 'wrap light'; white = off) tints only the light the clouds send forward towards the camera close to the sun (the narrow peak of 'forward scatter', 'sun glow' and 'wrap light': lit undersides and edges within about 10 degrees of the sun), not the evenly spread light of the shaded tops. At sunset the undersides can glow warm while the tops stay neutral grey: white balance the clouds' atmos (0.6-0.7) and turn on 'warmth from atmos', which puts back on that forward light the colour the white balance took out of the sun.
 Light from a self-lit EzAtmosScatter 1.1+ (v0.49.1): the sun reaching the clouds now also loses the atmos's ozone, as the atmos's own white balance assumes. Before, a white-balanced low sun came out yellow-green (the ozone it divides out was never taken off again), so sunset decks looked olive.
 Low sun on a deck (v0.49.0): with the sun within about 17 degrees of the horizon, how much of that
 forward direction the light keeps goes by the deck's depth along a slant of about 17 degrees (the
