@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.49.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.49.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -179,6 +179,7 @@ a few times inside the cloud travelling mostly forward, as it does in real cloud
 with depth: looking towards the sun, the edges and thinner cloud within about 30 degrees of it glow
 and the light wraps round the outline, as in a backlit photo, while the same cloud seen side on is a
 touch darker. It acts only with 'light diffusion' on.
+Light from a self-lit EzAtmosScatter 1.1+ (v0.49.1): the sun reaching the clouds now also loses the atmos's ozone, as the atmos's own white balance assumes. Before, a white-balanced low sun came out yellow-green (the ozone it divides out was never taken off again), so sunset decks looked olive.
 Low sun on a deck (v0.49.0): with the sun within about 17 degrees of the horizon, how much of that
 forward direction the light keeps goes by the deck's depth along a slant of about 17 degrees (the
 short way the scattered light leaves a deck), not along the sun ray, which at a low sun runs

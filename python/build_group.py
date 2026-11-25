@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.49.0"
+VERSION = "0.49.1"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -151,7 +151,8 @@ def atmos_light(pixel, channel, fallback):
     (irradiance), 2 the sky (mean radiance). With an HDRI it is what the atmos measured in it.
     A self-lit atmos (no HDRI) has measured nothing: its sky is its own sky's mean (SelfLight),
     and its sun is its manual sun dimmed by the air it crosses on the way down (Kasten-Young
-    air mass, the atmos's own Rayleigh and haze amounts)."""
+    air mass, the atmos's own Rayleigh and haze amounts, and from EzAtmosScatter 1.1 its ozone,
+    whose white balance divides it out of 'sun color in use')."""
     i = ("red", "green", "blue").index(channel)
     return py(FIND_ATMOS +
               "ret = %s\n"
@@ -171,8 +172,11 @@ def atmos_light(pixel, channel, fallback):
               "        tm = a['mie_coefficient'].value() / 0.9 * a['haze_amount'].value() * a['haze_height'].value() * math.exp(-hk / max(a['haze_height'].value(), 1e-3))\n"
               "        ck = a['sun_color_in_use'] if a.knob('sun_color_in_use') else a['sun_color']\n"
               "        tint = ck.getValueAt(nuke.frame(), %d) if ck.arraySize() > 1 and not ck.singleValue() else ck.getValueAt(nuke.frame(), 0)\n"
-              "        ret = tint * a['manual_sun_brightness'].value() * a['sun_strength'].value() * math.exp(-(tr + tm) * am) if el > -1 else 0.0\n"
-              % (fallback, pixel, pixel, channel, pixel + 0.5, i, i))
+              "        oz = 0.0\n"
+              "        if a.knob('ozone') is not None:\n"
+              "            oz = (0.000650, 0.001881, 0.000085)[%d] * 15.0 * a['ozone'].value() / math.sqrt(math.sin(math.radians(max(el, 0.0))) ** 2 + 50.0 / a['planet_radius'].value())\n"
+              "        ret = tint * a['manual_sun_brightness'].value() * a['sun_strength'].value() * math.exp(-(tr + tm) * am - oz) if el > -1 else 0.0\n"
+              % (fallback, pixel, pixel, channel, pixel + 0.5, i, i, i))
 
 
 # ---- 3D box inputs ------------------------------------------------------------------------
