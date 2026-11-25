@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.48.0"
+VERSION = "0.48.1"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -602,6 +602,28 @@ VARIATIONS_NEXT = (VARIATIONS_LAYER + "n[p + 'seed'].setValue(n[p + 'seed'].valu
 VARIATIONS_USE = (VARIATIONS_LAYER + "k = min(max(int(n['variation_pick'].value()), 1), 9)\n"
                   "n[p + 'seed'].setValue(n[p + 'seed'].value() + k - 1)\n"
                   "n['view'].setValue('Comp')\n")
+VARIATIONS_AIM = (
+    "import math\n"
+    "n = nuke.thisNode()\n"
+    "M = [n['cam_world_matrix'].getValue(i) for i in range(16)]\n"
+    "R = [M[0], M[1], M[2], M[4], M[5], M[6], M[8], M[9], M[10]]\n"
+    "p = 'l%d_' % (int(n['variations_of'].getValue()) + 1)\n"
+    "if not n[p + 'volume'].value():\n"
+    "    b = n.input(0)\n"
+    "    fm = b.format() if b is not None else nuke.root().format()\n"
+    "    vap = n['cam_haperture'].value() * fm.height() / (fm.width() * (fm.pixelAspect() or 1.0))\n"
+    "    t = 0.3 * vap / max(n['cam_focal'].value(), 1e-6)\n"
+    "    alt = (M[7] - n['ground_height'].value()) * (n['scene_scale'].value() or 0.1)\n"
+    "    lo = n[p + 'base'].value()\n"
+    "    hi = lo + n[p + 'thickness'].value()\n"
+    "    a = math.atan(t) if alt < lo else (-math.atan(t) if alt > hi else 0.0)\n"
+    "    hx, hz = -M[2], -M[10]\n"
+    "    l = math.hypot(hx, hz)\n"
+    "    hx, hz = (hx / l, hz / l) if l > 1e-6 else (0.0, -1.0)\n"
+    "    fw = [hx * math.cos(a), math.sin(a), hz * math.cos(a)]\n"
+    "    rt = [-hz, 0.0, hx]\n"
+    "    up = [rt[1] * fw[2] - rt[2] * fw[1], rt[2] * fw[0] - rt[0] * fw[2], rt[0] * fw[1] - rt[1] * fw[0]]\n"
+    "    R = [rt[0], up[0], -fw[0], rt[1], up[1], -fw[1], rt[2], up[2], -fw[2]]\n")
 
 
 # ---- Knobs --------------------------------------------------------------------------------
@@ -1122,6 +1144,13 @@ def build_knobs(g):
     k = hidden(g, nuke.Double_Knob("bg_pixel_aspect"))
     k.setExpression(py("b = nuke.thisNode().input(0)\n"
                        "ret = b.format().pixelAspect() if b is not None else nuke.root().format().pixelAspect()"))
+    # The variations sheet's camera: the shot camera turned (same place, same heading) to frame
+    # the layer shown. A deck above the camera puts the horizon low in each tile, one below it
+    # puts it high, so every tile is mostly cloud even when the shot looks down at a valley and
+    # the deck is only a strip at the top of its frame. A volume keeps the shot's framing.
+    m = hidden(g, nuke.Array_Knob("var_cam_rot", "variations camera", 9))
+    for i in range(9):
+        m.setExpression(py(VARIATIONS_AIM + "ret = R[%d]" % i), i)
     k = hidden(g, nuke.Int_Knob("map_found"))
     k.setExpression(py("ret = 1 if nuke.thisNode().input(4) is not None else 0"))
     k = hidden(g, nuke.Int_Knob("atm_found"))
@@ -1215,7 +1244,8 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
     rows = ((0, 1, 2), (4, 5, 6), (8, 9, 10))
     for r, idx in enumerate(rows):
         for j, m in enumerate(idx):
-            n[k + "cam_row%d" % r].setExpression("parent.cam_world_matrix.%d" % m, j)
+            n[k + "cam_row%d" % r].setExpression("parent.view==4 ? parent.var_cam_rot.%d : "
+                                                 "parent.cam_world_matrix.%d" % (r * 3 + j, m), j)
     for j, m in enumerate((3, 7, 11)):
         n[k + "cam_position"].setExpression("parent.cam_world_matrix.%d" % m, j)
     n[k + "focal"].setExpression("parent.cam_focal")
@@ -1719,8 +1749,12 @@ def build():
                 t["box"].setExpression(e, j)
             t["xjustify"].setValue("left")
             t["yjustify"].setValue("top")
-            t["font_size"].setExpression("height/14")
-            t["global_font_scale"].setValue(0.6)
+            # Big enough to read on a 4K plate at a fit-to-viewer zoom, and as wide as tall on
+            # an anamorphic plate once the viewer unsqueezes it.
+            t["font_size"].setExpression("height/9")
+            t["global_font_scale"].setValue(1)
+            if t.knob("font_width") is not None:
+                t["font_width"].setExpression("font_size / max(parent.bg_pixel_aspect, 0.01)")
             t["color"].setValue([1, 0.85, 0.3, 1])
             t.setInput(0, var_view)
             var_view = t

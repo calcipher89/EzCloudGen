@@ -49,6 +49,44 @@ def _scanline_on_b(bg):
     return False
 
 
+def _depth_kind(pos, mode, s, scanline):
+    """Which depth this is, from its numbers: 0 Planar Z, 1 1/Z, 2 Distance (kept when it is
+    already set and the numbers are distances). Each reading must put the middle of the frame
+    at a believable distance (2 m to 2000 km); the numbers win over a ScanlineRender found up
+    the pipe (a plate can be merged over a scanline render and still carry Arnold's Planar Z).
+    Returns (mode, note or '')."""
+    if not pos:
+        return mode, ''
+    mid = _pct(pos, 0.5)
+    as_z = mid * s                 # metres, read as Z (or distance)
+    as_inv = s / mid               # metres, read as 1/Z
+
+    def ok(m):
+        return 2.0 <= m <= 2.0e6
+    z_ok, inv_ok = ok(as_z), ok(as_inv)
+    plain = mode if mode != 1 else 0
+    if z_ok and not inv_ok:
+        new = plain
+    elif inv_ok and not z_ok:
+        new = 1
+    elif z_ok and inv_ok:
+        # Both believable (middle values near 1/sqrt(units to metres)): all under 1 reads as
+        # 1/Z, as does a ScanlineRender up the pipe; otherwise keep what is set.
+        new = 1 if (_pct(pos, 0.95) < 1.0 or scanline) else mode
+    else:
+        new = 1 if _pct(pos, 0.95) < 1.0 else plain
+    note = ''
+    if scanline and new != 1 and z_ok:
+        note = ('A ScanlineRender/RayRender is up the bg pipe, but the depth numbers (middle %.4g) are '
+                'too far for 1/Z, so they are read as %s.' % (mid, ['Planar Z', '1/Z', 'Distance'][new]))
+    if not (z_ok or inv_ok):
+        note = (note + ' ' if note else '') + (
+            'The depth numbers (middle %.4g) put the terrain at %.3g m as Z and %.3g m as 1/Z; neither '
+            'looks like a real scene. Check the depth channel and \'units to metres\' (now %g).'
+            % (mid, as_z, as_inv, s))
+    return new, note
+
+
 def analyze(n):
     undo = nuke.Undo()
     undo.begin('EzCloudGen analyze scene')
@@ -136,14 +174,9 @@ def _analyze(n):
                         v = 0.0
                     raw.append((v, px, py))
             pos = [v for v, _, _ in raw if v > 0]
-            # 1/Z: ScanlineRender up the plate's main pipe, or depth that is all under 1 (in scene
-            # units nothing in a shot is that close; 1/Z of anything past 1 unit is).
-            if pos and (_scanline_on_b(bg) or _pct(pos, 0.95) < 1.0):
-                new_mode = 1
-            elif mode == 1 and pos and _pct(pos, 0.5) > 1.0:
-                new_mode = 0
-            else:
-                new_mode = mode
+            new_mode, why = _depth_kind(pos, mode, s, _scanline_on_b(bg))
+            if why:
+                notes.append(why)
             if new_mode != mode:
                 setk('depth_mode', ['Planar Z', '1/Z (ScanlineRender)', 'Distance'][new_mode], 'depth is')
                 mode = new_mode
@@ -562,7 +595,7 @@ def debug_report(n):
           % (min(pos) if pos else 0, _pct(pos, .05), _pct(pos, .5), _pct(pos, .95), max(pos) if pos else 0,
              100 * sum(1 for v in raw if v == 0) // len(raw), 100 * bad // len(raw),
              100 * sum(1 for v in raw if v < 0) // len(raw)))
-        if _scanline_on_b(bg) and mode != 1:
+        if _scanline_on_b(bg) and mode != 1 and _depth_kind(pos, mode, s, True)[0] == 1:
             flags.append('A ScanlineRender/RayRender is up the bg pipe but depth is read as %s; its depth is 1/Z.'
                          % ['Planar Z', '1/Z', 'Distance'][mode])
         sky_su = n['sky_depth'].value() * 1000.0 / s

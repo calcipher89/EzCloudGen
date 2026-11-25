@@ -6,7 +6,7 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.48.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.48.1: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
@@ -294,7 +294,12 @@ lobes, billow light and the light grid cost under 15% each.
 
 'show me variations' (Air, time & map tab) shows nine seeds of one layer side by side ('next nine' for
 more), over a plain sky blue rather than the plate and each tile numbered; type the number of the
-one you like into 'use number' and press 'use it'.
+one you like into 'use number' and press 'use it'. The sheet turns the camera (same place and
+heading) to frame the layer: a deck above the camera puts the horizon low in each tile, one below it
+puts the horizon high, so the tiles are mostly cloud even when the shot looks down at a valley. A
+volume keeps the shot's framing. 'analyze scene' reads the depth type (Planar Z, 1/Z) from its
+numbers: a reading must put the terrain at a believable distance, and that wins over a
+ScanlineRender found up the bg pipe.
 
 Output: rgba (the comp, or a view), depth.Z (Planar Z of the clouds, scene units, for
 EzCloudShafts), and with 'breakout layers' on: cloud (rgba), cloud_sun, cloud_sky, and
