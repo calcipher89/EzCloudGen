@@ -745,7 +745,7 @@ SHEET = [
     ("fibre_length", "fibre length", 20.0, 2, 80, "How many times longer the strands are than they are wide."),
     ("direction", "direction", 35.0, -180, 180, "The way the strands and patches run, in degrees from north (-z) towards +x."),
     ("wind_speed", "wind speed", 15.0, 0, 80, "How fast the sheet drifts along its strands, in m/s."),
-    ("forward", "forward scatter", 0.45, 0, 0.95, "How much light the sheet throws forward: its glow around the sun."),
+    ("forward", "forward scatter", 0.35, 0, 0.95, "How much light the sheet throws forward: its glow around the sun."),
     ("ambient", "sky light", 1.0, 0, 3, "How much sky light the sheet takes: its brightness on the side away from the sun."),
     ("seed", "seed", 0.0, 0, 100, "Another sheet of the same kind."),
 ]

@@ -88,7 +88,7 @@ local:
     defineParam(hazeColor, "haze_color", float3(0.6f, 0.68f, 0.8f));
     defineParam(hazeDistance, "haze_distance", 60000.0f);
     defineParam(maxDistance, "max_distance", 400000.0f);
-    defineParam(forward, "forward", 0.45f);
+    defineParam(forward, "forward", 0.35f);
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(occlude, "occlude", 0);
     defineParam(depthMode, "depth_mode", 0);
@@ -292,10 +292,13 @@ local:
     float sunUp = max(dot(up, sun), 0.0f);
     // A broad forward lobe (ice crystals scatter some light far forward, but a sheet seen at a
     // grazing angle near the sun read as flat white with a narrow one) and a back lobe.
-    float ph = 0.6f * hg(clamp(forward, -0.95f, 0.95f), cosT) + 0.4f * hg(-0.15f, cosT) + sunGlow * hg(0.93f, cosT);
-    float tauSun = 0.6f * clamp(opacity, 0.0f, 4.0f) * den * min(1.0f / max(sunUp, 0.02f), 4.0f);
+    float ph = 0.5f * hg(clamp(forward, -0.95f, 0.95f), cosT) + 0.5f * hg(-0.15f, cosT) + sunGlow * hg(0.93f, cosT);
+    float tauSun = clamp(opacity, 0.0f, 4.0f) * den * min(1.0f / max(sunUp, 0.02f), 10.0f);
+    // The sun dimmed through the sheet along its own slant, plus a softer multiple-scattering
+    // term: at a low sun the thick parts dim and their thin edges and strands stay bright, so a
+    // sheet seen towards the sun keeps its fibres instead of reading as one flat white.
     // The sun sets on the sheet a little after it sets on the ground.
-    float lit = exp(-tauSun) * sstep(-0.06f, 0.0f, dot(up, sun));
+    float lit = (exp(-tauSun) + 0.25f * exp(-0.25f * tauSun)) / 1.25f * sstep(-0.06f, 0.0f, dot(up, sun));
     // The light a thin sheet sends to the camera per unit of its opacity: 4 pi x phase for the
     // sun (1 for an even phase), the sky's light all round.
     float3 sunPart = sunColor * (4.0f * pi * ph * lit * 0.25f);
