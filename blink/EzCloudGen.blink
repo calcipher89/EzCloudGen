@@ -245,6 +245,8 @@ param:
   float3 vol_axis_x[3];
   float3 vol_axis_y[3];
   float3 vol_axis_z[3];
+  // The sun at each layer's height against the camera's (the atmos light is the camera's sun).
+  float3 sun_tint[3];
   int depthMode;
   float skyDepth;
   // The layers: which are on, and each one's seed (the global seed jitters the steps). The
@@ -1800,7 +1802,8 @@ local:
     float powder = 1.0f - 0.6f * exp(-sig * 160.0f);
     powder += (1.0f - powder) * clamp(cosT * 0.5f + 0.5f, 0.0f, 1.0f);
     float3 warmK = forwardWarmth - float3(1.0f);
-    direct = sunColor * (ms * powder) + sunColor * warmK * (msFwd * powder);
+    float3 sunC = sunColor * sun_tint[lyr];
+    direct = sunC * (ms * powder) + sunC * warmK * (msFwd * powder);
     if (diffusion > 0.0f) {
       // Light diffusion: what a thick cloud really does with sunlight. Single
       // scattering keeps the forward peak (the silver lining), and the many times
@@ -1830,7 +1833,7 @@ local:
         fwd += many * max(wrapK - 1.0f, 0.0f) * clamp((wrapK - 4.0f) / 20.0f, 0.0f, 1.0f);
         many *= wrapK;
       }
-      float3 soft = sunColor * (single + many) + sunColor * warmK * fwd;
+      float3 soft = sunC * (single + many) + sunC * warmK * fwd;
       direct = direct + (soft - direct) * clamp(diffusion, 0.0f, 1.0f);
     }
     // Sky light from above, ground bounce from below.
