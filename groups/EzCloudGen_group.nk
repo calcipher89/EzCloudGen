@@ -3,7 +3,7 @@ version 15.1 v3
 push $cut_paste_input
 Group {
  name EzCloudGen
- knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic'\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic'\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic'\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic'\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic'\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows'\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows'\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\n"
+ knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3519, 'cover_table': \[0.0, 0.346, 0.552, 0.755, 1.0]\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.332, 'cover_table': \[0.0, 0.357, 0.549, 0.744, 1.0]\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.6076, 'cover_table': \[0.0, 0.324, 0.558, 0.795, 1.0]\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.9654, 'cover_table': \[0.0, 0.468, 0.633, 0.783, 1.0]\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.5298, 'cover_table': \[0.0, 0.399, 0.597, 0.79, 1.0]\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 1.0, 'cover_table': \[0.0, 0.461, 0.617, 0.773, 1.0]\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.4464, 'cover_table': \[0.0, 0.597, 0.83, 1.0, 1.0]\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3911, 'cover_table': \[0.0, 0.591, 0.855, 1.0, 1.0]\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.2036, 'cover_table': \[0.0, 0.614, 0.834, 0.994, 1.0]\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3547, 'cover_table': \[0.0, 0.475, 0.654, 0.851, 1.0]\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.55, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows', 'cover': 0.43, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.45, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.52, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.38, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\nif n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n    _kn = k.name()\n    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn\[:3] in ('l1_', 'l2_', 'l3_'):\n        _ez = \{\}\n        exec(__import__('base64').b64decode(n\['tool_code'].value()).decode(), _ez)\n        _ez\['on_knob'](n, _kn)\n"
  tile_color 0x8fb3d9ff
  label "\[expr \{\[value preview] ? \"PREVIEW\" : \"\"\}]"
  selected true
@@ -396,6 +396,19 @@ Group {
  addUserKnob {22 map_frame_here l "use this frame" t "Sets 'map frame' to the current frame." -STARTLINE T "nuke.thisNode()\['map_frame'].setValue(nuke.frame())"}
  addUserKnob {7 map_softness l "map softness" t "Blurs the map over a share of the cloud size, so a hard edge in the paint comes out as a slope of thinning cloud instead of a straight wall through a tall deck. 0: the map as painted." R 0 2}
  map_softness 0.5
+ addUserKnob {20 easy_tab l Easy}
+ addUserKnob {26 easy_intro l "" +STARTLINE T "A few big sliders over one layer's knobs. They start from the layer as it is; the layer tab shows what they changed. Editing a layer knob by hand starts them again from there."}
+ addUserKnob {4 easy_layer l "easy layer" t "The layer the sliders work on. Each layer keeps its own slider settings." M {"Layer 1" "Layer 2" "Layer 3"}}
+ addUserKnob {7 easy_cover l cover t "More or less of the sky covered (adds to the layer's 'cover')." R -1 1}
+ addUserKnob {7 easy_size l size t "Bigger or smaller clouds: the shapes, cells and lumps, and a little the billows." R 0.25 4}
+ easy_size 1
+ addUserKnob {7 easy_softness l softness t "Softer, thinner, more veil-like edges (up) or harder, denser ones (down)." R -1 1}
+ addUserKnob {7 easy_wisps l wisps t "More fine wisps eating into the edges, combed along the wind (up), or fewer." R -1 1}
+ addUserKnob {7 easy_underside l underside t "Darker, deeper undersides and folds (up), or lighter, glowing ones (down)." R -1 1}
+ addUserKnob {7 easy_lit l lit t "Brightness of the sunlit side, in stops (the node's 'sun intensity', every layer)." R -2 2}
+ addUserKnob {1 easy_base l "easy base" +INVISIBLE}
+ addUserKnob {1 tool_code l "tool code" +INVISIBLE}
+ tool_code IiIiRWFzeSB0YWI6IGEgZmV3IGFydGlzdC1sYW5ndWFnZSBzbGlkZXJzIG92ZXIgb25lIGxheWVyJ3Mga25vYnMgKHRoZSAnZWFzeSBsYXllcicpLgoKYnVpbGRfZ3JvdXAucHkgc3RvcmVzIHRoaXMgZmlsZSBiYXNlNjQtZW5jb2RlZCBpbiB0aGUgaGlkZGVuIHRvb2xfY29kZSBrbm9iOyBrbm9iQ2hhbmdlZCBydW5zCml0IGZyb20gdGhlcmUsIHNvIHRoZSBub2RlIG5lZWRzIG5vIFB5dGhvbiBtb2R1bGUgYXQgdGhlIHN0dWRpby4gRXpNYXRjaCBydW5zIGl0IHRoZSBzYW1lIHdheQphbmQgY2FsbHMgYXBwbHlfZWFzeSAvIHJlYmFzZSAoYW5kIG1hdGNoX2JlZ2luIC8gbWF0Y2hfZW5kIGFyb3VuZCBhIG1hdGNoKSwgc28gaXQgb25seSBldmVyCm1vdmVzIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlOiB0aGUgbGF5ZXIncyBrbm9iIHZhbHVlcyB3aGVuIHRoZSBzbGlkZXJzIHdlcmUgbGFzdCBjZW50cmVkLAprZXB0IHBlciBsYXllciBpbiB0aGUgaGlkZGVuIGVhc3lfYmFzZSBrbm9iIChKU09OKSB3aXRoIHRoZSBzbGlkZXJzJyBvd24gdmFsdWVzLCBzbyBzd2l0Y2hpbmcKJ2Vhc3kgbGF5ZXInIGJyaW5ncyBlYWNoIGxheWVyJ3Mgc2xpZGVycyBiYWNrLiBFdmVyeSBzbGlkZXIgY2hhbmdlIHJld3JpdGVzIHRoZSBsYXllcidzIGtub2JzCmZyb20gaXRzIGJhc2UsIHNvIHRoZSBsYXllciB0YWIgYWx3YXlzIHNob3dzIGV4YWN0bHkgd2hhdCBFYXN5IGRpZC4gRWRpdGluZyBvbmUgb2YgdGhvc2Uga25vYnMgYnkKaGFuZCwgb3IgY2hhbmdpbmcgdGhlIGxheWVyJ3MgdHlwZSwgbWFrZXMgdGhlIG5ldyB2YWx1ZXMgdGhlIGJhc2UgYW5kIGNlbnRyZXMgdGhlIHNsaWRlcnMuCidsaXQnIGlzIGdsb2JhbCAodGhlIHN1biBpbnRlbnNpdHkpIGFuZCBzdGF5cyB3aGVyZSBpdCBpcy4KIiIiCmltcG9ydCBqc29uCmltcG9ydCBtYXRoCgppbXBvcnQgbnVrZQoKIyAoa25vYiwgbmV1dHJhbCkKU0xJREVSUyA9IFsoImVhc3lfY292ZXIiLCAwLjApLCAoImVhc3lfc2l6ZSIsIDEuMCksICgiZWFzeV9zb2Z0bmVzcyIsIDAuMCksICgiZWFzeV93aXNwcyIsIDAuMCksCiAgICAgICAgICAgKCJlYXN5X3VuZGVyc2lkZSIsIDAuMCksICgiZWFzeV9saXQiLCAwLjApXQpFQVNZX0tOT0JTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSU10gKyBbImVhc3lfbGF5ZXIiXQpMQVlFUl9TTElERVJTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSUyBpZiBuYW1lICE9ICJlYXN5X2xpdCJdCiMgVGhlIGxheWVyIGtub2JzICh3aXRob3V0IHRoZSBsTl8gcHJlZml4KSB0aGUgc2xpZGVycyB3cml0ZS4KTE9PSyA9IFsiY292ZXIiLCAic2NhbGVfa20iLCAiY2VsbF9rbSIsICJsdW1wX3NpemUiLCAiZGV0YWlsX3NpemUiLCAiZWRnZSIsICJzaWdtYSIsICJ3aXNwX2Ftb3VudCIsCiAgICAgICAgIndpc3Bfc3RyZXRjaCIsICJza3lfb2NjbHVzaW9uIiwgInNoYWRvd19kZXB0aCIsICJhbWJpZW50Il0KR0xPQkFMID0gWyJzdW5faW50ZW5zaXR5Il0KCgpjbGFzcyBfQnVzeShvYmplY3QpOgogICAgIiIiV2hpbGUgdGhlIHNsaWRlcnMgc2V0IGtub2JzLCBrbm9iQ2hhbmdlZCBsZWF2ZXMgdGhlbSBhbG9uZS4iIiIKCiAgICBkZWYgX19lbnRlcl9fKHNlbGYpOgogICAgICAgIHNlbGYud2FzID0gZ2V0YXR0cihudWtlLCAiX2V6Y2xvdWRnZW5fYnVzeSIsIEZhbHNlKQogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IFRydWUKCiAgICBkZWYgX19leGl0X18oc2VsZiwgKmFyZ3MpOgogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IHNlbGYud2FzCgoKZGVmIGJ1c3koKToKICAgIHJldHVybiBnZXRhdHRyKG51a2UsICJfZXpjbG91ZGdlbl9idXN5IiwgRmFsc2UpCgoKZGVmIGxheWVyKG4pOgogICAgIiIiVGhlIGVhc3kgbGF5ZXIncyBrbm9iIHByZWZpeCwgJ2wxXycgLi4gJ2wzXycuIiIiCiAgICByZXR1cm4gImwlZF8iICUgKGludChuWyJlYXN5X2xheWVyIl0uZ2V0VmFsdWUoKSkgKyAxKQoKCmRlZiBfYWxsKG4pOgogICAgdHJ5OgogICAgICAgIHJldHVybiBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIHJldHVybiB7fQoKCmRlZiBfc2F2ZShuLCBkKToKICAgIHdpdGggX0J1c3koKToKICAgICAgICBuWyJlYXN5X2Jhc2UiXS5zZXRWYWx1ZShqc29uLmR1bXBzKGQpKQoKCmRlZiBfbGl0X2Jhc2UobiwgZCk6CiAgICBpZiAic3VuX2ludGVuc2l0eSIgbm90IGluIGQ6CiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICByZXR1cm4gZFsic3VuX2ludGVuc2l0eSJdCgoKZGVmIHJlYmFzZShuLCBjZW50cmU9VHJ1ZSwgcD1Ob25lKToKICAgICIiIk1ha2UgdGhlIGVhc3kgbGF5ZXIncyBrbm9iIHZhbHVlcyBpdHMgYmFzZSBhbmQgY2VudHJlIGl0cyBzbGlkZXJzICgnbGl0JyBzdGF5cykuIiIiCiAgICBwID0gcCBvciBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGRbcF0gPSB7ImJhc2UiOiBkaWN0KChrLCBuW3AgKyBrXS52YWx1ZSgpKSBmb3IgayBpbiBMT09LIGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmUpLAogICAgICAgICAgICAic2xpZGVycyI6IGRpY3QoKG5hbWUsIG5ldXRyYWwpIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiKX0KICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICAgICAgbltuYW1lXS5zZXRWYWx1ZShuZXV0cmFsKQoKCmRlZiBzaG93X2xheWVyKG4pOgogICAgIiIiJ2Vhc3kgbGF5ZXInIGNoYW5nZWQ6IGJyaW5nIHRoYXQgbGF5ZXIncyBzbGlkZXJzIGJhY2sgKG9yIHN0YXJ0IGl0IGZyb20gaXRzIGtub2JzKS4iIiIKICAgIHAgPSBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGlmIHAgbm90IGluIGQ6CiAgICAgICAgcmViYXNlKG4sIHA9cCkKICAgICAgICByZXR1cm4KICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgbmFtZSwgbmV1dHJhbCBpbiBTTElERVJTOgogICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKGRbcF1bInNsaWRlcnMiXS5nZXQobmFtZSwgbmV1dHJhbCkpCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBlYXN5IGxheWVyJ3Mga25vYnMgKGFuZCB0aGUgc3VuIGludGVuc2l0eSkgZnJvbSB0aGUgYmFzZSBhbmQgdGhlIHNsaWRlcnMuIiIiCiAgICBwID0gbGF5ZXIobikKICAgIGQgPSBfYWxsKG4pCiAgICBpZiBwIG5vdCBpbiBkOgogICAgICAgICMgTmV2ZXIgc2V0IHVwOiB0aGUga25vYnMgc3RpbGwgaG9sZCB0aGUgbG9vayB0aGUgc2xpZGVyIGp1c3QgbW92ZWQgYXdheSBmcm9tLgogICAgICAgIGtlZXAgPSBkaWN0KChuYW1lLCBuW25hbWVdLnZhbHVlKCkpIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICAgICAgcmViYXNlKG4sIGNlbnRyZT1GYWxzZSwgcD1wKQogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFtwXVsic2xpZGVycyJdID0ga2VlcAogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGRbcF1bInNsaWRlcnMiXSA9IGRpY3QoKG5hbWUsIGVbbmFtZV0pIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICBiID0gZFtwXVsiYmFzZSJdCiAgICBsaXQgPSBfbGl0X2Jhc2UobiwgZCkKICAgIF9zYXZlKG4sIGQpCgogICAgZGVmIHB1dChrLCB2LCBsbz1Ob25lLCBoaT1Ob25lKToKICAgICAgICBpZiBuLmtub2IocCArIGspIGlzIE5vbmUgb3IgayBub3QgaW4gYjoKICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgaWYgbG8gaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtYXgobG8sIHYpCiAgICAgICAgaWYgaGkgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtaW4oaGksIHYpCiAgICAgICAgbltwICsga10uc2V0VmFsdWUodikKCiAgICBzaXplID0gbWF4KGVbImVhc3lfc2l6ZSJdLCAxZS0zKQogICAgcyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3NvZnRuZXNzIl0pKQogICAgdyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3dpc3BzIl0pKQogICAgdSA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3VuZGVyc2lkZSJdKSkKICAgIHdpdGggX0J1c3koKToKICAgICAgICAjIENvdmVyOiBtb3JlIG9yIGxlc3Mgb2YgdGhlIHNreSBoaWRkZW4sIGluIHRoZSB0eXBlJ3MgdmlzaWJsZS1jb3ZlciB1bml0cy4KICAgICAgICBwdXQoImNvdmVyIiwgYi5nZXQoImNvdmVyIiwgMC41KSArIGVbImVhc3lfY292ZXIiXSwgMC4wLCAxLjApCiAgICAgICAgIyBTaXplOiB0aGUgY2xvdWQgc2hhcGVzIGFuZCB0aGVpciBjZWxscyBhbmQgbHVtcHM7IHRoZSBiaWxsb3dzIGdyb3cgbW9yZSBzbG93bHkuCiAgICAgICAgZm9yIGsgaW4gKCJzY2FsZV9rbSIsICJjZWxsX2ttIiwgImx1bXBfc2l6ZSIpOgogICAgICAgICAgICBwdXQoaywgYi5nZXQoaywgMS4wKSAqIHNpemUpCiAgICAgICAgcHV0KCJkZXRhaWxfc2l6ZSIsIGIuZ2V0KCJkZXRhaWxfc2l6ZSIsIDEwMC4wKSAqIG1hdGguc3FydChzaXplKSkKICAgICAgICAjIFNvZnRuZXNzOiBzb2Z0ZXIsIHRoaW5uZXIgZWRnZXMgKG9yIGhhcmRlciwgZGVuc2VyIG9uZXMpLgogICAgICAgIHB1dCgiZWRnZSIsIGIuZ2V0KCJlZGdlIiwgMC4xKSAqIDQuMCAqKiBzLCAwLjAxLCAwLjUpCiAgICAgICAgcHV0KCJzaWdtYSIsIGIuZ2V0KCJzaWdtYSIsIDAuMDQpICogMi4wICoqIC1zLCAwLjAwMDUsIDAuMSkKICAgICAgICAjIFdpc3BzOiBmaW5lIHdpc3BzIGVhdGluZyB0aGUgZWRnZXMsIGNvbWJlZCBhbG9uZyB0aGUgd2luZCBhcyBpdCBnb2VzIHVwLgogICAgICAgIHB1dCgid2lzcF9hbW91bnQiLCBiLmdldCgid2lzcF9hbW91bnQiLCAwLjApICsgMC42ICogdywgMC4wLCAxLjApCiAgICAgICAgcHV0KCJ3aXNwX3N0cmV0Y2giLCBiLmdldCgid2lzcF9zdHJldGNoIiwgMS4wKSAqIDQuMCAqKiBtYXgodywgMC4wKSwgMS4wLCAxMi4wKQogICAgICAgICMgVW5kZXJzaWRlOiBkYXJrZXIsIGRlZXBlciB1bmRlcnNpZGVzIGFuZCBmb2xkcyAob3IgbGlnaHRlciwgZ2xvd2luZyBvbmVzKS4KICAgICAgICBwdXQoInNreV9vY2NsdXNpb24iLCBiLmdldCgic2t5X29jY2x1c2lvbiIsIDEuMCkgKyAwLjggKiB1LCAwLjAsIDIuMCkKICAgICAgICBwdXQoInNoYWRvd19kZXB0aCIsIGIuZ2V0KCJzaGFkb3dfZGVwdGgiLCAwLjApICsgMC41ICogdSwgMC4wLCAxLjApCiAgICAgICAgcHV0KCJhbWJpZW50IiwgYi5nZXQoImFtYmllbnQiLCAxLjApICogMi4wICoqICgtMC41ICogdSksIDAuMCwgMy4wKQogICAgICAgICMgTGl0OiB0aGUgc3VubGl0IHNpZGUncyBicmlnaHRuZXNzLCBpbiBzdG9wcyAodGhlIHdob2xlIG5vZGUncyBzdW4pLgogICAgICAgIG5bInN1bl9pbnRlbnNpdHkiXS5zZXRWYWx1ZShsaXQgKiAyLjAgKiogZVsiZWFzeV9saXQiXSkKCgpkZWYgbWF0Y2hfYmVnaW4obik6CiAgICAiIiJCZWZvcmUgYSBtYXRjaDogZHJhZnQgcXVhbGl0eSBhdCBRdWFydGVyIHJlc29sdXRpb24sIHNvIGVhY2ggdHJ5IHJlbmRlcnMgZmFzdC4iIiIKICAgIGtlZXAgPSBkaWN0KChrLCBuW2tdLnZhbHVlKCkpIGZvciBrIGluICgicmVuZGVyX3ByZXNldCIsICJyZXNvbHV0aW9uIiwgInF1YWxpdHkiLCAiZWRnZV9zdGVwcyIsICJzYW1wbGluZyIpKQogICAgZCA9IF9hbGwobikKICAgIGRbIl9tYXRjaF9rZWVwIl0gPSBrZWVwCiAgICBfc2F2ZShuLCBkKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgVGhlIGRyYWZ0IHByZXNldCdzIHZhbHVlcyBzZXQgZGlyZWN0bHk6IGEga25vYkNoYW5nZWQgbWF5IG5vdCBydW4gZm9yIHNldFZhbHVlLgogICAgICAgIG5bInJlbmRlcl9wcmVzZXQiXS5zZXRWYWx1ZSgiZHJhZnQiKQogICAgICAgIG5bInF1YWxpdHkiXS5zZXRWYWx1ZSgwLjUpCiAgICAgICAgblsiZWRnZV9zdGVwcyJdLnNldFZhbHVlKDIuMCkKICAgICAgICBuWyJzYW1wbGluZyJdLnNldFZhbHVlKCJMb3ciKQogICAgICAgIG5bInJlc29sdXRpb24iXS5zZXRWYWx1ZSgiUXVhcnRlciIpCgoKZGVmIG1hdGNoX2VuZChuKToKICAgICIiIkFmdGVyIGEgbWF0Y2g6IHRoZSByZW5kZXIgc2V0dGluZ3MgYXMgdGhleSB3ZXJlLiIiIgogICAgZCA9IF9hbGwobikKICAgIGtlZXAgPSBkLnBvcCgiX21hdGNoX2tlZXAiLCBOb25lKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGtlZXA6CiAgICAgICAgd2l0aCBfQnVzeSgpOgogICAgICAgICAgICBmb3IgayBpbiAoInJlc29sdXRpb24iLCAicXVhbGl0eSIsICJlZGdlX3N0ZXBzIiwgInNhbXBsaW5nIiwgInJlbmRlcl9wcmVzZXQiKToKICAgICAgICAgICAgICAgIG5ba10uc2V0VmFsdWUoa2VlcFtrXSkKCgpkZWYgb25fa25vYihuLCBrKToKICAgICIiImtub2JDaGFuZ2VkLCBmb3IgYSBrbm9iIHRoZSBFYXN5IHRhYiBsb29rcyBhZnRlci4iIiIKICAgIGlmIGJ1c3koKToKICAgICAgICByZXR1cm4KICAgIGlmIGsgPT0gImVhc3lfbGF5ZXIiOgogICAgICAgIHNob3dfbGF5ZXIobikKICAgIGVsaWYgayBpbiBFQVNZX0tOT0JTOgogICAgICAgIGFwcGx5X2Vhc3kobikKICAgIGVsaWYgbGVuKGspID4gMyBhbmQga1s6M10gaW4gKCJsMV8iLCAibDJfIiwgImwzXyIpIGFuZCBrWzozXSA9PSBsYXllcihuKSBhbmQgKGtbMzpdIGluIExPT0sgb3Iga1szOl0gPT0gInR5cGUiKToKICAgICAgICAjIFR1bmVkIGJ5IGhhbmQsIG9yIGEgbmV3IHR5cGU6IHRoYXQgYmVjb21lcyB0aGUgc2xpZGVycycgc3RhcnRpbmcgcG9pbnQuCiAgICAgICAgcmViYXNlKG4pCiAgICBlbGlmIGsgPT0gInN1bl9pbnRlbnNpdHkiOgogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICAgICAgX3NhdmUobiwgZCkK
  addUserKnob {20 l1_tab l "Layer 1"}
  addUserKnob {6 l1_enable l enable t "Draw this layer. Layers sort themselves by depth." -STARTLINE}
  l1_enable true
@@ -404,12 +417,14 @@ Group {
  l1_base 1400
  addUserKnob {7 l1_thickness l thickness t "Depth of the layer, base to top, in metres." R 50 6000}
  l1_thickness 1300
- addUserKnob {7 l1_coverage l coverage t "How much of the sky the layer covers."}
- l1_coverage 0.43
+ addUserKnob {7 l1_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
+ l1_cover 0.3519
  addUserKnob {7 l1_scale_km l size t "Size of the cloud shapes across the ground, in km." R 0.1 10}
  l1_scale_km 1.6
  addUserKnob {7 l1_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l1_wind_deg 20
+ addUserKnob {78 l1_cover_table l "cover table" +INVISIBLE n 5}
+ l1_cover_table {0 0.346 0.552 0.755 1}
  addUserKnob {7 l1_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)."}
  l1_map_amount 1
  addUserKnob {4 l1_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE M {luminance red green blue alpha}}
@@ -535,12 +550,14 @@ Group {
  l2_base 1400
  addUserKnob {7 l2_thickness l thickness t "Depth of the layer, base to top, in metres." +HIDDEN R 50 6000}
  l2_thickness 1000
- addUserKnob {7 l2_coverage l coverage t "How much of the sky the layer covers."}
- l2_coverage 0.5
+ addUserKnob {7 l2_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
+ l2_cover 0.5
  addUserKnob {7 l2_scale_km l size t "Size of the cloud shapes across the ground, in km." +HIDDEN R 0.1 10}
  l2_scale_km 2
  addUserKnob {7 l2_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l2_wind_deg 20
+ addUserKnob {78 l2_cover_table l "cover table" +INVISIBLE n 5}
+ l2_cover_table {0 0.25 0.5 0.75 1}
  addUserKnob {7 l2_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)." +HIDDEN}
  l2_map_amount 1
  addUserKnob {4 l2_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE +HIDDEN M {luminance red green blue alpha}}
@@ -668,12 +685,14 @@ Group {
  l3_base 9000
  addUserKnob {7 l3_thickness l thickness t "Depth of the layer, base to top, in metres." R 50 6000}
  l3_thickness 500
- addUserKnob {7 l3_coverage l coverage t "How much of the sky the layer covers."}
- l3_coverage 0.5
+ addUserKnob {7 l3_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
+ l3_cover 0.2036
  addUserKnob {7 l3_scale_km l size t "Size of the cloud shapes across the ground, in km." R 0.1 10}
  l3_scale_km 5
  addUserKnob {7 l3_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l3_wind_deg 35
+ addUserKnob {78 l3_cover_table l "cover table" +INVISIBLE n 5}
+ l3_cover_table {0 0.614 0.834 0.994 1}
  addUserKnob {7 l3_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)."}
  l3_map_amount 1
  addUserKnob {4 l3_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE M {luminance red green blue alpha}}
@@ -793,9 +812,9 @@ Group {
  addUserKnob {43 shape_lib l "shape lib" +INVISIBLE}
  shape_lib "\nHOLD_INPUT, ADD_INPUT, MAX_SHAPES = 8, 9, 32\n\n\ndef unit_matrix(b):\n    # The unit shape (radius 1, half size 1, centred) to the primitive's own object space.\n    c = b.Class()\n    if c == 'Sphere':\n        r = b\['radius'].value()\n        return \[r, 0, 0, 0, 0, r, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 1.0\n    if c == 'Cube':\n        e = \[b\['cube'].value(j) for j in range(6)]\n        h = \[(e\[3] - e\[0]) / 2.0, (e\[4] - e\[1]) / 2.0, (e\[5] - e\[2]) / 2.0]\n        m = \[(e\[3] + e\[0]) / 2.0, (e\[4] + e\[1]) / 2.0, (e\[5] + e\[2]) / 2.0]\n        return \[h\[0], 0, 0, m\[0], 0, h\[1], 0, m\[1], 0, 0, h\[2], m\[2], 0, 0, 0, 1], 2.0\n    r, hh = b\['radius'].value(), b\['height'].value() / 2.0\n    return \[r, 0, 0, 0, 0, hh, 0, 0, 0, 0, r, 0, 0, 0, 0, 1], 3.0\n\n\ndef collect(b, M, f, out):\n    # Scenes and MergeGeos gather, TransformGeos move what is under them, Dots pass through.\n    if b is None or len(out) >= MAX_SHAPES or (b.knob('disable') and b\['disable'].value()):\n        return\n    c = b.Class()\n    if c in ('Scene', 'MergeGeo', 'MergeGeo2'):\n        for i in range(b.inputs()):\n            collect(b.input(i), M, f, out)\n    elif c in ('Dot', 'NoOp'):\n        collect(b.input(0), M, f, out)\n    elif c == 'TransformGeo':\n        collect(b.input(0), mul(M, box_matrix(b, f)), f, out)\n    elif c in ('Sphere', 'Cube', 'Cylinder'):\n        U, t = unit_matrix(b)\n        out.append((t, mul(mul(M, box_matrix(b, f)), U)))\n\n\ndef shapes(n, f):\n    I = \[1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]\n    found = \[]\n    for mode, idx in ((0.0, HOLD_INPUT), (1.0, ADD_INPUT)):\n        got = \[]\n        collect(n.input(idx), I, f, got)\n        found += \[(t, mode, M) for t, M in got]\n    return found\[:MAX_SHAPES]\n\n\ndef inverse(M):\n    # An affine 4x4 (row major): the inverse of its 3x3, and of its translation.\n    a = \[M\[0], M\[1], M\[2], M\[4], M\[5], M\[6], M\[8], M\[9], M\[10]]\n    det = (a\[0] * (a\[4] * a\[8] - a\[5] * a\[7]) - a\[1] * (a\[3] * a\[8] - a\[5] * a\[6])\n           + a\[2] * (a\[3] * a\[7] - a\[4] * a\[6]))\n    if abs(det) < 1e-12:\n        return \[0.0] * 12\n    inv = \[(a\[4] * a\[8] - a\[5] * a\[7]) / det, (a\[2] * a\[7] - a\[1] * a\[8]) / det, (a\[1] * a\[5] - a\[2] * a\[4]) / det,\n           (a\[5] * a\[6] - a\[3] * a\[8]) / det, (a\[0] * a\[8] - a\[2] * a\[6]) / det, (a\[2] * a\[3] - a\[0] * a\[5]) / det,\n           (a\[3] * a\[7] - a\[4] * a\[6]) / det, (a\[1] * a\[6] - a\[0] * a\[7]) / det, (a\[0] * a\[4] - a\[1] * a\[3]) / det]\n    t = \[M\[3], M\[7], M\[11]]\n    rows = \[]\n    for r in range(3):\n        rows += inv\[r * 3:r * 3 + 3] + \[-(inv\[r * 3] * t\[0] + inv\[r * 3 + 1] * t\[1] + inv\[r * 3 + 2] * t\[2])]\n    return rows\n\n\n# The shape table: one pass reads every shape for a node and frame (walking the 3D graph,\n# combining transforms, inverting), and every knob value then looks it up. Any edit to a 3D\n# node, a Scene's inputs or the node's own inputs starts a new table (see install).\n_cache = \{\}\n_state = \{'edits': 0\}\n\n\ndef table(n, f):\n    key = (n.fullName(), f, _state\['edits'])\n    t = _cache.get(key)\n    if t is None:\n        ss = n\['scene_scale'].value() or 1.0\n        t = \[]\n        for typ, mode, M in shapes(n, f):\n            cols = \[(M\[c] ** 2 + M\[4 + c] ** 2 + M\[8 + c] ** 2) ** 0.5 for c in range(3)]\n            t.append((inverse(M), (typ, mode, min(cols) * ss)))\n        if len(_cache) > 512:\n            _cache.clear()\n        _cache\[key] = t\n    return t\n\n\ndef shape_value(n, slot, what):\n    # what: count; or for shape slot: rN:j (its world-to-unit rows), info:0 type, info:1 mode,\n    # info:2 metres per unit (its smallest size).\n    t = table(n, nuke.frame())\n    if what == 'count':\n        return float(len(t))\n    if slot >= len(t):\n        return 0.0\n    inv, info = t\[slot]\n    name, j = what.split(':')\n    if name == 'info':\n        return float(info\[int(j)])\n    return inv\[int(name\[1]) * 4 + int(j)]\n\n\ndef _edited():\n    _state\['edits'] += 1\n\n\ndef install():\n    # Once per session: new tables after any edit of the nodes a shape can come through.\n    for cls in ('Sphere', 'Cube', 'Cylinder', 'TransformGeo', 'Scene', 'MergeGeo', 'MergeGeo2', 'Axis', 'Axis2',\n                'Axis3', 'Dot', 'NoOp', 'Group', 'Gizmo'):\n        nuke.addKnobChanged(_edited, nodeClass=cls)\n    return shape_value\n"
  addUserKnob {43 analyze_lib l "analyze lib" +INVISIBLE}
- analyze_lib "# 'analyze scene': reads the node's inputs (the bg's depth as numbers on a coarse grid, the\n# camera, the sun and light inputs) and sets the scene knobs to match. Only numbers are read:\n# no picture leaves the node. Undoable in one step. Writes what it found to 'analysis'.\nimport math\n\nGX, GY = 32, 18\n\n\ndef _find(n, idx, knob):\n    c = n.input(idx)\n    while c is not None and not c.knob(knob):\n        c = c.input(0) if c.inputs() else None\n    return c\n\n\ndef _pct(vals, q):\n    if not vals:\n        return 0.0\n    v = sorted(vals)\n    i = min(len(v) - 1, max(0, int(round(q * (len(v) - 1)))))\n    return v\[i]\n\n\ndef _depth_channel(n, bg):\n    chans = list(bg.channels())\n    cur = n\['depth_channel'].value()\n    cur = \{'depth': 'depth.Z'\}.get(cur, cur)\n    if cur in chans:\n        return cur\n    if 'depth.Z' in chans:\n        return 'depth.Z'\n    for test in (lambda c: c.endswith('.Z') and 'depth' in c.lower(),\n                 lambda c: 'depth' in c.lower(),\n                 lambda c: c.endswith('.Z') or c.endswith('.z')):\n        for c in chans:\n            if test(c):\n                return c\n    return None\n\n\ndef _scanline_on_b(bg):\n    # ScanlineRender (or RayRender) up the B pipe: its depth is 1/Z.\n    x, seen = bg, 0\n    while x is not None and seen < 300:\n        if x.Class() in ('ScanlineRender', 'ScanlineRender2', 'RayRender'):\n            return True\n        x = x.input(0) if x.inputs() else None\n        seen += 1\n    return False\n\n\ndef _depth_kind(pos, mode, s, scanline):\n    \"\"\"Which depth this is, from its numbers: 0 Planar Z, 1 1/Z, 2 Distance (kept when it is\n    already set and the numbers are distances). Each reading must put the middle of the frame\n    at a believable distance (2 m to 2000 km); the numbers win over a ScanlineRender found up\n    the pipe (a plate can be merged over a scanline render and still carry Arnold's Planar Z).\n    Returns (mode, note or '').\"\"\"\n    if not pos:\n        return mode, ''\n    mid = _pct(pos, 0.5)\n    as_z = mid * s                 # metres, read as Z (or distance)\n    as_inv = s / mid               # metres, read as 1/Z\n\n    def ok(m):\n        return 2.0 <= m <= 2.0e6\n    z_ok, inv_ok = ok(as_z), ok(as_inv)\n    plain = mode if mode != 1 else 0\n    if z_ok and not inv_ok:\n        new = plain\n    elif inv_ok and not z_ok:\n        new = 1\n    elif z_ok and inv_ok:\n        # Both believable (middle values near 1/sqrt(units to metres)): all under 1 reads as\n        # 1/Z, as does a ScanlineRender up the pipe; otherwise keep what is set.\n        new = 1 if (_pct(pos, 0.95) < 1.0 or scanline) else mode\n    else:\n        new = 1 if _pct(pos, 0.95) < 1.0 else plain\n    note = ''\n    if scanline and new != 1 and z_ok:\n        note = ('A ScanlineRender/RayRender is up the bg pipe, but the depth numbers (middle %.4g) are '\n                'too far for 1/Z, so they are read as %s.' % (mid, \['Planar Z', '1/Z', 'Distance']\[new]))\n    if not (z_ok or inv_ok):\n        note = (note + ' ' if note else '') + (\n            'The depth numbers (middle %.4g) put the terrain at %.3g m as Z and %.3g m as 1/Z; neither '\n            'looks like a real scene. Check the depth channel and \\'units to metres\\' (now %g).'\n            % (mid, as_z, as_inv, s))\n    return new, note\n\n\ndef analyze(n):\n    undo = nuke.Undo()\n    undo.begin('EzCloudGen analyze scene')\n    try:\n        text = _analyze(n)\n    finally:\n        undo.end()\n    n\['analysis'].setValue(text)\n    if n.knob('debug') is not None and n\['debug'].value():\n        debug_report(n)\n    if nuke.GUI:\n        nuke.message('EzCloudGen: analyze scene\\n\\n' + text)\n    return text\n\n\ndef _analyze(n):\n    found, changed, notes = \[], \[], \[]\n    s = n\['scene_scale'].value() or 0.1\n    f = nuke.frame()\n\n    def setk(name, value, label, fmt='%g'):\n        k = n\[name]\n        old = k.value()\n        if isinstance(value, (int, float)) and isinstance(old, (int, float)):\n            if abs(old - value) <= 1e-6 * max(1.0, abs(value)):\n                return\n            changed.append('%s: %s to %s' % (label, fmt % old, fmt % value))\n        else:\n            if old == value:\n                return\n            changed.append('%s: %s to %s' % (label, old, value))\n        k.setValue(value)\n\n    bg = n.input(0)\n    cam = _find(n, 1, 'focal')\n    atm = _find(n, 2, 'haze_density')\n    axis = _find(n, 3, 'world_matrix')\n\n    # The camera, as the kernel sees it.\n    M = \[n\['cam_world_matrix'].getValueAt(f, i) for i in range(16)]\n    focal = n\['cam_focal'].getValueAt(f) or 24.0\n    hap = n\['cam_haperture'].getValueAt(f) or 36.0\n    cam_y = M\[7]\n    if cam is None:\n        found.append('camera: none plugged in, so the node looks level from 300 m up. Plug in the shot camera.')\n    else:\n        found.append('camera: %s (focal %g, haperture %g)' % (cam.name(), focal, hap))\n\n    def to_world(p):\n        return \[M\[0] * p\[0] + M\[1] * p\[1] + M\[2] * p\[2] + M\[3],\n                M\[4] * p\[0] + M\[5] * p\[1] + M\[6] * p\[2] + M\[7],\n                M\[8] * p\[0] + M\[9] * p\[1] + M\[10] * p\[2] + M\[11]]\n\n    def to_cam(w):\n        r = \[w\[0] - M\[3], w\[1] - M\[7], w\[2] - M\[11]]\n        return \[M\[0] * r\[0] + M\[4] * r\[1] + M\[8] * r\[2],\n                M\[1] * r\[0] + M\[5] * r\[1] + M\[9] * r\[2],\n                M\[2] * r\[0] + M\[6] * r\[1] + M\[10] * r\[2]]\n\n    # The bg's depth.\n    W = H = 0\n    ground = \[]      # (planar or distance raw value, distance in scene units, world point, px, py)\n    sky_raw = \[]\n    mode = int(n\['depth_mode'].getValue())\n    chan = None\n    if bg is None:\n        found.append('bg: none plugged in. The clouds render over black at the root format.')\n    else:\n        fmt = bg.format()\n        W, H = fmt.width(), fmt.height()\n        chan = _depth_channel(n, bg)\n        if chan is None:\n            found.append('bg: %s, %d x %d, no depth channel. Clouds can\\'t go behind anything in the plate '\n                         'and cast no shadows on it.' % (bg.name(), W, H))\n        else:\n            raw = \[]\n            for j in range(GY):\n                for i in range(GX):\n                    px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                    try:\n                        v = bg.sample(chan, px, py, frame=f)\n                    except Exception:\n                        v = 0.0\n                    if not (v == v) or abs(v) == float('inf'):\n                        v = 0.0\n                    raw.append((v, px, py))\n            pos = \[v for v, _, _ in raw if v > 0]\n            new_mode, why = _depth_kind(pos, mode, s, _scanline_on_b(bg))\n            if why:\n                notes.append(why)\n            if new_mode != mode:\n                setk('depth_mode', \['Planar Z', '1/Z (ScanlineRender)', 'Distance']\[new_mode], 'depth is')\n                mode = new_mode\n            vap = hap * H / (float(W) * (bg.format().pixelAspect() or 1.0))\n            pts = \[]\n            for v, px, py in raw:\n                z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v\n                if z <= 0:\n                    sky_raw.append(0.0)\n                    continue\n                cd = \[(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]\n                l = math.sqrt(cd\[0] ** 2 + cd\[1] ** 2 + 1.0)\n                if mode == 2:\n                    dist, p = z, \[c / l * z for c in cd]\n                else:\n                    dist, p = z * l, \[c * z for c in cd]\n                pts.append((z, dist, to_world(p), px, py))\n            # Sky: a tight cluster of far distances (a sky dome) well past the rest.\n            pts.sort(key=lambda t: t\[1])\n            split = None\n            m = len(pts)\n            best = 0.0\n            for k in range(1, m):\n                lo, hi = pts\[k - 1]\[1], pts\[k]\[1]\n                top = m - k\n                if top < max(3, 0.03 * GX * GY) or k < 3 or lo <= 0:\n                    continue\n                gap = hi / lo\n                tight = pts\[-1]\[1] / hi <= 1.3\n                if (gap >= 1.5 and tight) or gap >= 4.0:\n                    if gap > best:\n                        best, split = gap, k\n            if split is not None:\n                ground = pts\[:split]\n                sky_raw += \[t\[0] for t in pts\[split:]]\n                g_max = max(t\[0] for t in ground)\n                s_min = min(t\[0] for t in pts\[split:])\n                # Just under the dome: terrain between the grid's samples can reach further than\n                # the farthest one sampled.\n                thr = (max(g_max * 1.2, 0.8 * s_min) if s_min > 1.25 * g_max else\n                       math.sqrt(g_max * s_min) if s_min > g_max else 0.5 * (ground\[-1]\[1] + pts\[split]\[1]))\n                setk('sky_depth', round(thr * s / 1000.0, 2), 'sky beyond (km)')\n                found.append('sky in the depth: a far dome at about %.0f km (%d%% of the frame)'\n                             % (pts\[split]\[1] * s / 1000.0, 100 * (m - split) // (GX * GY)))\n            else:\n                ground = pts\n                if ground:\n                    g_max = max(t\[0] for t in ground)\n                    if n\['sky_depth'].value() * 1000.0 / s <= g_max:\n                        setk('sky_depth', round(min(500.0, g_max * 1.5 * s / 1000.0), 2), 'sky beyond (km)')\n            n_sky = sum(1 for v in sky_raw if v == 0)\n            found.append('bg: %s, %d x %d, depth in %s (%s); %d%% of the frame is ground or buildings%s'\n                         % (bg.name(), W, H, chan, \['Planar Z', '1/Z', 'Distance']\[mode],\n                            100 * len(ground) // (GX * GY),\n                            ', %d%% depth 0 (sky)' % (100 * n_sky // (GX * GY)) if n_sky else ''))\n            if chan != \{'depth': 'depth.Z'\}.get(n\['depth_channel'].value(), n\['depth_channel'].value()):\n                setk('depth_channel', chan, 'depth channel')\n                try:\n                    n.node('DepthEnsure')\['channels'].setValue(chan)\n                    n.node('DepthSource')\['from0'].setValue(chan)\n                except Exception:\n                    pass\n            if not n\['occlude'].value():\n                setk('occlude', True, 'hide behind bg')\n\n    # The ground: the low ground in the nearer half of the terrain (the valley the shot looks into).\n    # Far terrain can lie well below it (a distant basin, the earth's curve in the render) and would\n    # put every deck too low for the valley in view.\n    terrain_km = None\n    relief = None\n    if len(ground) >= 8:\n        d_mid = _pct(\[t\[1] for t in ground], 0.5)\n        near = \[t for t in ground if t\[1] <= d_mid]\n        if len(near) < 8:\n            near = ground\n        ys = \[t\[2]\[1] for t in near]\n        gh = _pct(ys, 0.05)\n        low_all = _pct(\[t\[2]\[1] for t in ground], 0.05)\n        if gh < cam_y:\n            setk('ground_height', round(gh, 3), 'ground height (scene units)')\n        else:\n            notes.append('Everything in the depth is at or above the camera, so the ground height was left '\n                         'as it was.')\n        d = \[t\[1] * s / 1000.0 for t in ground]\n        terrain_km = (_pct(d, 0.1), _pct(d, 0.5), _pct(d, 0.9))\n        relief = ((_pct(ys, 0.5) - gh) * s, (_pct(ys, 0.95) - gh) * s)\n        found.append('ground: valley floor (lowest ground in the nearer half) at %g scene units; terrain %.2f / '\n                     '%.2f / %.2f km away (near / middle / far)'\n                     % (round(gh, 3), terrain_km\[0], terrain_km\[1], terrain_km\[2]))\n        found.append('terrain heights above that floor: middle %.0f m, ridges up to %.0f m' % relief)\n        if (gh - low_all) * s > 50:\n            found.append('far terrain goes %.0f m lower than that floor (not used for the ground height)'\n                         % ((gh - low_all) * s))\n        if terrain_km\[2] > 0.8 * n\['max_distance'].value():\n            setk('max_distance', round(min(500.0, terrain_km\[2] * 1.5), 1), 'max distance (km)')\n    elif n\['ground_height'].value() >= cam_y:\n        setk('ground_height', 0.0, 'ground height (scene units)')\n        notes.append('The camera was below the ground; ground height reset to 0.')\n    cam_alt = (cam_y - n\['ground_height'].value()) * s\n    found.append('camera height: %.0f m above the ground' % cam_alt)\n\n    # Units sanity.\n    if terrain_km is not None and (terrain_km\[1] < 0.02 or terrain_km\[1] > 300):\n        notes.append('The terrain comes out %.3g km away at its middle. If that is wrong, check '\n                     '\\'units to metres\\' (now %g: 0.1 for decimetres, 1 for metres, 0.01 for centimetres) and '\n                     'press analyze again.' % (terrain_km\[1], s))\n    if cam_alt > 30000 or cam_alt < -1:\n        notes.append('A camera %.0f m above the ground looks wrong: check \\'units to metres\\' (now %g) '\n                     'and the camera.' % (cam_alt, s))\n\n    # Sun and light.\n    src = int(n\['sun_source'].getValueAt(f))\n    if src == 1:\n        found.append('sun: from the Axis %s' % (axis.name() if axis else ''))\n    elif src == 2:\n        found.append('sun: from the EzAtmosScatter %s' % (atm.name() if atm else ''))\n    else:\n        sd = n\['sun_direction'].value()\n        found.append('sun: the typed sun direction (%.2f, %.2f, %.2f)' % tuple(sd))\n        if n\['sun_from'].value() == 'Auto':\n            notes.append('No sun Axis or EzAtmosScatter is plugged in. For the plate\\'s own sun, plug the '\n                         'scene\\'s sun Axis into \\'sun\\' or its EzAtmosScatter into \\'atmos\\'.')\n    if int(n\['light_source'].getValueAt(f)):\n        found.append('light: sun and sky colour measured by the EzAtmosScatter')\n    else:\n        found.append('light: the Light tab\\'s sun and sky colours (Manual)')\n        if atm is not None and n\['light_from'].value() == 'Auto':\n            notes.append('The EzAtmosScatter is plugged in but measured no light (self lit?), so the '\n                         'Light tab\\'s colours are used.')\n\n    # The layers.\n    pa = (bg.format().pixelAspect() or 1.0) if bg is not None else 1.0\n    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)\n    for i in (1, 2, 3):\n        p = 'l%d_' % i\n        if not n\[p + 'enable'].value():\n            continue\n        t = n\[p + 'type'].value()\n        if n\[p + 'volume'].value() < 0.5:\n            base = n\[p + 'base'].value()\n            top = base + n\[p + 'thickness'].value()\n            where = ('inside it' if base <= cam_alt <= top else\n                     'above it, looking down on it' if cam_alt > top else 'below it')\n            found.append('layer %d: %s deck, %.0f to %.0f m above the ground; the camera is %s'\n                         % (i, t, base, top, where))\n            if relief is not None and base < relief\[1]:\n                notes.append('Layer %d\\'s base (%.0f m) is below the ridges in view (up to %.0f m above the floor): '\n                             'the terrain rises through the deck and the clouds stop at it. That is right for '\n                             'valley fog (set its base just above the valley floor, so the fog fills the low '\n                             'ground); for a deck that should float over the terrain, raise its base above %.0f m.'\n                             % (i, base, relief\[1], relief\[1]))\n            if n\[p + 'sigma'].value() * n\[p + 'density'].value() >= 0.01 and cam_alt > top + 300:\n                notes.append('Layer %d is seen from %.0f m above its top: at this density (sigma x density %.3g) '\n                             'it reads as a solid, smooth sheet. For fog with breakup use the Valley Fog type '\n                             '(0.0035), or lower density and coverage.'\n                             % (i, cam_alt - top, n\[p + 'sigma'].value() * n\[p + 'density'].value()))\n            continue\n        if n\[p + 'box_found'].value() > 0.5:\n            found.append('layer %d: %s volume, following the 3D box in box%d' % (i, t, i))\n            continue\n        pos = n\[p + 'vol_position'].value()\n        size = n\[p + 'vol_size'].value()\n        c = to_cam(\[pos\[0], pos\[1] + size\[1] / s / 2.0, pos\[2]])\n        reason = None\n        if c\[2] > -1e-6:\n            reason = 'behind the camera'\n        else:\n            u = c\[0] / -c\[2] * focal / hap\n            v = c\[1] / -c\[2] * focal / vap\n            if abs(u) > 0.65 or abs(v) > 0.65:\n                reason = 'out of frame'\n            elif ground and W:\n                # Hidden behind the plate's terrain?\n                px, py = (u + 0.5) * W, (v + 0.5) * H\n                near = min(ground, key=lambda tt: (tt\[3] - px) ** 2 + (tt\[4] - py) ** 2)\n                d_vol = math.sqrt(c\[0] ** 2 + c\[1] ** 2 + c\[2] ** 2) - 0.5 * max(size) / s\n                if (near\[3] - px) ** 2 + (near\[4] - py) ** 2 < (1.5 * W / GX) ** 2 and near\[1] < d_vol:\n                    reason = 'behind the plate\\'s terrain'\n        if reason is None:\n            found.append('layer %d: %s volume, in view' % (i, t))\n            continue\n        if n\[p + 'vol_position'].isAnimated():\n            notes.append('Layer %d (%s) is %s, but its position is animated, so it was left alone.'\n                         % (i, t, reason))\n            continue\n        km = n\[p + 'place_km'].value()\n        if terrain_km is not None:\n            km = max(0.2, min(km, 0.7 * terrain_km\[1]))\n        n\[p + 'place_km'].setValue(round(km, 2))\n        # The layer's own 'place in front of camera' code, run on this node.\n        exec(n\[p + 'place'].value().replace('nuke.thisNode()', '_n'), \{'nuke': nuke, '_n': n\})\n        changed.append('layer %d (%s) was %s: placed %.2f km in front of the camera' % (i, t, reason, km))\n\n    if n\['preview'].value():\n        notes.append('preview is on: half resolution, one sample. Turn it off for the real look.')\n\n    out = 'Found:\\n' + '\\n'.join('  ' + x for x in found)\n    out += '\\n\\nChanged:\\n' + ('\\n'.join('  ' + x for x in changed) if changed else '  nothing, it already matched')\n    if notes:\n        out += '\\n\\nCheck:\\n' + '\\n'.join('  ' + x for x in notes)\n    return out\n\n\n# ---------------------------------------------------------------------------------------------\n# 'debug report' (About tab): a plain-text dump of what the node sees, printed to the Script\n# Editor, for debugging a shot without sharing the plate. Numbers only: no picture leaves the node.\n\n_P_NAMES = ('p', 'pworld', 'p_world', 'pw', 'wp', 'position', 'world_position', 'worldposition',\n            'p_w', 'pos', 'worldpos', 'ppass', 'p_pass', 'position_world')\n\n\ndef _rgb_channels(bg, layer):\n    chans = \[c for c in bg.channels() if c.split('.')\[0] == layer]\n    order = \{'red': 0, 'x': 0, 'r': 0, 'green': 1, 'y': 1, 'g': 1, 'blue': 2, 'z': 2, 'b': 2\}\n    chans = sorted(chans, key=lambda c: order.get(c.split('.')\[-1].lower(), 9))\n    return chans\[:3] if len(chans) >= 3 else None\n\n\ndef _find_p_layer(bg):\n    layers = \[]\n    for c in bg.channels():\n        l = c.split('.')\[0]\n        if l not in layers:\n            layers.append(l)\n    for l in layers:\n        if l.lower() in _P_NAMES and _rgb_channels(bg, l):\n            return l\n    for l in layers:\n        ll = l.lower()\n        if ('position' in ll or ll.startswith('pworld') or ll.startswith('p_')) and _rgb_channels(bg, l):\n            return l\n    return None\n\n\ndef _fmt_list(vals, fmt='%.3g'):\n    return ' / '.join(fmt % v for v in vals)\n\n\ndef debug_report(n):\n    out = \[]\n    w = out.append\n    f = nuke.frame()\n    s = n\['scene_scale'].value() or 0.1\n\n    def section(title):\n        w('')\n        w('-- %s ' % title + '-' * max(4, 70 - len(title)))\n\n    def safe(fn):\n        try:\n            fn()\n        except Exception as e:\n            w('  (error in this section: %s: %s)' % (type(e).__name__, e))\n\n    ver = n\['version'].value() if n.knob('version') else '?'\n    w('==== EzCloudGen debug report ' + '=' * 50)\n    w('%s, node %s, frame %d, Nuke %s' % (ver, n.fullName(), f, nuke.NUKE_VERSION_STRING))\n    rf = nuke.root().format()\n    w('root format %d x %d (pixel aspect %g), fps %g' % (rf.width(), rf.height(), rf.pixelAspect(),\n                                                          nuke.root()\['fps'].value()))\n\n    bg = n.input(0)\n    cam = _find(n, 1, 'focal')\n    atm = _find(n, 2, 'haze_density')\n    axis = _find(n, 3, 'world_matrix')\n    M = \[n\['cam_world_matrix'].getValueAt(f, i) for i in range(16)]\n    focal = n\['cam_focal'].getValueAt(f) or 24.0\n    hap = n\['cam_haperture'].getValueAt(f) or 36.0\n    gh = n\['ground_height'].value()\n    W = H = 0\n    pa = 1.0\n    if bg is not None:\n        W, H = bg.format().width(), bg.format().height()\n        pa = bg.format().pixelAspect() or 1.0\n    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)\n    flags = \[]\n\n    def to_world(p):\n        return \[M\[0] * p\[0] + M\[1] * p\[1] + M\[2] * p\[2] + M\[3],\n                M\[4] * p\[0] + M\[5] * p\[1] + M\[6] * p\[2] + M\[7],\n                M\[8] * p\[0] + M\[9] * p\[1] + M\[10] * p\[2] + M\[11]]\n\n    # ---- inputs\n    def inputs():\n        section('inputs')\n        names = \['bg', 'camera', 'atmos', 'sun', 'map', 'box1', 'box2', 'box3', 'holdout', 'add']\n        for i, nm in enumerate(names):\n            x = n.input(i) if i < n.inputs() or n.input(i) is not None else None\n            w('  %-8s %s' % (nm, '%s (%s)' % (x.name(), x.Class()) if x is not None else '-'))\n        if bg is None:\n            return\n        fm = bg.format()\n        w('  bg format %d x %d (pixel aspect %g); bbox %d %d %d %d'\n          % (fm.width(), fm.height(), fm.pixelAspect(), bg.bbox().x(), bg.bbox().y(), bg.bbox().w(), bg.bbox().h()))\n        bb = bg.bbox()\n        if bb.x() < 0 or bb.y() < 0 or bb.x() + bb.w() > fm.width() or bb.y() + bb.h() > fm.height():\n            flags.append('bg has overscan (bbox outside the format): the camera must match the FORMAT, '\n                         'not the overscan area.')\n            w('  ! bbox reaches outside the format (overscan)')\n        chain, x, k = \[], bg, 0\n        while x is not None and k < 15:\n            chain.append(x.Class())\n            x = x.input(0) if x.inputs() else None\n            k += 1\n        w('  B pipe up from bg: ' + ' < '.join(chain))\n        layers = \[]\n        for c in bg.channels():\n            l = c.split('.')\[0]\n            if l not in layers:\n                layers.append(l)\n        w('  bg layers: ' + ', '.join(layers))\n    safe(inputs)\n\n    # ---- camera\n    def camera():\n        section('camera')\n        if cam is None:\n            w('  none plugged in (the node uses a level camera 300 m up)')\n            return\n        w('  %s (%s)' % (cam.name(), cam.Class()))\n        w('  world matrix rows: ' + ' | '.join(_fmt_list(M\[4 * r:4 * r + 4], '%.6g') for r in range(4)))\n        for kn in ('translate', 'rotate', 'rot_order', 'focal', 'haperture', 'vaperture', 'near', 'far',\n                   'win_translate', 'win_scale', 'winroll', 'projection_mode', 'focal_point', 'fstop'):\n            kk = cam.knob(kn)\n            if kk is None:\n                continue\n            try:\n                v = kk.getValueAt(f) if kk.arraySize() == 1 else \[kk.getValueAt(f, i) for i in range(kk.arraySize())]\n            except Exception:\n                v = kk.value()\n            anim = ' (animated)' if hasattr(kk, 'isAnimated') and kk.isAnimated() else ''\n            w('  %-15s %s%s' % (kn, v, anim))\n        cv = cam.knob('vaperture').getValueAt(f) if cam.knob('vaperture') else None\n        if cv and W and abs(cv - vap) > 0.01 * vap:\n            flags.append('camera vaperture %.4g differs from haperture x bg height / (width x pixel aspect) = %.4g: EzCloudGen derives '\n                         'the vertical aperture from the format and its pixel aspect, so the clouds may be '\n                         'stretched vertically against the plate.' % (cv, vap))\n        if cam.knob('win_translate'):\n            wt = \[cam\['win_translate'].getValueAt(f, i) for i in range(2)]\n            if abs(wt\[0]) > 1e-6 or abs(wt\[1]) > 1e-6:\n                flags.append('camera win_translate %s is not 0: EzCloudGen ignores it, so the clouds are offset '\n                             'from the plate.' % wt)\n        if cam.knob('win_scale'):\n            ws = \[cam\['win_scale'].getValueAt(f, i) for i in range(2)]\n            if abs(ws\[0] - 1) > 1e-6 or abs(ws\[1] - 1) > 1e-6:\n                flags.append('camera win_scale %s is not 1: EzCloudGen ignores it.' % ws)\n        if cam.knob('winroll') and abs(cam\['winroll'].getValueAt(f)) > 1e-6:\n            flags.append('camera winroll is not 0: EzCloudGen ignores it.')\n        for kn in ('focal', 'haperture'):\n            if cam.knob(kn) and cam\[kn].isAnimated():\n                flags.append('camera %s is animated (fine, it is read per frame; just so you know).' % kn)\n        if cam.knob('projection_mode') and cam\['projection_mode'].value() not in ('perspective', 0, '0'):\n            flags.append('camera projection is %s: EzCloudGen assumes perspective.' % cam\['projection_mode'].value())\n        fwd = \[-M\[2], -M\[6], -M\[10]]\n        l = math.sqrt(sum(c * c for c in fwd)) or 1.0\n        fwd = \[c / l for c in fwd]\n        pitch = math.degrees(math.asin(max(-1.0, min(1.0, fwd\[1]))))\n        head = math.degrees(math.atan2(fwd\[0], -fwd\[2]))\n        w('  as used: focal %g, haperture %g, vaperture (from format, pixel aspect %g) %.4g; position %s scene units; '\n          'looking %.1f deg %s level, heading %.1f deg'\n          % (focal, hap, pa, vap, _fmt_list(M\[3:12:4], '%.6g'), abs(pitch), 'below' if pitch < 0 else 'above', head))\n        w('  camera height above ground height: %.1f m' % ((M\[7] - gh) * s))\n        try:\n            P = \[n\['cam_prev_matrix'].getValueAt(f, i) for i in range(16)]\n            N = \[n\['cam_next_matrix'].getValueAt(f, i) for i in range(16)]\n            mv = math.sqrt(sum((N\[i] - P\[i]) ** 2 for i in (3, 7, 11))) * s / 2.0\n            w('  camera moves %.2f m per frame (from the frames either side)' % mv)\n        except Exception:\n            pass\n    safe(camera)\n\n    # ---- scene knobs\n    def scene():\n        section('scene knobs')\n        for kn in ('scene_scale', 'ground_height', 'earth', 'occlude', 'depth_channel', 'depth_mode', 'sky_depth',\n                   'bg_edge_softness', 'ground_softness', 'max_distance', 'render_preset', 'resolution', 'quality',\n                   'edge_steps', 'sampling', 'samples', 'preview', 'motion_blur', 'haze_distance', 'horizon_haze',\n                   'light_grid', 'view'):\n            if n.knob(kn) is not None:\n                w('  %-17s %s' % (kn, n\[kn].value()))\n        try:\n            cc = n.node('Clouds_Color')\n            spp = cc\['EzCloudGen_samples'].value()\n            w('  samples per pixel in use: %g' % spp)\n        except Exception:\n            pass\n    safe(scene)\n\n    # ---- depth, terrain, P\n    grid = \{\}\n\n    def depth():\n        section('depth (bg, %dx%d grid)' % (GX, GY))\n        if bg is None:\n            w('  no bg')\n            return\n        chan = _depth_channel(n, bg)\n        mode = int(n\['depth_mode'].getValue())\n        w('  channel %s, read as %s' % (chan, \['Planar Z', '1/Z', 'Distance']\[mode]))\n        if chan is None:\n            return\n        raw, bad = \[], 0\n        for j in range(GY):\n            for i in range(GX):\n                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                try:\n                    v = bg.sample(chan, px, py, frame=f)\n                except Exception:\n                    v = 0.0\n                if not (v == v) or abs(v) == float('inf'):\n                    bad += 1\n                    v = 0.0\n                raw.append(v)\n        pos = \[v for v in raw if v > 0]\n        w('  raw: min %.6g, p5 %.6g, p50 %.6g, p95 %.6g, max %.6g; %d%% zero, %d%% NaN/inf, %d%% negative'\n          % (min(pos) if pos else 0, _pct(pos, .05), _pct(pos, .5), _pct(pos, .95), max(pos) if pos else 0,\n             100 * sum(1 for v in raw if v == 0) // len(raw), 100 * bad // len(raw),\n             100 * sum(1 for v in raw if v < 0) // len(raw)))\n        if _scanline_on_b(bg) and mode != 1 and _depth_kind(pos, mode, s, True)\[0] == 1:\n            flags.append('A ScanlineRender/RayRender is up the bg pipe but depth is read as %s; its depth is 1/Z.'\n                         % \['Planar Z', '1/Z', 'Distance']\[mode])\n        sky_su = n\['sky_depth'].value() * 1000.0 / s\n        pts = \{\}\n        for idx, v in enumerate(raw):\n            j, i = divmod(idx, GX)\n            px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n            z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v\n            if z <= 0 or z >= sky_su:\n                continue\n            cd = \[(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]\n            l = math.sqrt(cd\[0] ** 2 + cd\[1] ** 2 + 1.0)\n            if mode == 2:\n                dist, p = z, \[c / l * z for c in cd]\n            else:\n                dist, p = z * l, \[c * z for c in cd]\n            pts\[(i, j)] = (dist, to_world(p))\n        grid\['pts'] = pts\n        w('  %d%% beyond \\'sky beyond\\' (%.4g km) or zero = sky' % (100 - 100 * len(pts) // len(raw),\n                                                                   n\['sky_depth'].value()))\n        if not pts:\n            return\n        dk = \[d * s / 1000.0 for d, _ in pts.values()]\n        bins = \[0.1, 0.3, 1, 3, 10, 30, 100, 300, 1e9]\n        hist, lo = \[], 0.0\n        for b in bins:\n            c = sum(1 for d in dk if lo <= d < b)\n            hist.append('%s-%s km: %d' % (('%g' % lo), ('%g' % b) if b < 1e8 else 'inf', c))\n            lo = b\n        w('  distance histogram: ' + ', '.join(hist))\n        # Edges: neighbours with a >2x depth jump.\n        jumps = tot = 0\n        for (i, j), (d, _) in pts.items():\n            for di, dj in ((1, 0), (0, 1)):\n                q = pts.get((i + di, j + dj))\n                if q is None:\n                    continue\n                tot += 1\n                if max(d, q\[0]) / max(min(d, q\[0]), 1e-9) > 2.0:\n                    jumps += 1\n        w('  depth edges: %d of %d grid neighbours (%.0f%%) jump more than 2x in depth' % (jumps, tot,\n                                                                                          100.0 * jumps / max(tot, 1)))\n        # Coarse maps, 16x9: distance (km) and height above 'ground height' (m). Top row = top of frame.\n        def cmap(val, title, fmt):\n            w('  %s (16x9, top of frame first; . = sky):' % title)\n            for jj in range(8, -1, -1):\n                row = \[]\n                for ii in range(16):\n                    vs = \[val(pts\[(2 * ii + a, 2 * jj + b)]) for a in (0, 1) for b in (0, 1)\n                          if (2 * ii + a, 2 * jj + b) in pts]\n                    row.append(fmt % (sorted(vs)\[len(vs) // 2]) if vs else '      .')\n                w('   ' + ''.join(row))\n        cmap(lambda t: t\[0] * s / 1000.0, 'distance km', '%7.2f')\n        cmap(lambda t: (t\[1]\[1] - gh) * s, 'height above ground height, m', '%7.0f')\n        hs = \[(t\[1]\[1] - gh) * s for t in pts.values()]\n        w('  heights above ground height (m): p5 %.0f, p25 %.0f, p50 %.0f, p75 %.0f, p95 %.0f'\n          % (_pct(hs, .05), _pct(hs, .25), _pct(hs, .5), _pct(hs, .75), _pct(hs, .95)))\n    safe(depth)\n\n    def ppass():\n        section('position pass')\n        if bg is None:\n            return\n        picked = n\['position_pass'].value() if n.knob('position_pass') is not None else 'none'\n        if picked and picked not in ('none', 'all'):\n            pl, how = picked, 'picked in \\'position pass\\''\n            if _rgb_channels(bg, pl) is None:\n                w('  layer %s (picked) is not on the bg, or has fewer than 3 channels' % pl)\n                flags.append('\\'position pass\\' is set to %s, which the bg does not have.' % pl)\n                return\n        else:\n            pl, how = _find_p_layer(bg), 'auto-detected'\n            if pl is None:\n                w('  none found on the bg (looked for P, Pworld, P_world, position, ...); pick it in '\n                  '\\'position pass\\' (About tab) if it has another name')\n                return\n        ch = _rgb_channels(bg, pl)\n        w('  layer %s (%s), %s' % (pl, ', '.join(ch), how))\n        absmax = \[]\n        pts = grid.get('pts', \{\})\n        errs, rel, pys, near_ys, ratio = \[], \[], \[], \[], \[]\n        dmid = _pct(\[d for d, _ in pts.values()], 0.5) if pts else 0\n        camp = \[M\[3], M\[7], M\[11]]\n        for j in range(GY):\n            for i in range(GX):\n                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                try:\n                    P = \[bg.sample(c, px, py, frame=f) for c in ch]\n                except Exception:\n                    continue\n                if not all(v == v and abs(v) != float('inf') for v in P) or (P\[0] == 0 and P\[1] == 0 and P\[2] == 0):\n                    continue\n                pys.append(P\[1])\n                absmax.append(max(abs(v) for v in P))\n                t = pts.get((i, j))\n                if t is None:\n                    continue\n                d, wp = t\n                e = math.sqrt(sum((P\[k] - wp\[k]) ** 2 for k in range(3)))\n                errs.append(e * s)\n                rel.append(100.0 * e / max(d, 1e-9))\n                dp = math.sqrt(sum((P\[k] - camp\[k]) ** 2 for k in range(3)))\n                ratio.append(dp / max(d, 1e-9))\n                if d <= dmid:\n                    near_ys.append(P\[1])\n        w('  %d grid points with P; %d also with depth' % (len(pys), len(errs)))\n        if absmax and _pct(absmax, 0.95) <= 1.05:\n            w('  ! its values stay within -1..1: this looks like a normal pass or a normalised / reference '\n              'position (Pref), not world positions')\n            flags.append('Position pass %s has values within -1..1: probably not a world-position pass.' % pl)\n        if pys:\n            w('  P.y: p5 %.6g, p50 %.6g, p95 %.6g (scene units)' % (_pct(pys, .05), _pct(pys, .5), _pct(pys, .95)))\n        if near_ys:\n            pg = _pct(near_ys, 0.05)\n            w('  ground from P (5th pct of the nearer half): %.6g scene units; ground height knob %.6g (%+.1f m)'\n              % (pg, gh, (gh - pg) * s))\n        if errs:\n            w('  P vs depth+camera world position: error median %.2f m, p90 %.2f m; %.2f%% / %.2f%% of distance'\n              % (_pct(errs, .5), _pct(errs, .9), _pct(rel, .5), _pct(rel, .9)))\n            r = _pct(ratio, 0.5)\n            w('  |P - camera| / depth distance: median %.4g' % r)\n            if _pct(rel, .5) > 20.0:\n                w('  ! P and the depth+camera positions are far apart (median %.0f%% of distance): if this '\n                  'layer is not world position in the camera\\'s space (Pref, object space, camera space), '\n                  'pick the world one in \\'position pass\\'' % _pct(rel, .5))\n            if _pct(rel, .5) > 2.0:\n                hint = \[]\n                if abs(r - 1) > 0.05:\n                    hint.append('distances differ by a factor %.3g: wrong \\'depth is\\' mode or units '\n                                '(P and depth in different units?)' % r)\n                else:\n                    hint.append('distances agree but positions do not: the camera does not match the render '\n                                '(film back / vaperture, win_translate, overscan, or a different camera)')\n                flags.append('Position pass and depth disagree (median %.1f%% of distance): ' % _pct(rel, .5) +\n                             '; '.join(hint))\n            else:\n                w('  -> depth, depth mode, camera and units agree with the position pass')\n    safe(ppass)\n\n    # ---- layers\n    def layers():\n        section('layers')\n        cam_alt = (M\[7] - gh) * s\n        hs = \[(t\[1]\[1] - gh) * s for t in grid.get('pts', \{\}).values()]\n        for i in (1, 2, 3):\n            p = 'l%d_' % i\n            if not n\[p + 'enable'].value():\n                w('  layer %d: off' % i)\n                continue\n            vol = n\[p + 'volume'].value() > 0.5\n            sd = n\[p + 'sigma'].value() * n\[p + 'density'].value()\n            w('  layer %d: %s, %s; coverage %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '\n              'edge %g, model %s, wind %g deg %g m/s, wisp stretch %g'\n              % (i, n\[p + 'type'].value(), 'volume' if vol else 'deck', n\[p + 'coverage'].value(), sd,\n                 n\[p + 'scale_km'].value(), n\[p + 'detail_size'].value(), n\[p + 'erosion'].value(),\n                 n\[p + 'edge'].value(), n\[p + 'detail_model'].value(), n\[p + 'wind_deg'].value(),\n                 n\[p + 'wind_speed'].value(),\n                 n\[p + 'wisp_stretch'].value() if n.knob(p + 'wisp_stretch') is not None else 1.0))\n            if not vol and n.knob(p + 'depth_ramp_on') is not None and n\[p + 'depth_ramp_on'].value():\n                kr = n.node('L%d_DepthRamp' % i)\n                rv = \[kr\['range'].value(k) for k in range(4)] if kr is not None else \[0, 0, 0, 0]\n                w('    depth ramp (Planar Z): %s scene units = %s m; %s falloff; %s'\n                  % (_fmt_list(rv, '%g'), _fmt_list(\[v * s for v in rv], '%g'),\n                     n\[p + 'depth_ramp_falloff'].value() if n.knob(p + 'depth_ramp_falloff') is not None else 'linear',\n                     'hides shadows too' if n.knob(p + 'depth_ramp_shadows') is not None\n                     and n\[p + 'depth_ramp_shadows'].value() else 'shadows kept'))\n            if not vol:\n                base = n\[p + 'base'].value()\n                top = base + n\[p + 'thickness'].value()\n                where = 'inside' if base <= cam_alt <= top else 'above' if cam_alt > top else 'below'\n                w('    base %.0f m, top %.0f m above ground height (scene y %.6g to %.6g); camera %s it'\n                  % (base, top, gh + base / s, gh + top / s, where))\n                if hs:\n                    below = sum(1 for h in hs if h < base)\n                    inside = sum(1 for h in hs if base <= h <= top)\n                    above = len(hs) - below - inside\n                    w('    terrain in view: %d%% below the base, %d%% inside the layer (fog meets ground there), '\n                      '%d%% above the top' % (100 * below // len(hs), 100 * inside // len(hs), 100 * above // len(hs)))\n            else:\n                if n\[p + 'box_found'].value() > 0.5:\n                    w('    follows the 3D box in box%d: centre %s, size %s'\n                      % (i, _fmt_list(\[n\[p + 'box_center'].value(k) for k in range(3)], '%.6g'),\n                         _fmt_list(\[n\[p + 'box_size'].value(k) for k in range(3)], '%.6g')))\n                else:\n                    w('    position %s (scene units), size %s m, shape %s'\n                      % (_fmt_list(n\[p + 'vol_position'].value(), '%.6g'), _fmt_list(n\[p + 'vol_size'].value(), '%g'),\n                         n\[p + 'vol_shape'].value()))\n    safe(layers)\n\n    # ---- sun and light\n    def light():\n        section('sun and light')\n        w('  sun from %s, light from %s; atmos %s, sun axis %s'\n          % (n\['sun_from'].value(), n\['light_from'].value(), atm.name() if atm else '-', axis.name() if axis else '-'))\n        src = int(n\['sun_source'].getValueAt(f))\n        sv = \[n\['sun_in_use'].getValueAt(f, i) for i in range(3)]\n        l = math.sqrt(sum(c * c for c in sv)) or 1.0\n        sv = \[c / l for c in sv]\n        elev = math.degrees(math.asin(max(-1.0, min(1.0, sv\[1]))))\n        fwd = \[-M\[2], -M\[10]]\n        az = math.degrees(math.atan2(sv\[0] * fwd\[1] - sv\[2] * fwd\[0], sv\[0] * fwd\[0] + sv\[2] * fwd\[1]))\n        w('  source in use: %s; direction %s, %.1f deg up, %.1f deg %s of the camera heading'\n          % (\['typed', 'Axis', 'EzAtmosScatter']\[src] if 0 <= src <= 2 else src, _fmt_list(sv, '%.3f'), elev,\n             abs(az), 'right' if az < 0 else 'left'))\n        w('  light source: %s; sun colour in use %s; sky colour in use %s'\n          % ('EzAtmosScatter' if int(n\['light_source'].getValueAt(f)) else 'Manual (Light tab)',\n             _fmt_list(\[n\['sun_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g'),\n             _fmt_list(\[n\['sky_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g')))\n    safe(light)\n\n    # ---- GPU\n    def gpu():\n        section('gpu')\n        import platform\n        w('  %s, %s; Nuke %s mode' % (platform.system(), platform.machine(),\n                                     'GUI' if nuke.env.get('gui') else 'terminal'))\n        names = \[]\n        for nd in n.nodes():\n            if nd.Class() == 'BlinkScript' and nd.knob('gpuName') is not None:\n                names.append((nd.name(), nd\['gpuName'].value(), nd\['useGPUIfAvailable'].value(),\n                              nd\['disable'].value() if nd.knob('disable') else False))\n        devices = sorted(set(g for _, g, _, _ in names))\n        w('  BlinkScript GPU: %s' % (', '.join(devices) if devices else '?'))\n        off = \[nm for nm, _, use, _ in names if not use]\n        if off:\n            w(\"  'use GPU if available' is off on: \" + ', '.join(off))\n            flags.append(\"'use GPU if available' is off on %s inside the node: they render on the CPU.\" % ', '.join(off))\n        if any('not available' in g.lower() for g in devices):\n            flags.append('Nuke has no usable GPU here (BlinkScript says \"Not available\"), so EzCloudGen renders on the '\n                         'CPU: much slower, and the first frame compiles for a long time. Check Preferences > '\n                         'Performance > Hardware (GPU device), the NVIDIA driver, and, for terminal or farm renders, '\n                         'that Nuke is started with --gpu.')\n        try:\n            pr = nuke.toNode('preferences')\n            for kn in ('selectedGPUDeviceName', 'selectedGPUDeviceIndex', 'enableMultiGPU'):\n                if pr.knob(kn) is not None:\n                    w('  pref %s: %s' % (kn, pr\[kn].value()))\n        except Exception:\n            pass\n    safe(gpu)\n\n    section('flags')\n    if flags:\n        for x in flags:\n            w('  ! ' + x)\n    else:\n        w('  none')\n    if n.knob('analysis') and n\['analysis'].value():\n        section('last analyze scene text')\n        for line in n\['analysis'].value().splitlines():\n            w('  ' + line)\n    w('==== end of EzCloudGen debug report ' + '=' * 43)\n    text = '\\n'.join(out)\n    print(text)\n    return text\n"
+ analyze_lib "# 'analyze scene': reads the node's inputs (the bg's depth as numbers on a coarse grid, the\n# camera, the sun and light inputs) and sets the scene knobs to match. Only numbers are read:\n# no picture leaves the node. Undoable in one step. Writes what it found to 'analysis'.\nimport math\n\nGX, GY = 32, 18\n\n\ndef _find(n, idx, knob):\n    c = n.input(idx)\n    while c is not None and not c.knob(knob):\n        c = c.input(0) if c.inputs() else None\n    return c\n\n\ndef _pct(vals, q):\n    if not vals:\n        return 0.0\n    v = sorted(vals)\n    i = min(len(v) - 1, max(0, int(round(q * (len(v) - 1)))))\n    return v\[i]\n\n\ndef _depth_channel(n, bg):\n    chans = list(bg.channels())\n    cur = n\['depth_channel'].value()\n    cur = \{'depth': 'depth.Z'\}.get(cur, cur)\n    if cur in chans:\n        return cur\n    if 'depth.Z' in chans:\n        return 'depth.Z'\n    for test in (lambda c: c.endswith('.Z') and 'depth' in c.lower(),\n                 lambda c: 'depth' in c.lower(),\n                 lambda c: c.endswith('.Z') or c.endswith('.z')):\n        for c in chans:\n            if test(c):\n                return c\n    return None\n\n\ndef _scanline_on_b(bg):\n    # ScanlineRender (or RayRender) up the B pipe: its depth is 1/Z.\n    x, seen = bg, 0\n    while x is not None and seen < 300:\n        if x.Class() in ('ScanlineRender', 'ScanlineRender2', 'RayRender'):\n            return True\n        x = x.input(0) if x.inputs() else None\n        seen += 1\n    return False\n\n\ndef _depth_kind(pos, mode, s, scanline):\n    \"\"\"Which depth this is, from its numbers: 0 Planar Z, 1 1/Z, 2 Distance (kept when it is\n    already set and the numbers are distances). Each reading must put the middle of the frame\n    at a believable distance (2 m to 2000 km); the numbers win over a ScanlineRender found up\n    the pipe (a plate can be merged over a scanline render and still carry Arnold's Planar Z).\n    Returns (mode, note or '').\"\"\"\n    if not pos:\n        return mode, ''\n    mid = _pct(pos, 0.5)\n    as_z = mid * s                 # metres, read as Z (or distance)\n    as_inv = s / mid               # metres, read as 1/Z\n\n    def ok(m):\n        return 2.0 <= m <= 2.0e6\n    z_ok, inv_ok = ok(as_z), ok(as_inv)\n    plain = mode if mode != 1 else 0\n    if z_ok and not inv_ok:\n        new = plain\n    elif inv_ok and not z_ok:\n        new = 1\n    elif z_ok and inv_ok:\n        # Both believable (middle values near 1/sqrt(units to metres)): all under 1 reads as\n        # 1/Z, as does a ScanlineRender up the pipe; otherwise keep what is set.\n        new = 1 if (_pct(pos, 0.95) < 1.0 or scanline) else mode\n    else:\n        new = 1 if _pct(pos, 0.95) < 1.0 else plain\n    note = ''\n    if scanline and new != 1 and z_ok:\n        note = ('A ScanlineRender/RayRender is up the bg pipe, but the depth numbers (middle %.4g) are '\n                'too far for 1/Z, so they are read as %s.' % (mid, \['Planar Z', '1/Z', 'Distance']\[new]))\n    if not (z_ok or inv_ok):\n        note = (note + ' ' if note else '') + (\n            'The depth numbers (middle %.4g) put the terrain at %.3g m as Z and %.3g m as 1/Z; neither '\n            'looks like a real scene. Check the depth channel and \\'units to metres\\' (now %g).'\n            % (mid, as_z, as_inv, s))\n    return new, note\n\n\ndef analyze(n):\n    undo = nuke.Undo()\n    undo.begin('EzCloudGen analyze scene')\n    try:\n        text = _analyze(n)\n    finally:\n        undo.end()\n    n\['analysis'].setValue(text)\n    if n.knob('debug') is not None and n\['debug'].value():\n        debug_report(n)\n    if nuke.GUI:\n        nuke.message('EzCloudGen: analyze scene\\n\\n' + text)\n    return text\n\n\ndef _analyze(n):\n    found, changed, notes = \[], \[], \[]\n    s = n\['scene_scale'].value() or 0.1\n    f = nuke.frame()\n\n    def setk(name, value, label, fmt='%g'):\n        k = n\[name]\n        old = k.value()\n        if isinstance(value, (int, float)) and isinstance(old, (int, float)):\n            if abs(old - value) <= 1e-6 * max(1.0, abs(value)):\n                return\n            changed.append('%s: %s to %s' % (label, fmt % old, fmt % value))\n        else:\n            if old == value:\n                return\n            changed.append('%s: %s to %s' % (label, old, value))\n        k.setValue(value)\n\n    bg = n.input(0)\n    cam = _find(n, 1, 'focal')\n    atm = _find(n, 2, 'haze_density')\n    axis = _find(n, 3, 'world_matrix')\n\n    # The camera, as the kernel sees it.\n    M = \[n\['cam_world_matrix'].getValueAt(f, i) for i in range(16)]\n    focal = n\['cam_focal'].getValueAt(f) or 24.0\n    hap = n\['cam_haperture'].getValueAt(f) or 36.0\n    cam_y = M\[7]\n    if cam is None:\n        found.append('camera: none plugged in, so the node looks level from 300 m up. Plug in the shot camera.')\n    else:\n        found.append('camera: %s (focal %g, haperture %g)' % (cam.name(), focal, hap))\n\n    def to_world(p):\n        return \[M\[0] * p\[0] + M\[1] * p\[1] + M\[2] * p\[2] + M\[3],\n                M\[4] * p\[0] + M\[5] * p\[1] + M\[6] * p\[2] + M\[7],\n                M\[8] * p\[0] + M\[9] * p\[1] + M\[10] * p\[2] + M\[11]]\n\n    def to_cam(w):\n        r = \[w\[0] - M\[3], w\[1] - M\[7], w\[2] - M\[11]]\n        return \[M\[0] * r\[0] + M\[4] * r\[1] + M\[8] * r\[2],\n                M\[1] * r\[0] + M\[5] * r\[1] + M\[9] * r\[2],\n                M\[2] * r\[0] + M\[6] * r\[1] + M\[10] * r\[2]]\n\n    # The bg's depth.\n    W = H = 0\n    ground = \[]      # (planar or distance raw value, distance in scene units, world point, px, py)\n    sky_raw = \[]\n    mode = int(n\['depth_mode'].getValue())\n    chan = None\n    if bg is None:\n        found.append('bg: none plugged in. The clouds render over black at the root format.')\n    else:\n        fmt = bg.format()\n        W, H = fmt.width(), fmt.height()\n        chan = _depth_channel(n, bg)\n        if chan is None:\n            found.append('bg: %s, %d x %d, no depth channel. Clouds can\\'t go behind anything in the plate '\n                         'and cast no shadows on it.' % (bg.name(), W, H))\n        else:\n            raw = \[]\n            for j in range(GY):\n                for i in range(GX):\n                    px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                    try:\n                        v = bg.sample(chan, px, py, frame=f)\n                    except Exception:\n                        v = 0.0\n                    if not (v == v) or abs(v) == float('inf'):\n                        v = 0.0\n                    raw.append((v, px, py))\n            pos = \[v for v, _, _ in raw if v > 0]\n            new_mode, why = _depth_kind(pos, mode, s, _scanline_on_b(bg))\n            if why:\n                notes.append(why)\n            if new_mode != mode:\n                setk('depth_mode', \['Planar Z', '1/Z (ScanlineRender)', 'Distance']\[new_mode], 'depth is')\n                mode = new_mode\n            vap = hap * H / (float(W) * (bg.format().pixelAspect() or 1.0))\n            pts = \[]\n            for v, px, py in raw:\n                z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v\n                if z <= 0:\n                    sky_raw.append(0.0)\n                    continue\n                cd = \[(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]\n                l = math.sqrt(cd\[0] ** 2 + cd\[1] ** 2 + 1.0)\n                if mode == 2:\n                    dist, p = z, \[c / l * z for c in cd]\n                else:\n                    dist, p = z * l, \[c * z for c in cd]\n                pts.append((z, dist, to_world(p), px, py))\n            # Sky: a tight cluster of far distances (a sky dome) well past the rest.\n            pts.sort(key=lambda t: t\[1])\n            split = None\n            m = len(pts)\n            best = 0.0\n            for k in range(1, m):\n                lo, hi = pts\[k - 1]\[1], pts\[k]\[1]\n                top = m - k\n                if top < max(3, 0.03 * GX * GY) or k < 3 or lo <= 0:\n                    continue\n                gap = hi / lo\n                tight = pts\[-1]\[1] / hi <= 1.3\n                if (gap >= 1.5 and tight) or gap >= 4.0:\n                    if gap > best:\n                        best, split = gap, k\n            if split is not None:\n                ground = pts\[:split]\n                sky_raw += \[t\[0] for t in pts\[split:]]\n                g_max = max(t\[0] for t in ground)\n                s_min = min(t\[0] for t in pts\[split:])\n                # Just under the dome: terrain between the grid's samples can reach further than\n                # the farthest one sampled.\n                thr = (max(g_max * 1.2, 0.8 * s_min) if s_min > 1.25 * g_max else\n                       math.sqrt(g_max * s_min) if s_min > g_max else 0.5 * (ground\[-1]\[1] + pts\[split]\[1]))\n                setk('sky_depth', round(thr * s / 1000.0, 2), 'sky beyond (km)')\n                found.append('sky in the depth: a far dome at about %.0f km (%d%% of the frame)'\n                             % (pts\[split]\[1] * s / 1000.0, 100 * (m - split) // (GX * GY)))\n            else:\n                ground = pts\n                if ground:\n                    g_max = max(t\[0] for t in ground)\n                    if n\['sky_depth'].value() * 1000.0 / s <= g_max:\n                        setk('sky_depth', round(min(500.0, g_max * 1.5 * s / 1000.0), 2), 'sky beyond (km)')\n            n_sky = sum(1 for v in sky_raw if v == 0)\n            found.append('bg: %s, %d x %d, depth in %s (%s); %d%% of the frame is ground or buildings%s'\n                         % (bg.name(), W, H, chan, \['Planar Z', '1/Z', 'Distance']\[mode],\n                            100 * len(ground) // (GX * GY),\n                            ', %d%% depth 0 (sky)' % (100 * n_sky // (GX * GY)) if n_sky else ''))\n            if chan != \{'depth': 'depth.Z'\}.get(n\['depth_channel'].value(), n\['depth_channel'].value()):\n                setk('depth_channel', chan, 'depth channel')\n                try:\n                    n.node('DepthEnsure')\['channels'].setValue(chan)\n                    n.node('DepthSource')\['from0'].setValue(chan)\n                except Exception:\n                    pass\n            if not n\['occlude'].value():\n                setk('occlude', True, 'hide behind bg')\n\n    # The ground: the low ground in the nearer half of the terrain (the valley the shot looks into).\n    # Far terrain can lie well below it (a distant basin, the earth's curve in the render) and would\n    # put every deck too low for the valley in view.\n    terrain_km = None\n    relief = None\n    if len(ground) >= 8:\n        d_mid = _pct(\[t\[1] for t in ground], 0.5)\n        near = \[t for t in ground if t\[1] <= d_mid]\n        if len(near) < 8:\n            near = ground\n        ys = \[t\[2]\[1] for t in near]\n        gh = _pct(ys, 0.05)\n        low_all = _pct(\[t\[2]\[1] for t in ground], 0.05)\n        if gh < cam_y:\n            setk('ground_height', round(gh, 3), 'ground height (scene units)')\n        else:\n            notes.append('Everything in the depth is at or above the camera, so the ground height was left '\n                         'as it was.')\n        d = \[t\[1] * s / 1000.0 for t in ground]\n        terrain_km = (_pct(d, 0.1), _pct(d, 0.5), _pct(d, 0.9))\n        relief = ((_pct(ys, 0.5) - gh) * s, (_pct(ys, 0.95) - gh) * s)\n        found.append('ground: valley floor (lowest ground in the nearer half) at %g scene units; terrain %.2f / '\n                     '%.2f / %.2f km away (near / middle / far)'\n                     % (round(gh, 3), terrain_km\[0], terrain_km\[1], terrain_km\[2]))\n        found.append('terrain heights above that floor: middle %.0f m, ridges up to %.0f m' % relief)\n        if (gh - low_all) * s > 50:\n            found.append('far terrain goes %.0f m lower than that floor (not used for the ground height)'\n                         % ((gh - low_all) * s))\n        if terrain_km\[2] > 0.8 * n\['max_distance'].value():\n            setk('max_distance', round(min(500.0, terrain_km\[2] * 1.5), 1), 'max distance (km)')\n    elif n\['ground_height'].value() >= cam_y:\n        setk('ground_height', 0.0, 'ground height (scene units)')\n        notes.append('The camera was below the ground; ground height reset to 0.')\n    cam_alt = (cam_y - n\['ground_height'].value()) * s\n    found.append('camera height: %.0f m above the ground' % cam_alt)\n\n    # Units sanity.\n    if terrain_km is not None and (terrain_km\[1] < 0.02 or terrain_km\[1] > 300):\n        notes.append('The terrain comes out %.3g km away at its middle. If that is wrong, check '\n                     '\\'units to metres\\' (now %g: 0.1 for decimetres, 1 for metres, 0.01 for centimetres) and '\n                     'press analyze again.' % (terrain_km\[1], s))\n    if cam_alt > 30000 or cam_alt < -1:\n        notes.append('A camera %.0f m above the ground looks wrong: check \\'units to metres\\' (now %g) '\n                     'and the camera.' % (cam_alt, s))\n\n    # Sun and light.\n    src = int(n\['sun_source'].getValueAt(f))\n    if src == 1:\n        found.append('sun: from the Axis %s' % (axis.name() if axis else ''))\n    elif src == 2:\n        found.append('sun: from the EzAtmosScatter %s' % (atm.name() if atm else ''))\n    else:\n        sd = n\['sun_direction'].value()\n        found.append('sun: the typed sun direction (%.2f, %.2f, %.2f)' % tuple(sd))\n        if n\['sun_from'].value() == 'Auto':\n            notes.append('No sun Axis or EzAtmosScatter is plugged in. For the plate\\'s own sun, plug the '\n                         'scene\\'s sun Axis into \\'sun\\' or its EzAtmosScatter into \\'atmos\\'.')\n    if int(n\['light_source'].getValueAt(f)):\n        found.append('light: sun and sky colour measured by the EzAtmosScatter')\n    else:\n        found.append('light: the Light tab\\'s sun and sky colours (Manual)')\n        if atm is not None and n\['light_from'].value() == 'Auto':\n            notes.append('The EzAtmosScatter is plugged in but measured no light (self lit?), so the '\n                         'Light tab\\'s colours are used.')\n\n    # The layers.\n    pa = (bg.format().pixelAspect() or 1.0) if bg is not None else 1.0\n    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)\n    for i in (1, 2, 3):\n        p = 'l%d_' % i\n        if not n\[p + 'enable'].value():\n            continue\n        t = n\[p + 'type'].value()\n        if n\[p + 'volume'].value() < 0.5:\n            base = n\[p + 'base'].value()\n            top = base + n\[p + 'thickness'].value()\n            where = ('inside it' if base <= cam_alt <= top else\n                     'above it, looking down on it' if cam_alt > top else 'below it')\n            found.append('layer %d: %s deck, %.0f to %.0f m above the ground; the camera is %s'\n                         % (i, t, base, top, where))\n            if relief is not None and base < relief\[1]:\n                notes.append('Layer %d\\'s base (%.0f m) is below the ridges in view (up to %.0f m above the floor): '\n                             'the terrain rises through the deck and the clouds stop at it. That is right for '\n                             'valley fog (set its base just above the valley floor, so the fog fills the low '\n                             'ground); for a deck that should float over the terrain, raise its base above %.0f m.'\n                             % (i, base, relief\[1], relief\[1]))\n            if n\[p + 'sigma'].value() * n\[p + 'density'].value() >= 0.01 and cam_alt > top + 300:\n                notes.append('Layer %d is seen from %.0f m above its top: at this density (sigma x density %.3g) '\n                             'it reads as a solid, smooth sheet. For fog with breakup use the Valley Fog type '\n                             '(0.0035), or lower density and coverage.'\n                             % (i, cam_alt - top, n\[p + 'sigma'].value() * n\[p + 'density'].value()))\n            continue\n        if n\[p + 'box_found'].value() > 0.5:\n            found.append('layer %d: %s volume, following the 3D box in box%d' % (i, t, i))\n            continue\n        pos = n\[p + 'vol_position'].value()\n        size = n\[p + 'vol_size'].value()\n        c = to_cam(\[pos\[0], pos\[1] + size\[1] / s / 2.0, pos\[2]])\n        reason = None\n        if c\[2] > -1e-6:\n            reason = 'behind the camera'\n        else:\n            u = c\[0] / -c\[2] * focal / hap\n            v = c\[1] / -c\[2] * focal / vap\n            if abs(u) > 0.65 or abs(v) > 0.65:\n                reason = 'out of frame'\n            elif ground and W:\n                # Hidden behind the plate's terrain?\n                px, py = (u + 0.5) * W, (v + 0.5) * H\n                near = min(ground, key=lambda tt: (tt\[3] - px) ** 2 + (tt\[4] - py) ** 2)\n                d_vol = math.sqrt(c\[0] ** 2 + c\[1] ** 2 + c\[2] ** 2) - 0.5 * max(size) / s\n                if (near\[3] - px) ** 2 + (near\[4] - py) ** 2 < (1.5 * W / GX) ** 2 and near\[1] < d_vol:\n                    reason = 'behind the plate\\'s terrain'\n        if reason is None:\n            found.append('layer %d: %s volume, in view' % (i, t))\n            continue\n        if n\[p + 'vol_position'].isAnimated():\n            notes.append('Layer %d (%s) is %s, but its position is animated, so it was left alone.'\n                         % (i, t, reason))\n            continue\n        km = n\[p + 'place_km'].value()\n        if terrain_km is not None:\n            km = max(0.2, min(km, 0.7 * terrain_km\[1]))\n        n\[p + 'place_km'].setValue(round(km, 2))\n        # The layer's own 'place in front of camera' code, run on this node.\n        exec(n\[p + 'place'].value().replace('nuke.thisNode()', '_n'), \{'nuke': nuke, '_n': n\})\n        changed.append('layer %d (%s) was %s: placed %.2f km in front of the camera' % (i, t, reason, km))\n\n    if n\['preview'].value():\n        notes.append('preview is on: half resolution, one sample. Turn it off for the real look.')\n\n    out = 'Found:\\n' + '\\n'.join('  ' + x for x in found)\n    out += '\\n\\nChanged:\\n' + ('\\n'.join('  ' + x for x in changed) if changed else '  nothing, it already matched')\n    if notes:\n        out += '\\n\\nCheck:\\n' + '\\n'.join('  ' + x for x in notes)\n    return out\n\n\n# ---------------------------------------------------------------------------------------------\n# 'debug report' (About tab): a plain-text dump of what the node sees, printed to the Script\n# Editor, for debugging a shot without sharing the plate. Numbers only: no picture leaves the node.\n\n_P_NAMES = ('p', 'pworld', 'p_world', 'pw', 'wp', 'position', 'world_position', 'worldposition',\n            'p_w', 'pos', 'worldpos', 'ppass', 'p_pass', 'position_world')\n\n\ndef _rgb_channels(bg, layer):\n    chans = \[c for c in bg.channels() if c.split('.')\[0] == layer]\n    order = \{'red': 0, 'x': 0, 'r': 0, 'green': 1, 'y': 1, 'g': 1, 'blue': 2, 'z': 2, 'b': 2\}\n    chans = sorted(chans, key=lambda c: order.get(c.split('.')\[-1].lower(), 9))\n    return chans\[:3] if len(chans) >= 3 else None\n\n\ndef _find_p_layer(bg):\n    layers = \[]\n    for c in bg.channels():\n        l = c.split('.')\[0]\n        if l not in layers:\n            layers.append(l)\n    for l in layers:\n        if l.lower() in _P_NAMES and _rgb_channels(bg, l):\n            return l\n    for l in layers:\n        ll = l.lower()\n        if ('position' in ll or ll.startswith('pworld') or ll.startswith('p_')) and _rgb_channels(bg, l):\n            return l\n    return None\n\n\ndef _fmt_list(vals, fmt='%.3g'):\n    return ' / '.join(fmt % v for v in vals)\n\n\ndef debug_report(n):\n    out = \[]\n    w = out.append\n    f = nuke.frame()\n    s = n\['scene_scale'].value() or 0.1\n\n    def section(title):\n        w('')\n        w('-- %s ' % title + '-' * max(4, 70 - len(title)))\n\n    def safe(fn):\n        try:\n            fn()\n        except Exception as e:\n            w('  (error in this section: %s: %s)' % (type(e).__name__, e))\n\n    ver = n\['version'].value() if n.knob('version') else '?'\n    w('==== EzCloudGen debug report ' + '=' * 50)\n    w('%s, node %s, frame %d, Nuke %s' % (ver, n.fullName(), f, nuke.NUKE_VERSION_STRING))\n    rf = nuke.root().format()\n    w('root format %d x %d (pixel aspect %g), fps %g' % (rf.width(), rf.height(), rf.pixelAspect(),\n                                                          nuke.root()\['fps'].value()))\n\n    bg = n.input(0)\n    cam = _find(n, 1, 'focal')\n    atm = _find(n, 2, 'haze_density')\n    axis = _find(n, 3, 'world_matrix')\n    M = \[n\['cam_world_matrix'].getValueAt(f, i) for i in range(16)]\n    focal = n\['cam_focal'].getValueAt(f) or 24.0\n    hap = n\['cam_haperture'].getValueAt(f) or 36.0\n    gh = n\['ground_height'].value()\n    W = H = 0\n    pa = 1.0\n    if bg is not None:\n        W, H = bg.format().width(), bg.format().height()\n        pa = bg.format().pixelAspect() or 1.0\n    vap = hap * (H / (float(W) * pa) if W else 9 / 16.0)\n    flags = \[]\n\n    def to_world(p):\n        return \[M\[0] * p\[0] + M\[1] * p\[1] + M\[2] * p\[2] + M\[3],\n                M\[4] * p\[0] + M\[5] * p\[1] + M\[6] * p\[2] + M\[7],\n                M\[8] * p\[0] + M\[9] * p\[1] + M\[10] * p\[2] + M\[11]]\n\n    # ---- inputs\n    def inputs():\n        section('inputs')\n        names = \['bg', 'camera', 'atmos', 'sun', 'map', 'box1', 'box2', 'box3', 'holdout', 'add']\n        for i, nm in enumerate(names):\n            x = n.input(i) if i < n.inputs() or n.input(i) is not None else None\n            w('  %-8s %s' % (nm, '%s (%s)' % (x.name(), x.Class()) if x is not None else '-'))\n        if bg is None:\n            return\n        fm = bg.format()\n        w('  bg format %d x %d (pixel aspect %g); bbox %d %d %d %d'\n          % (fm.width(), fm.height(), fm.pixelAspect(), bg.bbox().x(), bg.bbox().y(), bg.bbox().w(), bg.bbox().h()))\n        bb = bg.bbox()\n        if bb.x() < 0 or bb.y() < 0 or bb.x() + bb.w() > fm.width() or bb.y() + bb.h() > fm.height():\n            flags.append('bg has overscan (bbox outside the format): the camera must match the FORMAT, '\n                         'not the overscan area.')\n            w('  ! bbox reaches outside the format (overscan)')\n        chain, x, k = \[], bg, 0\n        while x is not None and k < 15:\n            chain.append(x.Class())\n            x = x.input(0) if x.inputs() else None\n            k += 1\n        w('  B pipe up from bg: ' + ' < '.join(chain))\n        layers = \[]\n        for c in bg.channels():\n            l = c.split('.')\[0]\n            if l not in layers:\n                layers.append(l)\n        w('  bg layers: ' + ', '.join(layers))\n    safe(inputs)\n\n    # ---- camera\n    def camera():\n        section('camera')\n        if cam is None:\n            w('  none plugged in (the node uses a level camera 300 m up)')\n            return\n        w('  %s (%s)' % (cam.name(), cam.Class()))\n        w('  world matrix rows: ' + ' | '.join(_fmt_list(M\[4 * r:4 * r + 4], '%.6g') for r in range(4)))\n        for kn in ('translate', 'rotate', 'rot_order', 'focal', 'haperture', 'vaperture', 'near', 'far',\n                   'win_translate', 'win_scale', 'winroll', 'projection_mode', 'focal_point', 'fstop'):\n            kk = cam.knob(kn)\n            if kk is None:\n                continue\n            try:\n                v = kk.getValueAt(f) if kk.arraySize() == 1 else \[kk.getValueAt(f, i) for i in range(kk.arraySize())]\n            except Exception:\n                v = kk.value()\n            anim = ' (animated)' if hasattr(kk, 'isAnimated') and kk.isAnimated() else ''\n            w('  %-15s %s%s' % (kn, v, anim))\n        cv = cam.knob('vaperture').getValueAt(f) if cam.knob('vaperture') else None\n        if cv and W and abs(cv - vap) > 0.01 * vap:\n            flags.append('camera vaperture %.4g differs from haperture x bg height / (width x pixel aspect) = %.4g: EzCloudGen derives '\n                         'the vertical aperture from the format and its pixel aspect, so the clouds may be '\n                         'stretched vertically against the plate.' % (cv, vap))\n        if cam.knob('win_translate'):\n            wt = \[cam\['win_translate'].getValueAt(f, i) for i in range(2)]\n            if abs(wt\[0]) > 1e-6 or abs(wt\[1]) > 1e-6:\n                flags.append('camera win_translate %s is not 0: EzCloudGen ignores it, so the clouds are offset '\n                             'from the plate.' % wt)\n        if cam.knob('win_scale'):\n            ws = \[cam\['win_scale'].getValueAt(f, i) for i in range(2)]\n            if abs(ws\[0] - 1) > 1e-6 or abs(ws\[1] - 1) > 1e-6:\n                flags.append('camera win_scale %s is not 1: EzCloudGen ignores it.' % ws)\n        if cam.knob('winroll') and abs(cam\['winroll'].getValueAt(f)) > 1e-6:\n            flags.append('camera winroll is not 0: EzCloudGen ignores it.')\n        for kn in ('focal', 'haperture'):\n            if cam.knob(kn) and cam\[kn].isAnimated():\n                flags.append('camera %s is animated (fine, it is read per frame; just so you know).' % kn)\n        if cam.knob('projection_mode') and cam\['projection_mode'].value() not in ('perspective', 0, '0'):\n            flags.append('camera projection is %s: EzCloudGen assumes perspective.' % cam\['projection_mode'].value())\n        fwd = \[-M\[2], -M\[6], -M\[10]]\n        l = math.sqrt(sum(c * c for c in fwd)) or 1.0\n        fwd = \[c / l for c in fwd]\n        pitch = math.degrees(math.asin(max(-1.0, min(1.0, fwd\[1]))))\n        head = math.degrees(math.atan2(fwd\[0], -fwd\[2]))\n        w('  as used: focal %g, haperture %g, vaperture (from format, pixel aspect %g) %.4g; position %s scene units; '\n          'looking %.1f deg %s level, heading %.1f deg'\n          % (focal, hap, pa, vap, _fmt_list(M\[3:12:4], '%.6g'), abs(pitch), 'below' if pitch < 0 else 'above', head))\n        w('  camera height above ground height: %.1f m' % ((M\[7] - gh) * s))\n        try:\n            P = \[n\['cam_prev_matrix'].getValueAt(f, i) for i in range(16)]\n            N = \[n\['cam_next_matrix'].getValueAt(f, i) for i in range(16)]\n            mv = math.sqrt(sum((N\[i] - P\[i]) ** 2 for i in (3, 7, 11))) * s / 2.0\n            w('  camera moves %.2f m per frame (from the frames either side)' % mv)\n        except Exception:\n            pass\n    safe(camera)\n\n    # ---- scene knobs\n    def scene():\n        section('scene knobs')\n        for kn in ('scene_scale', 'ground_height', 'earth', 'occlude', 'depth_channel', 'depth_mode', 'sky_depth',\n                   'bg_edge_softness', 'ground_softness', 'max_distance', 'render_preset', 'resolution', 'quality',\n                   'edge_steps', 'sampling', 'samples', 'preview', 'motion_blur', 'haze_distance', 'horizon_haze',\n                   'light_grid', 'view'):\n            if n.knob(kn) is not None:\n                w('  %-17s %s' % (kn, n\[kn].value()))\n        try:\n            cc = n.node('Clouds_Color')\n            spp = cc\['EzCloudGen_samples'].value()\n            w('  samples per pixel in use: %g' % spp)\n        except Exception:\n            pass\n    safe(scene)\n\n    # ---- depth, terrain, P\n    grid = \{\}\n\n    def depth():\n        section('depth (bg, %dx%d grid)' % (GX, GY))\n        if bg is None:\n            w('  no bg')\n            return\n        chan = _depth_channel(n, bg)\n        mode = int(n\['depth_mode'].getValue())\n        w('  channel %s, read as %s' % (chan, \['Planar Z', '1/Z', 'Distance']\[mode]))\n        if chan is None:\n            return\n        raw, bad = \[], 0\n        for j in range(GY):\n            for i in range(GX):\n                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                try:\n                    v = bg.sample(chan, px, py, frame=f)\n                except Exception:\n                    v = 0.0\n                if not (v == v) or abs(v) == float('inf'):\n                    bad += 1\n                    v = 0.0\n                raw.append(v)\n        pos = \[v for v in raw if v > 0]\n        w('  raw: min %.6g, p5 %.6g, p50 %.6g, p95 %.6g, max %.6g; %d%% zero, %d%% NaN/inf, %d%% negative'\n          % (min(pos) if pos else 0, _pct(pos, .05), _pct(pos, .5), _pct(pos, .95), max(pos) if pos else 0,\n             100 * sum(1 for v in raw if v == 0) // len(raw), 100 * bad // len(raw),\n             100 * sum(1 for v in raw if v < 0) // len(raw)))\n        if _scanline_on_b(bg) and mode != 1 and _depth_kind(pos, mode, s, True)\[0] == 1:\n            flags.append('A ScanlineRender/RayRender is up the bg pipe but depth is read as %s; its depth is 1/Z.'\n                         % \['Planar Z', '1/Z', 'Distance']\[mode])\n        sky_su = n\['sky_depth'].value() * 1000.0 / s\n        pts = \{\}\n        for idx, v in enumerate(raw):\n            j, i = divmod(idx, GX)\n            px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n            z = (1.0 / v if v > 0 else 0.0) if mode == 1 else v\n            if z <= 0 or z >= sky_su:\n                continue\n            cd = \[(px / W - 0.5) * hap / focal, (py / H - 0.5) * vap / focal, -1.0]\n            l = math.sqrt(cd\[0] ** 2 + cd\[1] ** 2 + 1.0)\n            if mode == 2:\n                dist, p = z, \[c / l * z for c in cd]\n            else:\n                dist, p = z * l, \[c * z for c in cd]\n            pts\[(i, j)] = (dist, to_world(p))\n        grid\['pts'] = pts\n        w('  %d%% beyond \\'sky beyond\\' (%.4g km) or zero = sky' % (100 - 100 * len(pts) // len(raw),\n                                                                   n\['sky_depth'].value()))\n        if not pts:\n            return\n        dk = \[d * s / 1000.0 for d, _ in pts.values()]\n        bins = \[0.1, 0.3, 1, 3, 10, 30, 100, 300, 1e9]\n        hist, lo = \[], 0.0\n        for b in bins:\n            c = sum(1 for d in dk if lo <= d < b)\n            hist.append('%s-%s km: %d' % (('%g' % lo), ('%g' % b) if b < 1e8 else 'inf', c))\n            lo = b\n        w('  distance histogram: ' + ', '.join(hist))\n        # Edges: neighbours with a >2x depth jump.\n        jumps = tot = 0\n        for (i, j), (d, _) in pts.items():\n            for di, dj in ((1, 0), (0, 1)):\n                q = pts.get((i + di, j + dj))\n                if q is None:\n                    continue\n                tot += 1\n                if max(d, q\[0]) / max(min(d, q\[0]), 1e-9) > 2.0:\n                    jumps += 1\n        w('  depth edges: %d of %d grid neighbours (%.0f%%) jump more than 2x in depth' % (jumps, tot,\n                                                                                          100.0 * jumps / max(tot, 1)))\n        # Coarse maps, 16x9: distance (km) and height above 'ground height' (m). Top row = top of frame.\n        def cmap(val, title, fmt):\n            w('  %s (16x9, top of frame first; . = sky):' % title)\n            for jj in range(8, -1, -1):\n                row = \[]\n                for ii in range(16):\n                    vs = \[val(pts\[(2 * ii + a, 2 * jj + b)]) for a in (0, 1) for b in (0, 1)\n                          if (2 * ii + a, 2 * jj + b) in pts]\n                    row.append(fmt % (sorted(vs)\[len(vs) // 2]) if vs else '      .')\n                w('   ' + ''.join(row))\n        cmap(lambda t: t\[0] * s / 1000.0, 'distance km', '%7.2f')\n        cmap(lambda t: (t\[1]\[1] - gh) * s, 'height above ground height, m', '%7.0f')\n        hs = \[(t\[1]\[1] - gh) * s for t in pts.values()]\n        w('  heights above ground height (m): p5 %.0f, p25 %.0f, p50 %.0f, p75 %.0f, p95 %.0f'\n          % (_pct(hs, .05), _pct(hs, .25), _pct(hs, .5), _pct(hs, .75), _pct(hs, .95)))\n    safe(depth)\n\n    def ppass():\n        section('position pass')\n        if bg is None:\n            return\n        picked = n\['position_pass'].value() if n.knob('position_pass') is not None else 'none'\n        if picked and picked not in ('none', 'all'):\n            pl, how = picked, 'picked in \\'position pass\\''\n            if _rgb_channels(bg, pl) is None:\n                w('  layer %s (picked) is not on the bg, or has fewer than 3 channels' % pl)\n                flags.append('\\'position pass\\' is set to %s, which the bg does not have.' % pl)\n                return\n        else:\n            pl, how = _find_p_layer(bg), 'auto-detected'\n            if pl is None:\n                w('  none found on the bg (looked for P, Pworld, P_world, position, ...); pick it in '\n                  '\\'position pass\\' (About tab) if it has another name')\n                return\n        ch = _rgb_channels(bg, pl)\n        w('  layer %s (%s), %s' % (pl, ', '.join(ch), how))\n        absmax = \[]\n        pts = grid.get('pts', \{\})\n        errs, rel, pys, near_ys, ratio = \[], \[], \[], \[], \[]\n        dmid = _pct(\[d for d, _ in pts.values()], 0.5) if pts else 0\n        camp = \[M\[3], M\[7], M\[11]]\n        for j in range(GY):\n            for i in range(GX):\n                px, py = (i + 0.5) * W / GX, (j + 0.5) * H / GY\n                try:\n                    P = \[bg.sample(c, px, py, frame=f) for c in ch]\n                except Exception:\n                    continue\n                if not all(v == v and abs(v) != float('inf') for v in P) or (P\[0] == 0 and P\[1] == 0 and P\[2] == 0):\n                    continue\n                pys.append(P\[1])\n                absmax.append(max(abs(v) for v in P))\n                t = pts.get((i, j))\n                if t is None:\n                    continue\n                d, wp = t\n                e = math.sqrt(sum((P\[k] - wp\[k]) ** 2 for k in range(3)))\n                errs.append(e * s)\n                rel.append(100.0 * e / max(d, 1e-9))\n                dp = math.sqrt(sum((P\[k] - camp\[k]) ** 2 for k in range(3)))\n                ratio.append(dp / max(d, 1e-9))\n                if d <= dmid:\n                    near_ys.append(P\[1])\n        w('  %d grid points with P; %d also with depth' % (len(pys), len(errs)))\n        if absmax and _pct(absmax, 0.95) <= 1.05:\n            w('  ! its values stay within -1..1: this looks like a normal pass or a normalised / reference '\n              'position (Pref), not world positions')\n            flags.append('Position pass %s has values within -1..1: probably not a world-position pass.' % pl)\n        if pys:\n            w('  P.y: p5 %.6g, p50 %.6g, p95 %.6g (scene units)' % (_pct(pys, .05), _pct(pys, .5), _pct(pys, .95)))\n        if near_ys:\n            pg = _pct(near_ys, 0.05)\n            w('  ground from P (5th pct of the nearer half): %.6g scene units; ground height knob %.6g (%+.1f m)'\n              % (pg, gh, (gh - pg) * s))\n        if errs:\n            w('  P vs depth+camera world position: error median %.2f m, p90 %.2f m; %.2f%% / %.2f%% of distance'\n              % (_pct(errs, .5), _pct(errs, .9), _pct(rel, .5), _pct(rel, .9)))\n            r = _pct(ratio, 0.5)\n            w('  |P - camera| / depth distance: median %.4g' % r)\n            if _pct(rel, .5) > 20.0:\n                w('  ! P and the depth+camera positions are far apart (median %.0f%% of distance): if this '\n                  'layer is not world position in the camera\\'s space (Pref, object space, camera space), '\n                  'pick the world one in \\'position pass\\'' % _pct(rel, .5))\n            if _pct(rel, .5) > 2.0:\n                hint = \[]\n                if abs(r - 1) > 0.05:\n                    hint.append('distances differ by a factor %.3g: wrong \\'depth is\\' mode or units '\n                                '(P and depth in different units?)' % r)\n                else:\n                    hint.append('distances agree but positions do not: the camera does not match the render '\n                                '(film back / vaperture, win_translate, overscan, or a different camera)')\n                flags.append('Position pass and depth disagree (median %.1f%% of distance): ' % _pct(rel, .5) +\n                             '; '.join(hint))\n            else:\n                w('  -> depth, depth mode, camera and units agree with the position pass')\n    safe(ppass)\n\n    # ---- layers\n    def layers():\n        section('layers')\n        cam_alt = (M\[7] - gh) * s\n        hs = \[(t\[1]\[1] - gh) * s for t in grid.get('pts', \{\}).values()]\n        for i in (1, 2, 3):\n            p = 'l%d_' % i\n            if not n\[p + 'enable'].value():\n                w('  layer %d: off' % i)\n                continue\n            vol = n\[p + 'volume'].value() > 0.5\n            sd = n\[p + 'sigma'].value() * n\[p + 'density'].value()\n            w('  layer %d: %s, %s; cover %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '\n              'edge %g, model %s, wind %g deg %g m/s, wisp stretch %g'\n              % (i, n\[p + 'type'].value(), 'volume' if vol else 'deck', n\[p + 'cover'].value(), sd,\n                 n\[p + 'scale_km'].value(), n\[p + 'detail_size'].value(), n\[p + 'erosion'].value(),\n                 n\[p + 'edge'].value(), n\[p + 'detail_model'].value(), n\[p + 'wind_deg'].value(),\n                 n\[p + 'wind_speed'].value(),\n                 n\[p + 'wisp_stretch'].value() if n.knob(p + 'wisp_stretch') is not None else 1.0))\n            if not vol and n.knob(p + 'depth_ramp_on') is not None and n\[p + 'depth_ramp_on'].value():\n                kr = n.node('L%d_DepthRamp' % i)\n                rv = \[kr\['range'].value(k) for k in range(4)] if kr is not None else \[0, 0, 0, 0]\n                w('    depth ramp (Planar Z): %s scene units = %s m; %s falloff; %s'\n                  % (_fmt_list(rv, '%g'), _fmt_list(\[v * s for v in rv], '%g'),\n                     n\[p + 'depth_ramp_falloff'].value() if n.knob(p + 'depth_ramp_falloff') is not None else 'linear',\n                     'hides shadows too' if n.knob(p + 'depth_ramp_shadows') is not None\n                     and n\[p + 'depth_ramp_shadows'].value() else 'shadows kept'))\n            if not vol:\n                base = n\[p + 'base'].value()\n                top = base + n\[p + 'thickness'].value()\n                where = 'inside' if base <= cam_alt <= top else 'above' if cam_alt > top else 'below'\n                w('    base %.0f m, top %.0f m above ground height (scene y %.6g to %.6g); camera %s it'\n                  % (base, top, gh + base / s, gh + top / s, where))\n                if hs:\n                    below = sum(1 for h in hs if h < base)\n                    inside = sum(1 for h in hs if base <= h <= top)\n                    above = len(hs) - below - inside\n                    w('    terrain in view: %d%% below the base, %d%% inside the layer (fog meets ground there), '\n                      '%d%% above the top' % (100 * below // len(hs), 100 * inside // len(hs), 100 * above // len(hs)))\n            else:\n                if n\[p + 'box_found'].value() > 0.5:\n                    w('    follows the 3D box in box%d: centre %s, size %s'\n                      % (i, _fmt_list(\[n\[p + 'box_center'].value(k) for k in range(3)], '%.6g'),\n                         _fmt_list(\[n\[p + 'box_size'].value(k) for k in range(3)], '%.6g')))\n                else:\n                    w('    position %s (scene units), size %s m, shape %s'\n                      % (_fmt_list(n\[p + 'vol_position'].value(), '%.6g'), _fmt_list(n\[p + 'vol_size'].value(), '%g'),\n                         n\[p + 'vol_shape'].value()))\n    safe(layers)\n\n    # ---- sun and light\n    def light():\n        section('sun and light')\n        w('  sun from %s, light from %s; atmos %s, sun axis %s'\n          % (n\['sun_from'].value(), n\['light_from'].value(), atm.name() if atm else '-', axis.name() if axis else '-'))\n        src = int(n\['sun_source'].getValueAt(f))\n        sv = \[n\['sun_in_use'].getValueAt(f, i) for i in range(3)]\n        l = math.sqrt(sum(c * c for c in sv)) or 1.0\n        sv = \[c / l for c in sv]\n        elev = math.degrees(math.asin(max(-1.0, min(1.0, sv\[1]))))\n        fwd = \[-M\[2], -M\[10]]\n        az = math.degrees(math.atan2(sv\[0] * fwd\[1] - sv\[2] * fwd\[0], sv\[0] * fwd\[0] + sv\[2] * fwd\[1]))\n        w('  source in use: %s; direction %s, %.1f deg up, %.1f deg %s of the camera heading'\n          % (\['typed', 'Axis', 'EzAtmosScatter']\[src] if 0 <= src <= 2 else src, _fmt_list(sv, '%.3f'), elev,\n             abs(az), 'right' if az < 0 else 'left'))\n        w('  light source: %s; sun colour in use %s; sky colour in use %s'\n          % ('EzAtmosScatter' if int(n\['light_source'].getValueAt(f)) else 'Manual (Light tab)',\n             _fmt_list(\[n\['sun_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g'),\n             _fmt_list(\[n\['sky_color_in_use'].getValueAt(f, i) for i in range(3)], '%.3g')))\n    safe(light)\n\n    # ---- GPU\n    def gpu():\n        section('gpu')\n        import platform\n        w('  %s, %s; Nuke %s mode' % (platform.system(), platform.machine(),\n                                     'GUI' if nuke.env.get('gui') else 'terminal'))\n        names = \[]\n        for nd in n.nodes():\n            if nd.Class() == 'BlinkScript' and nd.knob('gpuName') is not None:\n                names.append((nd.name(), nd\['gpuName'].value(), nd\['useGPUIfAvailable'].value(),\n                              nd\['disable'].value() if nd.knob('disable') else False))\n        devices = sorted(set(g for _, g, _, _ in names))\n        w('  BlinkScript GPU: %s' % (', '.join(devices) if devices else '?'))\n        off = \[nm for nm, _, use, _ in names if not use]\n        if off:\n            w(\"  'use GPU if available' is off on: \" + ', '.join(off))\n            flags.append(\"'use GPU if available' is off on %s inside the node: they render on the CPU.\" % ', '.join(off))\n        if any('not available' in g.lower() for g in devices):\n            flags.append('Nuke has no usable GPU here (BlinkScript says \"Not available\"), so EzCloudGen renders on the '\n                         'CPU: much slower, and the first frame compiles for a long time. Check Preferences > '\n                         'Performance > Hardware (GPU device), the NVIDIA driver, and, for terminal or farm renders, '\n                         'that Nuke is started with --gpu.')\n        try:\n            pr = nuke.toNode('preferences')\n            for kn in ('selectedGPUDeviceName', 'selectedGPUDeviceIndex', 'enableMultiGPU'):\n                if pr.knob(kn) is not None:\n                    w('  pref %s: %s' % (kn, pr\[kn].value()))\n        except Exception:\n            pass\n    safe(gpu)\n\n    section('flags')\n    if flags:\n        for x in flags:\n            w('  ! ' + x)\n    else:\n        w('  none')\n    if n.knob('analysis') and n\['analysis'].value():\n        section('last analyze scene text')\n        for line in n\['analysis'].value().splitlines():\n            w('  ' + line)\n    w('==== end of EzCloudGen debug report ' + '=' * 43)\n    text = '\\n'.join(out)\n    print(text)\n    return text\n"
  addUserKnob {20 about l About}
- addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.50.0"}
+ addUserKnob {26 version l "" +STARTLINE T "EzCloudGen v0.51.0"}
  addUserKnob {6 debug l "debug report" t "Prints a plain-text report of what the node sees to the Script Editor: the inputs, the bg's format, bbox and layers, the camera (and settings EzCloudGen ignores, such as win_translate), the depth (statistics, a histogram and coarse maps of distance and height), a position pass compared with the depth and camera, each layer against the terrain, and the sun and light. Numbers only: no picture leaves the node, so it is safe to share for a studio plate. While on, 'analyze scene' prints it too." -STARTLINE}
  addUserKnob {22 print_debug l "print debug report" t "Prints the debug report for this frame to the Script Editor." -STARTLINE +HIDDEN T "g = \{'nuke': nuke\}\nexec(nuke.thisNode()\['analyze_lib'].getText(), g)\ng\['debug_report'](nuke.thisNode())\n"}
  addUserKnob {11 position_pass l "position pass" t "The bg's world-position layer for the debug report, when it isn't found by name (Pworld, P_world, a custom AOV...). none: look for P, Pworld, P_world, position and similar. The report compares it with the world positions from the depth and camera." +HIDDEN}
@@ -1059,7 +1078,7 @@ Group {
   name bg
   xpos 180
  }
-set Na616c000 [stack 0]
+set Nb5d7c000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -1087,14 +1106,14 @@ set Na616c000 [stack 0]
   xpos 0
   ypos 180
  }
-set Na6185000 [stack 0]
+set Nb5d97000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $Na6185000
+push $Nb5d97000
  Merge2 {
   inputs 2
   operation plus
@@ -1111,7 +1130,7 @@ push $Na6185000
   xpos 0
   ypos 360
  }
-set Na6185c00 [stack 0]
+set Nb5d97c00 [stack 0]
  Dot {
   name LayoutDot14
   xpos 86
@@ -1122,32 +1141,32 @@ set Na6185c00 [stack 0]
   xpos 86
   ypos 963
  }
-set N83532c00 [stack 0]
+set Nf88d4c00 [stack 0]
  Dot {
   name LayoutDot21
   xpos 86
   ypos 1491
  }
-set N8354c400 [stack 0]
+set Nf88ee400 [stack 0]
  Dot {
   name LayoutDot22
   xpos 394
   ypos 1491
  }
-set N8354c800 [stack 0]
-push $Na6185000
+set Nf88ee800 [stack 0]
+push $Nb5d97000
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set N834af400 [stack 0]
+set Nf8853400 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set N834af800 [stack 0]
+set Nf8853800 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -1170,29 +1189,29 @@ set N834af800 [stack 0]
   xpos 626
   ypos 567
  }
-set N839b2800 [stack 0]
+set Nf8954800 [stack 0]
  Dot {
   name LayoutDot58
   xpos 626
   ypos 1113
  }
-set N839b3800 [stack 0]
+set Nf8955800 [stack 0]
  Dot {
   name LayoutDot59
   xpos 610
   ypos 1113
  }
-set N839b3c00 [stack 0]
+set Nf8955c00 [stack 0]
  Dot {
   name LayoutDot60
   xpos 430
   ypos 1113
  }
-set N839ce000 [stack 0]
-push $N839ce000
-push $N839ce000
-push $N839ce000
-push $Na616c000
+set Nf8970000 [stack 0]
+push $Nf8970000
+push $Nf8970000
+push $Nf8970000
+push $Nb5d7c000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -1209,7 +1228,7 @@ push $Na616c000
   xpos 290
   ypos 243
  }
-push $N834af400
+push $Nf8853400
  Copy {
   inputs 2
   from0 depth.Z
@@ -1237,7 +1256,7 @@ push $N834af400
   xpos 470
   ypos 1053
  }
-set N83998400 [stack 0]
+set Nf893a400 [stack 0]
  Dot {
   name LayoutDot47
   xpos 376
@@ -1271,26 +1290,26 @@ set N83998400 [stack 0]
   xpos 446
   ypos 537
  }
-set N83964400 [stack 0]
+set Nf8906400 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
   ypos 1023
  }
-set N83965400 [stack 0]
+set Nf8907400 [stack 0]
  Dot {
   name LayoutDot34
   xpos 412
   ypos 1023
  }
-set N83965800 [stack 0]
-push $N83532c00
+set Nf8907800 [stack 0]
+push $Nf88d4c00
  Dot {
   name LayoutDot16
   xpos 394
   ypos 963
  }
-set N83533000 [stack 0]
+set Nf88d5000 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1328,7 +1347,7 @@ set N83533000 [stack 0]
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -1519,13 +1538,13 @@ set N83533000 [stack 0]
   xpos 446
   ypos 2139
  }
-set N83a4f000 [stack 0]
+set Nf89f1000 [stack 0]
  Dot {
   name LayoutDot106
   xpos 446
   ypos 2835
  }
-set N83a4f800 [stack 0]
+set Nf89f1800 [stack 0]
  Dot {
   name LayoutDot109
   xpos 446
@@ -1536,113 +1555,113 @@ set N83a4f800 [stack 0]
   xpos 772
   ypos 3753
  }
-push $N8354c800
+push $Nf88ee800
  Dot {
   name LayoutDot23
   xpos 574
   ypos 1491
  }
-set N8354cc00 [stack 0]
+set Nf88eec00 [stack 0]
  Dot {
   name LayoutDot24
   xpos 754
   ypos 1491
  }
-set N8354d000 [stack 0]
+set Nf88ef000 [stack 0]
  Dot {
   name LayoutDot25
   xpos 934
   ypos 1491
  }
-set N8354d400 [stack 0]
+set Nf88ef400 [stack 0]
  Dot {
   name LayoutDot26
   xpos 1114
   ypos 1491
  }
-push $N839b3800
+push $Nf8955800
  Dot {
   name LayoutDot61
   xpos 970
   ypos 1113
  }
-set N839ce400 [stack 0]
+set Nf8970400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1150
   ypos 1113
  }
-set N839ce800 [stack 0]
-push $N839ce800
-push $N839ce800
-push $N839ce800
-push $N83998400
+set Nf8970800 [stack 0]
+push $Nf8970800
+push $Nf8970800
+push $Nf8970800
+push $Nf893a400
  Dot {
   name LayoutDot46
   xpos 556
   ypos 1053
  }
-set N83998800 [stack 0]
+set Nf893a800 [stack 0]
  Dot {
   name LayoutDot48
   xpos 790
   ypos 1053
  }
-set N83999000 [stack 0]
+set Nf893b000 [stack 0]
  Dot {
   name LayoutDot49
   xpos 916
   ypos 1053
  }
-set N83999400 [stack 0]
+set Nf893b400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 1096
   ypos 1053
  }
-push $N83965400
+push $Nf8907400
  Dot {
   name LayoutDot35
   xpos 592
   ypos 1023
  }
-set N83965c00 [stack 0]
+set Nf8907c00 [stack 0]
  Dot {
   name LayoutDot37
   xpos 736
   ypos 1023
  }
-set N8397e400 [stack 0]
+set Nf8922400 [stack 0]
  Dot {
   name LayoutDot38
   xpos 952
   ypos 1023
  }
-set N8397e800 [stack 0]
+set Nf8922800 [stack 0]
  Dot {
   name LayoutDot39
   xpos 1132
   ypos 1023
  }
-push $N83533000
+push $Nf88d5000
  Dot {
   name LayoutDot17
   xpos 574
   ypos 963
  }
-set N83533400 [stack 0]
+set Nf88d5400 [stack 0]
  Dot {
   name LayoutDot18
   xpos 754
   ypos 963
  }
-set N83533800 [stack 0]
+set Nf88d5800 [stack 0]
  Dot {
   name LayoutDot19
   xpos 934
   ypos 963
  }
-set N83533c00 [stack 0]
+set Nf88d5c00 [stack 0]
  Dot {
   name LayoutDot20
   xpos 1114
@@ -1685,7 +1704,7 @@ set N83533c00 [stack 0]
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -1894,14 +1913,14 @@ set N83533c00 [stack 0]
   xpos 470
   ypos 3459
  }
-push $N8354d400
-push $N839ce400
-push $N839ce400
-push $N839ce400
-push $N839ce400
-push $N83999400
-push $N8397e800
-push $N83533c00
+push $Nf88ef400
+push $Nf8970400
+push $Nf8970400
+push $Nf8970400
+push $Nf8970400
+push $Nf893b400
+push $Nf8922800
+push $Nf88d5c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1939,7 +1958,7 @@ push $N83533c00
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -2148,24 +2167,24 @@ push $N83533c00
   xpos 314
   ypos 3399
  }
-push $N839b2800
+push $Nf8954800
  Dot {
   name LayoutDot55
   xpos 592
   ypos 567
  }
-set N839b2c00 [stack 0]
-push $N839b2c00
-push $N839b2c00
-push $N839b2c00
-push $N839b2c00
-push $N83964400
+set Nf8954c00 [stack 0]
+push $Nf8954c00
+push $Nf8954c00
+push $Nf8954c00
+push $Nf8954c00
+push $Nf8906400
  Dot {
   name LayoutDot31
   xpos 574
   ypos 537
  }
-push $N839b2c00
+push $Nf8954c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2203,7 +2222,7 @@ push $N839b2c00
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -2363,13 +2382,13 @@ push $N839b2c00
   xpos 650
   ypos 1143
  }
-set N83a01800 [stack 0]
+set Nf89a3800 [stack 0]
  Dot {
   name LayoutDot85
   xpos 650
   ypos 1287
  }
-set N83a1a400 [stack 0]
+set Nf89bc400 [stack 0]
  Dot {
   name LayoutDot86
   xpos 650
@@ -2385,25 +2404,25 @@ set N83a1a400 [stack 0]
   xpos 626
   ypos 2271
  }
-push $N839b2c00
+push $Nf8954c00
  Dot {
   name LayoutDot56
   xpos 412
   ypos 567
  }
-set N839b3000 [stack 0]
-push $N839b3000
-push $N839b3000
-push $N839b3000
-push $N839b3000
-push $N83964400
+set Nf8955000 [stack 0]
+push $Nf8955000
+push $Nf8955000
+push $Nf8955000
+push $Nf8955000
+push $Nf8906400
  Dot {
   name LayoutDot30
   xpos 394
   ypos 537
  }
-set N83964800 [stack 0]
-push $N839b3000
+set Nf8906800 [stack 0]
+push $Nf8955000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2441,7 +2460,7 @@ push $N839b3000
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -2601,13 +2620,13 @@ push $N839b3000
   xpos 494
   ypos 1083
  }
-set N839e7400 [stack 0]
+set Nf8989400 [stack 0]
  Dot {
   name LayoutDot76
   xpos 494
   ypos 1192
  }
-set N83a00000 [stack 0]
+set Nf89a2000 [stack 0]
  Dot {
   name LayoutDot79
   xpos 494
@@ -2618,24 +2637,24 @@ set N83a00000 [stack 0]
   xpos 592
   ypos 2109
  }
-push $N839b3000
+push $Nf8955000
  Dot {
   name LayoutDot57
   xpos 232
   ypos 567
  }
-set N839b3400 [stack 0]
-push $N839b3400
-push $N839b3400
-push $N839b3400
-push $N839b3400
-push $N83964800
+set Nf8955400 [stack 0]
+push $Nf8955400
+push $Nf8955400
+push $Nf8955400
+push $Nf8955400
+push $Nf8906800
  Dot {
   name LayoutDot32
   xpos 214
   ypos 537
  }
-push $N839b3400
+push $Nf8955400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2673,7 +2692,7 @@ push $N839b3400
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -2833,13 +2852,13 @@ push $N839b3400
   xpos 290
   ypos 993
  }
-set N839cf000 [stack 0]
+set Nf8971000 [stack 0]
  Dot {
   name LayoutDot67
   xpos 290
   ypos 1206
  }
-set N839cfc00 [stack 0]
+set Nf8971c00 [stack 0]
  Dot {
   name LayoutDot70
   xpos 290
@@ -2910,7 +2929,7 @@ set N839cfc00 [stack 0]
   xpos 338
   ypos 3279
  }
-push $N83a4f800
+push $Nf89f1800
  Dot {
   name LayoutDot107
   xpos 266
@@ -2921,33 +2940,33 @@ push $N83a4f800
   xpos 266
   ypos 3219
  }
-push $N8354c400
+push $Nf88ee400
  Dot {
   name LayoutDot27
   xpos 86
   ypos 1674
  }
-push $N839cf000
+push $Nf8971000
  Dot {
   name LayoutDot65
   xpos 214
   ypos 993
  }
-set N839cf400 [stack 0]
-push $N83a01800
+set Nf8971400 [stack 0]
+push $Nf89a3800
  Dot {
   name LayoutDot84
   xpos 250
   ypos 1143
  }
-push $N839e7400
+push $Nf8989400
  Dot {
   name LayoutDot75
   xpos 196
   ypos 1083
  }
-push $N839cf400
-push $N834af800
+push $Nf8971400
+push $Nf8853800
  Dot {
   name LayoutDot3
   xpos 754
@@ -2980,14 +2999,14 @@ push $N834af800
   xpos 178
   ypos 1173
  }
-set N83a1bc00 [stack 0]
-push $N83965800
+set Nf89bdc00 [stack 0]
+push $Nf8907800
  Dot {
   name LayoutDot36
   xpos 232
   ypos 1023
  }
-push $N83a1bc00
+push $Nf89bdc00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3025,7 +3044,7 @@ push $N83a1bc00
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -3174,14 +3193,14 @@ push $N83a1bc00
   ypos 1224
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set Nfc6dc000 [stack 0]
+set N89e7c000 [stack 0]
  Dot {
   name LayoutDot159
   xpos 46
   ypos 1227
  }
-push $N83a1a400
-push $N83a00000
+push $Nf89bc400
+push $Nf89a2000
  Dot {
   name LayoutDot77
   xpos 134
@@ -3192,7 +3211,7 @@ push $N83a00000
   xpos 134
   ypos 1287
  }
-push $N839cfc00
+push $Nf8971c00
  Dot {
   name LayoutDot68
   xpos 110
@@ -3203,7 +3222,7 @@ push $N839cfc00
   xpos 110
   ypos 1275
  }
-push $N83998400
+push $Nf893a400
  Dot {
   name LayoutDot51
   xpos 470
@@ -3214,7 +3233,7 @@ push $N83998400
   xpos 124
   ypos 1252
  }
-push $N83965400
+push $Nf8907400
  Dot {
   name LayoutDot40
   xpos 446
@@ -3225,7 +3244,7 @@ push $N83965400
   xpos 124
   ypos 1266
  }
-push $Na6185c00
+push $Nb5d97c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3262,7 +3281,7 @@ push $Na6185c00
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -3428,7 +3447,7 @@ push $Na6185c00
   xpos 0
   ypos 1752
  }
-set N83008000 [stack 0]
+set N8af58000 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -3445,40 +3464,40 @@ set N83008000 [stack 0]
   xpos 180
   ypos 1812
  }
-set N83009400 [stack 0]
+set N8af59400 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 1815
  }
-push $N8354d000
-push $Nfc6dc000
+push $Nf88ef000
+push $N89e7c000
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1275
  }
-push $N83a01800
+push $Nf89a3800
  Dot {
   name LayoutDot83
   xpos 808
   ypos 1143
  }
-push $N839e7400
+push $Nf8989400
  Dot {
   name LayoutDot74
   xpos 718
   ypos 1083
  }
-push $N839cf000
+push $Nf8971000
  Dot {
   name LayoutDot66
   xpos 772
   ypos 993
  }
-push $N83999000
-push $N8397e400
-push $N83533800
+push $Nf893b000
+push $Nf8922400
+push $Nf88d5800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3516,7 +3535,7 @@ push $N83533800
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -3716,15 +3735,15 @@ push $N83533800
   xpos 806
   ypos 2865
  }
-set N83a9c800 [stack 0]
+set Nf8a3e800 [stack 0]
  Dot {
   name LayoutDot127
   xpos 412
   ypos 2865
  }
-set N83a9cc00 [stack 0]
-push $N83009400
-push $N83008000
+set Nf8a3ec00 [stack 0]
+push $N8af59400
+push $N8af58000
  Merge2 {
   inputs 2
   operation multiply
@@ -3734,7 +3753,7 @@ push $N83008000
   ypos 1872
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N83009800 [stack 0]
+set N8af59800 [stack 0]
  Dot {
   name LayoutDot92
   xpos 86
@@ -3745,19 +3764,19 @@ set N83009800 [stack 0]
   xpos 86
   ypos 2457
  }
-set N83a32400 [stack 0]
+set Nf89d4400 [stack 0]
  Dot {
   name LayoutDot95
   xpos 86
   ypos 2775
  }
-set N83a32c00 [stack 0]
+set Nf89d4c00 [stack 0]
  Dot {
   name LayoutDot96
   xpos 214
   ypos 2775
  }
-set N83a33000 [stack 0]
+set Nf89d5000 [stack 0]
  Dot {
   name LayoutDot97
   xpos 394
@@ -3776,7 +3795,7 @@ set N83a33000 [stack 0]
   xpos 394
   ypos 3159
  }
-push $N83a9cc00
+push $Nf8a3ec00
  Dot {
   name LayoutDot128
   xpos 290
@@ -3787,15 +3806,15 @@ push $N83a9cc00
   xpos 290
   ypos 3099
  }
-push $N83a33000
-push $N8354cc00
-push $N839b3c00
-push $N839b3c00
-push $N839b3c00
-push $N839b3c00
-push $N83998800
-push $N83965c00
-push $N83533400
+push $Nf89d5000
+push $Nf88eec00
+push $Nf8955c00
+push $Nf8955c00
+push $Nf8955c00
+push $Nf8955c00
+push $Nf893a800
+push $Nf8907c00
+push $Nf88d5400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3833,7 +3852,7 @@ push $N83533400
   EzCloudGen_gap_size {{"parent.gap_size * 1000"}}
   EzCloudGen_base {{parent.l1_base} {parent.l2_base} {parent.l3_base}}
   EzCloudGen_thickness {{parent.l1_thickness} {parent.l2_thickness} {parent.l3_thickness}}
-  EzCloudGen_coverage {{parent.l1_coverage} {parent.l2_coverage} {parent.l3_coverage}}
+  EzCloudGen_coverage {{"parent.l1_cover_table.0 + (parent.l1_cover_table.1 - parent.l1_cover_table.0) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l1_cover_table.2 - parent.l1_cover_table.1) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l1_cover_table.3 - parent.l1_cover_table.2) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l1_cover_table.4 - parent.l1_cover_table.3) * clamp(clamp(parent.l1_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l2_cover_table.0 + (parent.l2_cover_table.1 - parent.l2_cover_table.0) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l2_cover_table.2 - parent.l2_cover_table.1) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l2_cover_table.3 - parent.l2_cover_table.2) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l2_cover_table.4 - parent.l2_cover_table.3) * clamp(clamp(parent.l2_cover, 0, 1) * 4 - 3, 0, 1)"} {"parent.l3_cover_table.0 + (parent.l3_cover_table.1 - parent.l3_cover_table.0) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 0, 0, 1) + (parent.l3_cover_table.2 - parent.l3_cover_table.1) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 1, 0, 1) + (parent.l3_cover_table.3 - parent.l3_cover_table.2) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 2, 0, 1) + (parent.l3_cover_table.4 - parent.l3_cover_table.3) * clamp(clamp(parent.l3_cover, 0, 1) * 4 - 3, 0, 1)"}}
   EzCloudGen_scale_km {{parent.l1_scale_km} {parent.l2_scale_km} {parent.l3_scale_km}}
   EzCloudGen_stretch {{parent.l1_stretch} {parent.l2_stretch} {parent.l3_stretch}}
   EzCloudGen_wind_deg {{parent.l1_wind_deg} {parent.l2_wind_deg} {parent.l3_wind_deg}}
@@ -4025,19 +4044,19 @@ push $N83533400
   xpos 674
   ypos 2958
  }
-set N83a80800 [stack 0]
+set Nf8a22800 [stack 0]
  Dot {
   name LayoutDot119
   xpos 110
   ypos 2958
  }
-push $N83a32400
+push $Nf89d4400
  Dot {
   name LayoutDot94
   xpos 214
   ypos 2457
  }
-push $N83a4f000
+push $Nf89f1000
  Dot {
   name LayoutDot105
   xpos 214
@@ -4053,7 +4072,7 @@ push $N83a4f000
   xpos 180
   ypos 2220
  }
-push $Na616c000
+push $Nb5d7c000
  Dot {
   name LayoutDot11
   xpos 266
@@ -4099,7 +4118,7 @@ push $Na616c000
   xpos 180
   ypos 2538
  }
-push $N83009800
+push $N8af59800
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -4116,7 +4135,7 @@ push $N83009800
   xpos 0
   ypos 2976
  }
-set N830a0400 [stack 0]
+set N8bfb2400 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -4185,7 +4204,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3276
   disable {{!parent.sun_map_out}}
  }
-push $N830a0400
+push $N8bfb2400
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -4194,7 +4213,7 @@ push $N830a0400
   xpos 0
   ypos 3336
  }
-set Na6194800 [stack 0]
+set Nb5da6800 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -4215,7 +4234,7 @@ set Na6194800 [stack 0]
   xpos 180
   ypos 3456
  }
-push $Na6194800
+push $Nb5da6800
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -4224,7 +4243,7 @@ push $Na6194800
   xpos 0
   ypos 3516
  }
-set Na6194d00 [stack 0]
+set Nb5da6d00 [stack 0]
  Dot {
   name LayoutDot153
   xpos 110
@@ -4240,19 +4259,19 @@ set Na6194d00 [stack 0]
   xpos 232
   ypos 3723
  }
-set N83aebc00 [stack 0]
+set Nf8a8dc00 [stack 0]
  Dot {
   name LayoutDot156
   xpos 394
   ypos 3723
  }
-set N83b00000 [stack 0]
+set Nf8aa2000 [stack 0]
  Dot {
   name LayoutDot157
   xpos 574
   ypos 3723
  }
-set N83b00400 [stack 0]
+set Nf8aa2400 [stack 0]
  Dot {
   name LayoutDot158
   xpos 754
@@ -4270,7 +4289,7 @@ set N83b00400 [stack 0]
   xpos 754
   ypos 4527
  }
-push $N83a32c00
+push $Nf89d4c00
  Dot {
   name LayoutDot98
   xpos 86
@@ -4281,7 +4300,7 @@ push $N83a32c00
   xpos 214
   ypos 3693
  }
-push $N83aebc00
+push $Nf8a8dc00
  Copy {
   inputs 2
   channels rgba
@@ -4289,7 +4308,7 @@ push $N83aebc00
   xpos 180
   ypos 3864
  }
-set N830f3800 [stack 0]
+set N8c005800 [stack 0]
  Expression {
   expr0 r+(1-a)*0.14
   expr1 g+(1-a)*0.22
@@ -4489,7 +4508,7 @@ set N830f3800 [stack 0]
   xpos 180
   ypos 4464
  }
-push $N83a80800
+push $Nf8a22800
  Dot {
   name LayoutDot120
   xpos 674
@@ -4500,7 +4519,7 @@ push $N83a80800
   xpos 592
   ypos 3783
  }
-push $N83b00400
+push $Nf8aa2400
  Copy {
   inputs 2
   channels rgba
@@ -4513,7 +4532,7 @@ push $N83b00400
   xpos 574
   ypos 4527
  }
-push $N83a9c800
+push $Nf8a3e800
  Dot {
   name LayoutDot130
   xpos 806
@@ -4524,7 +4543,7 @@ push $N83a9c800
   xpos 412
   ypos 3813
  }
-push $N83b00000
+push $Nf8aa2000
  Copy {
   inputs 2
   channels rgba
@@ -4537,13 +4556,13 @@ push $N83b00000
   xpos 394
   ypos 4515
  }
-push $N830f3800
+push $N8c005800
  Dot {
   name LayoutDot7
   xpos 46
   ypos 3867
  }
-push $Na6194d00
+push $Nb5da6d00
  Switch {
   inputs 6
   which {{parent.view}}
