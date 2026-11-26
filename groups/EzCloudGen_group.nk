@@ -3,7 +3,7 @@ version 15.1 v3
 push $cut_paste_input
 Group {
  name EzCloudGen
- knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3519, 'cover_table': \[0.0, 0.346, 0.552, 0.755, 1.0]\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.332, 'cover_table': \[0.0, 0.357, 0.549, 0.744, 1.0]\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.6076, 'cover_table': \[0.0, 0.324, 0.558, 0.795, 1.0]\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.9654, 'cover_table': \[0.0, 0.468, 0.633, 0.783, 1.0]\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.5298, 'cover_table': \[0.0, 0.399, 0.597, 0.79, 1.0]\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 1.0, 'cover_table': \[0.0, 0.461, 0.617, 0.773, 1.0]\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.4464, 'cover_table': \[0.0, 0.597, 0.83, 1.0, 1.0]\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3911, 'cover_table': \[0.0, 0.591, 0.855, 1.0, 1.0]\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.2036, 'cover_table': \[0.0, 0.614, 0.834, 0.994, 1.0]\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.3547, 'cover_table': \[0.0, 0.475, 0.654, 0.851, 1.0]\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.55, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows', 'cover': 0.43, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.45, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.52, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.38, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\nif n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n    _kn = k.name()\n    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn\[:3] in ('l1_', 'l2_', 'l3_'):\n        _ez = \{\}\n        exec(__import__('base64').b64decode(n\['tool_code'].value()).decode(), _ez)\n        _ez\['on_knob'](n, _kn)\n"
+ knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.220588, 'cover_table': \[-0.05, 0.494, 0.648, 0.807, 1.0]\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.24359, 'cover_table': \[-0.15, 0.435, 0.591, 0.747, 1.0]\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.664062, 'cover_table': \[-0.15, 0.395, 0.555, 0.715, 1.0]\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.968085, 'cover_table': \[-0.05, 0.481, 0.628, 0.765, 1.0]\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.554878, 'cover_table': \[-0.15, 0.415, 0.584, 0.748, 1.0]\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 1.0, 'cover_table': \[-0.05, 0.469, 0.618, 0.761, 1.0]\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.419207, 'cover_table': \[0.15, 0.669, 0.833, 0.993, 1.0]\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.381303, 'cover_table': \[-0.05, 0.615, 0.853, 1.0, 1.0]\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.212141, 'cover_table': \[-0.15, 0.616, 0.813, 0.967, 1.0]\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.358434, 'cover_table': \[-0.05, 0.478, 0.644, 0.813, 1.0]\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.55, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows', 'cover': 0.43, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.45, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.52, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.38, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\nif n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n    _kn = k.name()\n    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn\[:3] in ('l1_', 'l2_', 'l3_'):\n        _ez = \{\}\n        exec(__import__('base64').b64decode(n\['tool_code'].value()).decode(), _ez)\n        _ez\['on_knob'](n, _kn)\n"
  tile_color 0x8fb3d9ff
  label "\[expr \{\[value preview] ? \"PREVIEW\" : \"\"\}]"
  selected true
@@ -408,7 +408,7 @@ Group {
  addUserKnob {7 easy_lit l lit t "Brightness of the sunlit side, in stops (the node's 'sun intensity', every layer)." R -2 2}
  addUserKnob {1 easy_base l "easy base" +INVISIBLE}
  addUserKnob {1 tool_code l "tool code" +INVISIBLE}
- tool_code IiIiRWFzeSB0YWI6IGEgZmV3IGFydGlzdC1sYW5ndWFnZSBzbGlkZXJzIG92ZXIgb25lIGxheWVyJ3Mga25vYnMgKHRoZSAnZWFzeSBsYXllcicpLgoKYnVpbGRfZ3JvdXAucHkgc3RvcmVzIHRoaXMgZmlsZSBiYXNlNjQtZW5jb2RlZCBpbiB0aGUgaGlkZGVuIHRvb2xfY29kZSBrbm9iOyBrbm9iQ2hhbmdlZCBydW5zCml0IGZyb20gdGhlcmUsIHNvIHRoZSBub2RlIG5lZWRzIG5vIFB5dGhvbiBtb2R1bGUgYXQgdGhlIHN0dWRpby4gRXpNYXRjaCBydW5zIGl0IHRoZSBzYW1lIHdheQphbmQgY2FsbHMgYXBwbHlfZWFzeSAvIHJlYmFzZSAoYW5kIG1hdGNoX2JlZ2luIC8gbWF0Y2hfZW5kIGFyb3VuZCBhIG1hdGNoKSwgc28gaXQgb25seSBldmVyCm1vdmVzIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlOiB0aGUgbGF5ZXIncyBrbm9iIHZhbHVlcyB3aGVuIHRoZSBzbGlkZXJzIHdlcmUgbGFzdCBjZW50cmVkLAprZXB0IHBlciBsYXllciBpbiB0aGUgaGlkZGVuIGVhc3lfYmFzZSBrbm9iIChKU09OKSB3aXRoIHRoZSBzbGlkZXJzJyBvd24gdmFsdWVzLCBzbyBzd2l0Y2hpbmcKJ2Vhc3kgbGF5ZXInIGJyaW5ncyBlYWNoIGxheWVyJ3Mgc2xpZGVycyBiYWNrLiBFdmVyeSBzbGlkZXIgY2hhbmdlIHJld3JpdGVzIHRoZSBsYXllcidzIGtub2JzCmZyb20gaXRzIGJhc2UsIHNvIHRoZSBsYXllciB0YWIgYWx3YXlzIHNob3dzIGV4YWN0bHkgd2hhdCBFYXN5IGRpZC4gRWRpdGluZyBvbmUgb2YgdGhvc2Uga25vYnMgYnkKaGFuZCwgb3IgY2hhbmdpbmcgdGhlIGxheWVyJ3MgdHlwZSwgbWFrZXMgdGhlIG5ldyB2YWx1ZXMgdGhlIGJhc2UgYW5kIGNlbnRyZXMgdGhlIHNsaWRlcnMuCidsaXQnIGlzIGdsb2JhbCAodGhlIHN1biBpbnRlbnNpdHkpIGFuZCBzdGF5cyB3aGVyZSBpdCBpcy4KIiIiCmltcG9ydCBqc29uCmltcG9ydCBtYXRoCgppbXBvcnQgbnVrZQoKIyAoa25vYiwgbmV1dHJhbCkKU0xJREVSUyA9IFsoImVhc3lfY292ZXIiLCAwLjApLCAoImVhc3lfc2l6ZSIsIDEuMCksICgiZWFzeV9zb2Z0bmVzcyIsIDAuMCksICgiZWFzeV93aXNwcyIsIDAuMCksCiAgICAgICAgICAgKCJlYXN5X3VuZGVyc2lkZSIsIDAuMCksICgiZWFzeV9saXQiLCAwLjApXQpFQVNZX0tOT0JTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSU10gKyBbImVhc3lfbGF5ZXIiXQpMQVlFUl9TTElERVJTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSUyBpZiBuYW1lICE9ICJlYXN5X2xpdCJdCiMgVGhlIGxheWVyIGtub2JzICh3aXRob3V0IHRoZSBsTl8gcHJlZml4KSB0aGUgc2xpZGVycyB3cml0ZS4KTE9PSyA9IFsiY292ZXIiLCAic2NhbGVfa20iLCAiY2VsbF9rbSIsICJsdW1wX3NpemUiLCAiZGV0YWlsX3NpemUiLCAiZWRnZSIsICJzaWdtYSIsICJ3aXNwX2Ftb3VudCIsCiAgICAgICAgIndpc3Bfc3RyZXRjaCIsICJza3lfb2NjbHVzaW9uIiwgInNoYWRvd19kZXB0aCIsICJhbWJpZW50Il0KR0xPQkFMID0gWyJzdW5faW50ZW5zaXR5Il0KCgpjbGFzcyBfQnVzeShvYmplY3QpOgogICAgIiIiV2hpbGUgdGhlIHNsaWRlcnMgc2V0IGtub2JzLCBrbm9iQ2hhbmdlZCBsZWF2ZXMgdGhlbSBhbG9uZS4iIiIKCiAgICBkZWYgX19lbnRlcl9fKHNlbGYpOgogICAgICAgIHNlbGYud2FzID0gZ2V0YXR0cihudWtlLCAiX2V6Y2xvdWRnZW5fYnVzeSIsIEZhbHNlKQogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IFRydWUKCiAgICBkZWYgX19leGl0X18oc2VsZiwgKmFyZ3MpOgogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IHNlbGYud2FzCgoKZGVmIGJ1c3koKToKICAgIHJldHVybiBnZXRhdHRyKG51a2UsICJfZXpjbG91ZGdlbl9idXN5IiwgRmFsc2UpCgoKZGVmIGxheWVyKG4pOgogICAgIiIiVGhlIGVhc3kgbGF5ZXIncyBrbm9iIHByZWZpeCwgJ2wxXycgLi4gJ2wzXycuIiIiCiAgICByZXR1cm4gImwlZF8iICUgKGludChuWyJlYXN5X2xheWVyIl0uZ2V0VmFsdWUoKSkgKyAxKQoKCmRlZiBfYWxsKG4pOgogICAgdHJ5OgogICAgICAgIHJldHVybiBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIHJldHVybiB7fQoKCmRlZiBfc2F2ZShuLCBkKToKICAgIHdpdGggX0J1c3koKToKICAgICAgICBuWyJlYXN5X2Jhc2UiXS5zZXRWYWx1ZShqc29uLmR1bXBzKGQpKQoKCmRlZiBfbGl0X2Jhc2UobiwgZCk6CiAgICBpZiAic3VuX2ludGVuc2l0eSIgbm90IGluIGQ6CiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICByZXR1cm4gZFsic3VuX2ludGVuc2l0eSJdCgoKZGVmIHJlYmFzZShuLCBjZW50cmU9VHJ1ZSwgcD1Ob25lKToKICAgICIiIk1ha2UgdGhlIGVhc3kgbGF5ZXIncyBrbm9iIHZhbHVlcyBpdHMgYmFzZSBhbmQgY2VudHJlIGl0cyBzbGlkZXJzICgnbGl0JyBzdGF5cykuIiIiCiAgICBwID0gcCBvciBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGRbcF0gPSB7ImJhc2UiOiBkaWN0KChrLCBuW3AgKyBrXS52YWx1ZSgpKSBmb3IgayBpbiBMT09LIGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmUpLAogICAgICAgICAgICAic2xpZGVycyI6IGRpY3QoKG5hbWUsIG5ldXRyYWwpIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiKX0KICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICAgICAgbltuYW1lXS5zZXRWYWx1ZShuZXV0cmFsKQoKCmRlZiBzaG93X2xheWVyKG4pOgogICAgIiIiJ2Vhc3kgbGF5ZXInIGNoYW5nZWQ6IGJyaW5nIHRoYXQgbGF5ZXIncyBzbGlkZXJzIGJhY2sgKG9yIHN0YXJ0IGl0IGZyb20gaXRzIGtub2JzKS4iIiIKICAgIHAgPSBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGlmIHAgbm90IGluIGQ6CiAgICAgICAgcmViYXNlKG4sIHA9cCkKICAgICAgICByZXR1cm4KICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgbmFtZSwgbmV1dHJhbCBpbiBTTElERVJTOgogICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKGRbcF1bInNsaWRlcnMiXS5nZXQobmFtZSwgbmV1dHJhbCkpCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBlYXN5IGxheWVyJ3Mga25vYnMgKGFuZCB0aGUgc3VuIGludGVuc2l0eSkgZnJvbSB0aGUgYmFzZSBhbmQgdGhlIHNsaWRlcnMuIiIiCiAgICBwID0gbGF5ZXIobikKICAgIGQgPSBfYWxsKG4pCiAgICBpZiBwIG5vdCBpbiBkOgogICAgICAgICMgTmV2ZXIgc2V0IHVwOiB0aGUga25vYnMgc3RpbGwgaG9sZCB0aGUgbG9vayB0aGUgc2xpZGVyIGp1c3QgbW92ZWQgYXdheSBmcm9tLgogICAgICAgIGtlZXAgPSBkaWN0KChuYW1lLCBuW25hbWVdLnZhbHVlKCkpIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICAgICAgcmViYXNlKG4sIGNlbnRyZT1GYWxzZSwgcD1wKQogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFtwXVsic2xpZGVycyJdID0ga2VlcAogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGRbcF1bInNsaWRlcnMiXSA9IGRpY3QoKG5hbWUsIGVbbmFtZV0pIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICBiID0gZFtwXVsiYmFzZSJdCiAgICBsaXQgPSBfbGl0X2Jhc2UobiwgZCkKICAgIF9zYXZlKG4sIGQpCgogICAgZGVmIHB1dChrLCB2LCBsbz1Ob25lLCBoaT1Ob25lKToKICAgICAgICBpZiBuLmtub2IocCArIGspIGlzIE5vbmUgb3IgayBub3QgaW4gYjoKICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgaWYgbG8gaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtYXgobG8sIHYpCiAgICAgICAgaWYgaGkgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtaW4oaGksIHYpCiAgICAgICAgbltwICsga10uc2V0VmFsdWUodikKCiAgICBzaXplID0gbWF4KGVbImVhc3lfc2l6ZSJdLCAxZS0zKQogICAgcyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3NvZnRuZXNzIl0pKQogICAgdyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3dpc3BzIl0pKQogICAgdSA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3VuZGVyc2lkZSJdKSkKICAgIHdpdGggX0J1c3koKToKICAgICAgICAjIENvdmVyOiBtb3JlIG9yIGxlc3Mgb2YgdGhlIHNreSBoaWRkZW4sIGluIHRoZSB0eXBlJ3MgdmlzaWJsZS1jb3ZlciB1bml0cy4KICAgICAgICBwdXQoImNvdmVyIiwgYi5nZXQoImNvdmVyIiwgMC41KSArIGVbImVhc3lfY292ZXIiXSwgMC4wLCAxLjApCiAgICAgICAgIyBTaXplOiB0aGUgY2xvdWQgc2hhcGVzIGFuZCB0aGVpciBjZWxscyBhbmQgbHVtcHM7IHRoZSBiaWxsb3dzIGdyb3cgbW9yZSBzbG93bHkuCiAgICAgICAgZm9yIGsgaW4gKCJzY2FsZV9rbSIsICJjZWxsX2ttIiwgImx1bXBfc2l6ZSIpOgogICAgICAgICAgICBwdXQoaywgYi5nZXQoaywgMS4wKSAqIHNpemUpCiAgICAgICAgcHV0KCJkZXRhaWxfc2l6ZSIsIGIuZ2V0KCJkZXRhaWxfc2l6ZSIsIDEwMC4wKSAqIG1hdGguc3FydChzaXplKSkKICAgICAgICAjIFNvZnRuZXNzOiBzb2Z0ZXIsIHRoaW5uZXIgZWRnZXMgKG9yIGhhcmRlciwgZGVuc2VyIG9uZXMpLgogICAgICAgIHB1dCgiZWRnZSIsIGIuZ2V0KCJlZGdlIiwgMC4xKSAqIDQuMCAqKiBzLCAwLjAxLCAwLjUpCiAgICAgICAgcHV0KCJzaWdtYSIsIGIuZ2V0KCJzaWdtYSIsIDAuMDQpICogMi4wICoqIC1zLCAwLjAwMDUsIDAuMSkKICAgICAgICAjIFdpc3BzOiBmaW5lIHdpc3BzIGVhdGluZyB0aGUgZWRnZXMsIGNvbWJlZCBhbG9uZyB0aGUgd2luZCBhcyBpdCBnb2VzIHVwLgogICAgICAgIHB1dCgid2lzcF9hbW91bnQiLCBiLmdldCgid2lzcF9hbW91bnQiLCAwLjApICsgMC42ICogdywgMC4wLCAxLjApCiAgICAgICAgcHV0KCJ3aXNwX3N0cmV0Y2giLCBiLmdldCgid2lzcF9zdHJldGNoIiwgMS4wKSAqIDQuMCAqKiBtYXgodywgMC4wKSwgMS4wLCAxMi4wKQogICAgICAgICMgVW5kZXJzaWRlOiBkYXJrZXIsIGRlZXBlciB1bmRlcnNpZGVzIGFuZCBmb2xkcyAob3IgbGlnaHRlciwgZ2xvd2luZyBvbmVzKS4KICAgICAgICBwdXQoInNreV9vY2NsdXNpb24iLCBiLmdldCgic2t5X29jY2x1c2lvbiIsIDEuMCkgKyAwLjggKiB1LCAwLjAsIDIuMCkKICAgICAgICBwdXQoInNoYWRvd19kZXB0aCIsIGIuZ2V0KCJzaGFkb3dfZGVwdGgiLCAwLjApICsgMC41ICogdSwgMC4wLCAxLjApCiAgICAgICAgcHV0KCJhbWJpZW50IiwgYi5nZXQoImFtYmllbnQiLCAxLjApICogMi4wICoqICgtMC41ICogdSksIDAuMCwgMy4wKQogICAgICAgICMgTGl0OiB0aGUgc3VubGl0IHNpZGUncyBicmlnaHRuZXNzLCBpbiBzdG9wcyAodGhlIHdob2xlIG5vZGUncyBzdW4pLgogICAgICAgIG5bInN1bl9pbnRlbnNpdHkiXS5zZXRWYWx1ZShsaXQgKiAyLjAgKiogZVsiZWFzeV9saXQiXSkKCgpkZWYgbWF0Y2hfYmVnaW4obik6CiAgICAiIiJCZWZvcmUgYSBtYXRjaDogZHJhZnQgcXVhbGl0eSBhdCBRdWFydGVyIHJlc29sdXRpb24sIHNvIGVhY2ggdHJ5IHJlbmRlcnMgZmFzdC4iIiIKICAgIGtlZXAgPSBkaWN0KChrLCBuW2tdLnZhbHVlKCkpIGZvciBrIGluICgicmVuZGVyX3ByZXNldCIsICJyZXNvbHV0aW9uIiwgInF1YWxpdHkiLCAiZWRnZV9zdGVwcyIsICJzYW1wbGluZyIpKQogICAgZCA9IF9hbGwobikKICAgIGRbIl9tYXRjaF9rZWVwIl0gPSBrZWVwCiAgICBfc2F2ZShuLCBkKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgVGhlIGRyYWZ0IHByZXNldCdzIHZhbHVlcyBzZXQgZGlyZWN0bHk6IGEga25vYkNoYW5nZWQgbWF5IG5vdCBydW4gZm9yIHNldFZhbHVlLgogICAgICAgIG5bInJlbmRlcl9wcmVzZXQiXS5zZXRWYWx1ZSgiZHJhZnQiKQogICAgICAgIG5bInF1YWxpdHkiXS5zZXRWYWx1ZSgwLjUpCiAgICAgICAgblsiZWRnZV9zdGVwcyJdLnNldFZhbHVlKDIuMCkKICAgICAgICBuWyJzYW1wbGluZyJdLnNldFZhbHVlKCJMb3ciKQogICAgICAgIG5bInJlc29sdXRpb24iXS5zZXRWYWx1ZSgiUXVhcnRlciIpCgoKZGVmIG1hdGNoX2VuZChuKToKICAgICIiIkFmdGVyIGEgbWF0Y2g6IHRoZSByZW5kZXIgc2V0dGluZ3MgYXMgdGhleSB3ZXJlLiIiIgogICAgZCA9IF9hbGwobikKICAgIGtlZXAgPSBkLnBvcCgiX21hdGNoX2tlZXAiLCBOb25lKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGtlZXA6CiAgICAgICAgd2l0aCBfQnVzeSgpOgogICAgICAgICAgICBmb3IgayBpbiAoInJlc29sdXRpb24iLCAicXVhbGl0eSIsICJlZGdlX3N0ZXBzIiwgInNhbXBsaW5nIiwgInJlbmRlcl9wcmVzZXQiKToKICAgICAgICAgICAgICAgIG5ba10uc2V0VmFsdWUoa2VlcFtrXSkKCgpkZWYgb25fa25vYihuLCBrKToKICAgICIiImtub2JDaGFuZ2VkLCBmb3IgYSBrbm9iIHRoZSBFYXN5IHRhYiBsb29rcyBhZnRlci4iIiIKICAgIGlmIGJ1c3koKToKICAgICAgICByZXR1cm4KICAgIGlmIGsgPT0gImVhc3lfbGF5ZXIiOgogICAgICAgIHNob3dfbGF5ZXIobikKICAgIGVsaWYgayBpbiBFQVNZX0tOT0JTOgogICAgICAgIGFwcGx5X2Vhc3kobikKICAgIGVsaWYgbGVuKGspID4gMyBhbmQga1s6M10gaW4gKCJsMV8iLCAibDJfIiwgImwzXyIpIGFuZCBrWzozXSA9PSBsYXllcihuKSBhbmQgKGtbMzpdIGluIExPT0sgb3Iga1szOl0gPT0gInR5cGUiKToKICAgICAgICAjIFR1bmVkIGJ5IGhhbmQsIG9yIGEgbmV3IHR5cGU6IHRoYXQgYmVjb21lcyB0aGUgc2xpZGVycycgc3RhcnRpbmcgcG9pbnQuCiAgICAgICAgcmViYXNlKG4pCiAgICBlbGlmIGsgPT0gInN1bl9pbnRlbnNpdHkiOgogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICAgICAgX3NhdmUobiwgZCkK
+ tool_code IiIiRWFzeSB0YWI6IGEgZmV3IGFydGlzdC1sYW5ndWFnZSBzbGlkZXJzIG92ZXIgb25lIGxheWVyJ3Mga25vYnMgKHRoZSAnZWFzeSBsYXllcicpLgoKYnVpbGRfZ3JvdXAucHkgc3RvcmVzIHRoaXMgZmlsZSBiYXNlNjQtZW5jb2RlZCBpbiB0aGUgaGlkZGVuIHRvb2xfY29kZSBrbm9iOyBrbm9iQ2hhbmdlZCBydW5zCml0IGZyb20gdGhlcmUsIHNvIHRoZSBub2RlIG5lZWRzIG5vIFB5dGhvbiBtb2R1bGUgYXQgdGhlIHN0dWRpby4gRXpNYXRjaCBydW5zIGl0IHRoZSBzYW1lIHdheQphbmQgY2FsbHMgYXBwbHlfZWFzeSAvIHJlYmFzZSAoYW5kIG1hdGNoX2JlZ2luIC8gbWF0Y2hfZW5kIGFyb3VuZCBhIG1hdGNoKSwgc28gaXQgb25seSBldmVyCm1vdmVzIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlOiB0aGUgbGF5ZXIncyBrbm9iIHZhbHVlcyB3aGVuIHRoZSBzbGlkZXJzIHdlcmUgbGFzdCBjZW50cmVkLAprZXB0IHBlciBsYXllciBpbiB0aGUgaGlkZGVuIGVhc3lfYmFzZSBrbm9iIChKU09OKSB3aXRoIHRoZSBzbGlkZXJzJyBvd24gdmFsdWVzLCBzbyBzd2l0Y2hpbmcKJ2Vhc3kgbGF5ZXInIGJyaW5ncyBlYWNoIGxheWVyJ3Mgc2xpZGVycyBiYWNrLiBFdmVyeSBzbGlkZXIgY2hhbmdlIHJld3JpdGVzIHRoZSBsYXllcidzIGtub2JzCmZyb20gaXRzIGJhc2UsIHNvIHRoZSBsYXllciB0YWIgYWx3YXlzIHNob3dzIGV4YWN0bHkgd2hhdCBFYXN5IGRpZC4gRWRpdGluZyBvbmUgb2YgdGhvc2Uga25vYnMgYnkKaGFuZCwgb3IgY2hhbmdpbmcgdGhlIGxheWVyJ3MgdHlwZSwgbWFrZXMgdGhlIG5ldyB2YWx1ZXMgdGhlIGJhc2UgYW5kIGNlbnRyZXMgdGhlIHNsaWRlcnMuCidsaXQnIGlzIGdsb2JhbCAodGhlIHN1biBpbnRlbnNpdHkpIGFuZCBzdGF5cyB3aGVyZSBpdCBpcy4KIiIiCmltcG9ydCBqc29uCmltcG9ydCBtYXRoCgppbXBvcnQgbnVrZQoKIyAoa25vYiwgbmV1dHJhbCkKU0xJREVSUyA9IFsoImVhc3lfY292ZXIiLCAwLjApLCAoImVhc3lfc2l6ZSIsIDEuMCksICgiZWFzeV9zb2Z0bmVzcyIsIDAuMCksICgiZWFzeV93aXNwcyIsIDAuMCksCiAgICAgICAgICAgKCJlYXN5X3VuZGVyc2lkZSIsIDAuMCksICgiZWFzeV9saXQiLCAwLjApXQpFQVNZX0tOT0JTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSU10gKyBbImVhc3lfbGF5ZXIiXQpMQVlFUl9TTElERVJTID0gW25hbWUgZm9yIG5hbWUsIF8gaW4gU0xJREVSUyBpZiBuYW1lICE9ICJlYXN5X2xpdCJdCiMgVGhlIGxheWVyIGtub2JzICh3aXRob3V0IHRoZSBsTl8gcHJlZml4KSB0aGUgc2xpZGVycyB3cml0ZS4KTE9PSyA9IFsiY292ZXIiLCAic2NhbGVfa20iLCAiY2VsbF9rbSIsICJsdW1wX3NpemUiLCAiZGV0YWlsX3NpemUiLCAiZWRnZSIsICJzaWdtYSIsICJ3aXNwX2Ftb3VudCIsCiAgICAgICAgIndpc3Bfc3RyZXRjaCIsICJza3lfb2NjbHVzaW9uIiwgInNoYWRvd19kZXB0aCIsICJhbWJpZW50Il0KR0xPQkFMID0gWyJzdW5faW50ZW5zaXR5Il0KCgpjbGFzcyBfQnVzeShvYmplY3QpOgogICAgIiIiV2hpbGUgdGhlIHNsaWRlcnMgc2V0IGtub2JzLCBrbm9iQ2hhbmdlZCBsZWF2ZXMgdGhlbSBhbG9uZS4iIiIKCiAgICBkZWYgX19lbnRlcl9fKHNlbGYpOgogICAgICAgIHNlbGYud2FzID0gZ2V0YXR0cihudWtlLCAiX2V6Y2xvdWRnZW5fYnVzeSIsIEZhbHNlKQogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IFRydWUKCiAgICBkZWYgX19leGl0X18oc2VsZiwgKmFyZ3MpOgogICAgICAgIG51a2UuX2V6Y2xvdWRnZW5fYnVzeSA9IHNlbGYud2FzCgoKZGVmIGJ1c3koKToKICAgIHJldHVybiBnZXRhdHRyKG51a2UsICJfZXpjbG91ZGdlbl9idXN5IiwgRmFsc2UpCgoKZGVmIGxheWVyKG4pOgogICAgIiIiVGhlIGVhc3kgbGF5ZXIncyBrbm9iIHByZWZpeCwgJ2wxXycgLi4gJ2wzXycuIiIiCiAgICByZXR1cm4gImwlZF8iICUgKGludChuWyJlYXN5X2xheWVyIl0uZ2V0VmFsdWUoKSkgKyAxKQoKCmRlZiBfYWxsKG4pOgogICAgdHJ5OgogICAgICAgIHJldHVybiBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIHJldHVybiB7fQoKCmRlZiBfc2F2ZShuLCBkKToKICAgIHdpdGggX0J1c3koKToKICAgICAgICBuWyJlYXN5X2Jhc2UiXS5zZXRWYWx1ZShqc29uLmR1bXBzKGQpKQoKCmRlZiBfbGl0X2Jhc2UobiwgZCk6CiAgICBpZiAic3VuX2ludGVuc2l0eSIgbm90IGluIGQ6CiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICByZXR1cm4gZFsic3VuX2ludGVuc2l0eSJdCgoKZGVmIHJlYmFzZShuLCBjZW50cmU9VHJ1ZSwgcD1Ob25lKToKICAgICIiIk1ha2UgdGhlIGVhc3kgbGF5ZXIncyBrbm9iIHZhbHVlcyBpdHMgYmFzZSBhbmQgY2VudHJlIGl0cyBzbGlkZXJzICgnbGl0JyBzdGF5cykuIiIiCiAgICBwID0gcCBvciBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGRbcF0gPSB7ImJhc2UiOiBkaWN0KChrLCBuW3AgKyBrXS52YWx1ZSgpKSBmb3IgayBpbiBMT09LIGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmUpLAogICAgICAgICAgICAic2xpZGVycyI6IGRpY3QoKG5hbWUsIG5ldXRyYWwpIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiKX0KICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICAgICAgbltuYW1lXS5zZXRWYWx1ZShuZXV0cmFsKQoKCmRlZiBzaG93X2xheWVyKG4pOgogICAgIiIiJ2Vhc3kgbGF5ZXInIGNoYW5nZWQ6IGJyaW5nIHRoYXQgbGF5ZXIncyBzbGlkZXJzIGJhY2sgKG9yIHN0YXJ0IGl0IGZyb20gaXRzIGtub2JzKS4iIiIKICAgIHAgPSBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGlmIHAgbm90IGluIGQ6CiAgICAgICAgcmViYXNlKG4sIHA9cCkKICAgICAgICByZXR1cm4KICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgbmFtZSwgbmV1dHJhbCBpbiBTTElERVJTOgogICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKGRbcF1bInNsaWRlcnMiXS5nZXQobmFtZSwgbmV1dHJhbCkpCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBlYXN5IGxheWVyJ3Mga25vYnMgKGFuZCB0aGUgc3VuIGludGVuc2l0eSkgZnJvbSB0aGUgYmFzZSBhbmQgdGhlIHNsaWRlcnMuIiIiCiAgICBwID0gbGF5ZXIobikKICAgIGQgPSBfYWxsKG4pCiAgICBpZiBwIG5vdCBpbiBkOgogICAgICAgICMgTmV2ZXIgc2V0IHVwOiB0aGUga25vYnMgc3RpbGwgaG9sZCB0aGUgbG9vayB0aGUgc2xpZGVyIGp1c3QgbW92ZWQgYXdheSBmcm9tLgogICAgICAgIGtlZXAgPSBkaWN0KChuYW1lLCBuW25hbWVdLnZhbHVlKCkpIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICAgICAgcmViYXNlKG4sIGNlbnRyZT1GYWxzZSwgcD1wKQogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFtwXVsic2xpZGVycyJdID0ga2VlcAogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGRbcF1bInNsaWRlcnMiXSA9IGRpY3QoKG5hbWUsIGVbbmFtZV0pIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICBiID0gZFtwXVsiYmFzZSJdCiAgICBsaXQgPSBfbGl0X2Jhc2UobiwgZCkKICAgIF9zYXZlKG4sIGQpCgogICAgZGVmIHB1dChrLCB2LCBsbz1Ob25lLCBoaT1Ob25lKToKICAgICAgICBpZiBuLmtub2IocCArIGspIGlzIE5vbmUgb3IgayBub3QgaW4gYjoKICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgaWYgbG8gaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtYXgobG8sIHYpCiAgICAgICAgaWYgaGkgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtaW4oaGksIHYpCiAgICAgICAgbltwICsga10uc2V0VmFsdWUodikKCiAgICBzaXplID0gbWF4KGVbImVhc3lfc2l6ZSJdLCAxZS0zKQogICAgcyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3NvZnRuZXNzIl0pKQogICAgdyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3dpc3BzIl0pKQogICAgdSA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3VuZGVyc2lkZSJdKSkKICAgIHdpdGggX0J1c3koKToKICAgICAgICAjIENvdmVyOiBtb3JlIG9yIGxlc3Mgb2YgdGhlIHNreSBoaWRkZW4sIGluIHRoZSB0eXBlJ3MgdmlzaWJsZS1jb3ZlciB1bml0cy4KICAgICAgICBwdXQoImNvdmVyIiwgYi5nZXQoImNvdmVyIiwgMC41KSArIGVbImVhc3lfY292ZXIiXSwgMC4wLCAxLjApCiAgICAgICAgIyBTaXplOiB0aGUgY2xvdWQgc2hhcGVzIGFuZCB0aGVpciBjZWxscyBhbmQgbHVtcHM7IHRoZSBiaWxsb3dzIGdyb3cgbW9yZSBzbG93bHkuCiAgICAgICAgZm9yIGsgaW4gKCJzY2FsZV9rbSIsICJjZWxsX2ttIiwgImx1bXBfc2l6ZSIpOgogICAgICAgICAgICBwdXQoaywgYi5nZXQoaywgMS4wKSAqIHNpemUpCiAgICAgICAgcHV0KCJkZXRhaWxfc2l6ZSIsIGIuZ2V0KCJkZXRhaWxfc2l6ZSIsIDEwMC4wKSAqIG1hdGguc3FydChzaXplKSkKICAgICAgICAjIFNvZnRuZXNzOiBzb2Z0ZXIsIHRoaW5uZXIgZWRnZXMgKG9yIGhhcmRlciwgZGVuc2VyIG9uZXMpLgogICAgICAgIHB1dCgiZWRnZSIsIGIuZ2V0KCJlZGdlIiwgMC4xKSAqIDQuMCAqKiBzLCAwLjAxLCAwLjUpCiAgICAgICAgcHV0KCJzaWdtYSIsIGIuZ2V0KCJzaWdtYSIsIDAuMDQpICogMi4wICoqIC1zLCAwLjAwMDUsIDAuMSkKICAgICAgICAjIFdpc3BzOiBmaW5lIHdpc3BzIGVhdGluZyB0aGUgZWRnZXMsIGNvbWJlZCBhbG9uZyB0aGUgd2luZCBhcyBpdCBnb2VzIHVwLgogICAgICAgIHB1dCgid2lzcF9hbW91bnQiLCBiLmdldCgid2lzcF9hbW91bnQiLCAwLjApICsgMC42ICogdywgMC4wLCAxLjApCiAgICAgICAgcHV0KCJ3aXNwX3N0cmV0Y2giLCBiLmdldCgid2lzcF9zdHJldGNoIiwgMS4wKSAqIDQuMCAqKiBtYXgodywgMC4wKSwgMS4wLCAxMi4wKQogICAgICAgICMgVW5kZXJzaWRlOiBkYXJrZXIsIGRlZXBlciB1bmRlcnNpZGVzIGFuZCBmb2xkcyAob3IgbGlnaHRlciwgZ2xvd2luZyBvbmVzKS4KICAgICAgICBwdXQoInNreV9vY2NsdXNpb24iLCBiLmdldCgic2t5X29jY2x1c2lvbiIsIDEuMCkgKyAwLjggKiB1LCAwLjAsIDIuMCkKICAgICAgICBwdXQoInNoYWRvd19kZXB0aCIsIGIuZ2V0KCJzaGFkb3dfZGVwdGgiLCAwLjApICsgMC41ICogdSwgMC4wLCAxLjApCiAgICAgICAgcHV0KCJhbWJpZW50IiwgYi5nZXQoImFtYmllbnQiLCAxLjApICogMi4wICoqICgtMC41ICogdSksIDAuMCwgMy4wKQogICAgICAgICMgTGl0OiB0aGUgc3VubGl0IHNpZGUncyBicmlnaHRuZXNzLCBpbiBzdG9wcyAodGhlIHdob2xlIG5vZGUncyBzdW4pLgogICAgICAgIG5bInN1bl9pbnRlbnNpdHkiXS5zZXRWYWx1ZShsaXQgKiAyLjAgKiogZVsiZWFzeV9saXQiXSkKCgpkZWYgbWF0Y2hfYmVnaW4obik6CiAgICAiIiJCZWZvcmUgYSBtYXRjaDogZHJhZnQgcXVhbGl0eSBhdCBRdWFydGVyIHJlc29sdXRpb24sIHNvIGVhY2ggdHJ5IHJlbmRlcnMgZmFzdC4iIiIKICAgIGtlZXAgPSBkaWN0KChrLCBuW2tdLnZhbHVlKCkpIGZvciBrIGluICgicmVuZGVyX3ByZXNldCIsICJyZXNvbHV0aW9uIiwgInF1YWxpdHkiLCAiZWRnZV9zdGVwcyIsICJzYW1wbGluZyIpKQogICAgZCA9IF9hbGwobikKICAgIGRbIl9tYXRjaF9rZWVwIl0gPSBrZWVwCiAgICBfc2F2ZShuLCBkKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgVGhlIGRyYWZ0IHByZXNldCdzIHZhbHVlcywgYXQgUXVhcnRlciAodGhlIHJlbmRlciBwcmVzZXQgbWVudSB0aGVuIHJlYWRzICdjdXN0b20nOwogICAgICAgICMgbWF0Y2hfZW5kIHB1dHMgaXQgYmFjaykuCiAgICAgICAgblsicXVhbGl0eSJdLnNldFZhbHVlKDAuNSkKICAgICAgICBuWyJlZGdlX3N0ZXBzIl0uc2V0VmFsdWUoMi4wKQogICAgICAgIG5bInNhbXBsaW5nIl0uc2V0VmFsdWUoIkxvdyIpCiAgICAgICAgblsicmVzb2x1dGlvbiJdLnNldFZhbHVlKCJRdWFydGVyIikKCgpkZWYgbWF0Y2hfZW5kKG4pOgogICAgIiIiQWZ0ZXIgYSBtYXRjaDogdGhlIHJlbmRlciBzZXR0aW5ncyBhcyB0aGV5IHdlcmUuIiIiCiAgICBkID0gX2FsbChuKQogICAga2VlcCA9IGQucG9wKCJfbWF0Y2hfa2VlcCIsIE5vbmUpCiAgICBfc2F2ZShuLCBkKQogICAgaWYga2VlcDoKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBrIGluICgicmVzb2x1dGlvbiIsICJxdWFsaXR5IiwgImVkZ2Vfc3RlcHMiLCAic2FtcGxpbmciLCAicmVuZGVyX3ByZXNldCIpOgogICAgICAgICAgICAgICAgbltrXS5zZXRWYWx1ZShrZWVwW2tdKQoKCmRlZiBvbl9rbm9iKG4sIGspOgogICAgIiIia25vYkNoYW5nZWQsIGZvciBhIGtub2IgdGhlIEVhc3kgdGFiIGxvb2tzIGFmdGVyLiIiIgogICAgaWYgYnVzeSgpOgogICAgICAgIHJldHVybgogICAgaWYgayA9PSAiZWFzeV9sYXllciI6CiAgICAgICAgc2hvd19sYXllcihuKQogICAgZWxpZiBrIGluIEVBU1lfS05PQlM6CiAgICAgICAgYXBwbHlfZWFzeShuKQogICAgZWxpZiBsZW4oaykgPiAzIGFuZCBrWzozXSBpbiAoImwxXyIsICJsMl8iLCAibDNfIikgYW5kIGtbOjNdID09IGxheWVyKG4pIGFuZCAoa1szOl0gaW4gTE9PSyBvciBrWzM6XSA9PSAidHlwZSIpOgogICAgICAgICMgVHVuZWQgYnkgaGFuZCwgb3IgYSBuZXcgdHlwZTogdGhhdCBiZWNvbWVzIHRoZSBzbGlkZXJzJyBzdGFydGluZyBwb2ludC4KICAgICAgICByZWJhc2UobikKICAgIGVsaWYgayA9PSAic3VuX2ludGVuc2l0eSI6CiAgICAgICAgZCA9IF9hbGwobikKICAgICAgICBkWyJzdW5faW50ZW5zaXR5Il0gPSBuWyJzdW5faW50ZW5zaXR5Il0udmFsdWUoKSAvIDIuMCAqKiBuWyJlYXN5X2xpdCJdLnZhbHVlKCkKICAgICAgICBfc2F2ZShuLCBkKQo=
  addUserKnob {20 l1_tab l "Layer 1"}
  addUserKnob {6 l1_enable l enable t "Draw this layer. Layers sort themselves by depth." -STARTLINE}
  l1_enable true
@@ -418,13 +418,13 @@ Group {
  addUserKnob {7 l1_thickness l thickness t "Depth of the layer, base to top, in metres." R 50 6000}
  l1_thickness 1300
  addUserKnob {7 l1_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
- l1_cover 0.3519
+ l1_cover 0.220588
  addUserKnob {7 l1_scale_km l size t "Size of the cloud shapes across the ground, in km." R 0.1 10}
  l1_scale_km 1.6
  addUserKnob {7 l1_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l1_wind_deg 20
  addUserKnob {78 l1_cover_table l "cover table" +INVISIBLE n 5}
- l1_cover_table {0 0.346 0.552 0.755 1}
+ l1_cover_table {-0.05 0.494 0.648 0.807 1}
  addUserKnob {7 l1_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)."}
  l1_map_amount 1
  addUserKnob {4 l1_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE M {luminance red green blue alpha}}
@@ -686,13 +686,13 @@ Group {
  addUserKnob {7 l3_thickness l thickness t "Depth of the layer, base to top, in metres." R 50 6000}
  l3_thickness 500
  addUserKnob {7 l3_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
- l3_cover 0.2036
+ l3_cover 0.212141
  addUserKnob {7 l3_scale_km l size t "Size of the cloud shapes across the ground, in km." R 0.1 10}
  l3_scale_km 5
  addUserKnob {7 l3_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l3_wind_deg 35
  addUserKnob {78 l3_cover_table l "cover table" +INVISIBLE n 5}
- l3_cover_table {0 0.614 0.834 0.994 1}
+ l3_cover_table {-0.15 0.616 0.813 0.967 1}
  addUserKnob {7 l3_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)."}
  l3_map_amount 1
  addUserKnob {4 l3_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE M {luminance red green blue alpha}}
@@ -1078,7 +1078,7 @@ Group {
   name bg
   xpos 180
  }
-set Nb5d7c000 [stack 0]
+set N5e02c000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -1106,14 +1106,14 @@ set Nb5d7c000 [stack 0]
   xpos 0
   ypos 180
  }
-set Nb5d97000 [stack 0]
+set N5e047000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $Nb5d97000
+push $N5e047000
  Merge2 {
   inputs 2
   operation plus
@@ -1130,7 +1130,7 @@ push $Nb5d97000
   xpos 0
   ypos 360
  }
-set Nb5d97c00 [stack 0]
+set N5e047c00 [stack 0]
  Dot {
   name LayoutDot14
   xpos 86
@@ -1141,32 +1141,32 @@ set Nb5d97c00 [stack 0]
   xpos 86
   ypos 963
  }
-set Nf88d4c00 [stack 0]
+set N210d4c00 [stack 0]
  Dot {
   name LayoutDot21
   xpos 86
   ypos 1491
  }
-set Nf88ee400 [stack 0]
+set N210ee400 [stack 0]
  Dot {
   name LayoutDot22
   xpos 394
   ypos 1491
  }
-set Nf88ee800 [stack 0]
-push $Nb5d97000
+set N210ee800 [stack 0]
+push $N5e047000
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set Nf8853400 [stack 0]
+set N21053400 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set Nf8853800 [stack 0]
+set N21053800 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -1189,29 +1189,29 @@ set Nf8853800 [stack 0]
   xpos 626
   ypos 567
  }
-set Nf8954800 [stack 0]
+set N211d4800 [stack 0]
  Dot {
   name LayoutDot58
   xpos 626
   ypos 1113
  }
-set Nf8955800 [stack 0]
+set N211d5800 [stack 0]
  Dot {
   name LayoutDot59
   xpos 610
   ypos 1113
  }
-set Nf8955c00 [stack 0]
+set N211d5c00 [stack 0]
  Dot {
   name LayoutDot60
   xpos 430
   ypos 1113
  }
-set Nf8970000 [stack 0]
-push $Nf8970000
-push $Nf8970000
-push $Nf8970000
-push $Nb5d7c000
+set N211f0000 [stack 0]
+push $N211f0000
+push $N211f0000
+push $N211f0000
+push $N5e02c000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -1228,7 +1228,7 @@ push $Nb5d7c000
   xpos 290
   ypos 243
  }
-push $Nf8853400
+push $N21053400
  Copy {
   inputs 2
   from0 depth.Z
@@ -1256,7 +1256,7 @@ push $Nf8853400
   xpos 470
   ypos 1053
  }
-set Nf893a400 [stack 0]
+set N211ba400 [stack 0]
  Dot {
   name LayoutDot47
   xpos 376
@@ -1290,26 +1290,26 @@ set Nf893a400 [stack 0]
   xpos 446
   ypos 537
  }
-set Nf8906400 [stack 0]
+set N21186400 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
   ypos 1023
  }
-set Nf8907400 [stack 0]
+set N21187400 [stack 0]
  Dot {
   name LayoutDot34
   xpos 412
   ypos 1023
  }
-set Nf8907800 [stack 0]
-push $Nf88d4c00
+set N21187800 [stack 0]
+push $N210d4c00
  Dot {
   name LayoutDot16
   xpos 394
   ypos 963
  }
-set Nf88d5000 [stack 0]
+set N210d5000 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1538,13 +1538,13 @@ set Nf88d5000 [stack 0]
   xpos 446
   ypos 2139
  }
-set Nf89f1000 [stack 0]
+set N21271000 [stack 0]
  Dot {
   name LayoutDot106
   xpos 446
   ypos 2835
  }
-set Nf89f1800 [stack 0]
+set N21271800 [stack 0]
  Dot {
   name LayoutDot109
   xpos 446
@@ -1555,113 +1555,113 @@ set Nf89f1800 [stack 0]
   xpos 772
   ypos 3753
  }
-push $Nf88ee800
+push $N210ee800
  Dot {
   name LayoutDot23
   xpos 574
   ypos 1491
  }
-set Nf88eec00 [stack 0]
+set N210eec00 [stack 0]
  Dot {
   name LayoutDot24
   xpos 754
   ypos 1491
  }
-set Nf88ef000 [stack 0]
+set N210ef000 [stack 0]
  Dot {
   name LayoutDot25
   xpos 934
   ypos 1491
  }
-set Nf88ef400 [stack 0]
+set N210ef400 [stack 0]
  Dot {
   name LayoutDot26
   xpos 1114
   ypos 1491
  }
-push $Nf8955800
+push $N211d5800
  Dot {
   name LayoutDot61
   xpos 970
   ypos 1113
  }
-set Nf8970400 [stack 0]
+set N211f0400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1150
   ypos 1113
  }
-set Nf8970800 [stack 0]
-push $Nf8970800
-push $Nf8970800
-push $Nf8970800
-push $Nf893a400
+set N211f0800 [stack 0]
+push $N211f0800
+push $N211f0800
+push $N211f0800
+push $N211ba400
  Dot {
   name LayoutDot46
   xpos 556
   ypos 1053
  }
-set Nf893a800 [stack 0]
+set N211ba800 [stack 0]
  Dot {
   name LayoutDot48
   xpos 790
   ypos 1053
  }
-set Nf893b000 [stack 0]
+set N211bb000 [stack 0]
  Dot {
   name LayoutDot49
   xpos 916
   ypos 1053
  }
-set Nf893b400 [stack 0]
+set N211bb400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 1096
   ypos 1053
  }
-push $Nf8907400
+push $N21187400
  Dot {
   name LayoutDot35
   xpos 592
   ypos 1023
  }
-set Nf8907c00 [stack 0]
+set N21187c00 [stack 0]
  Dot {
   name LayoutDot37
   xpos 736
   ypos 1023
  }
-set Nf8922400 [stack 0]
+set N211a2400 [stack 0]
  Dot {
   name LayoutDot38
   xpos 952
   ypos 1023
  }
-set Nf8922800 [stack 0]
+set N211a2800 [stack 0]
  Dot {
   name LayoutDot39
   xpos 1132
   ypos 1023
  }
-push $Nf88d5000
+push $N210d5000
  Dot {
   name LayoutDot17
   xpos 574
   ypos 963
  }
-set Nf88d5400 [stack 0]
+set N210d5400 [stack 0]
  Dot {
   name LayoutDot18
   xpos 754
   ypos 963
  }
-set Nf88d5800 [stack 0]
+set N210d5800 [stack 0]
  Dot {
   name LayoutDot19
   xpos 934
   ypos 963
  }
-set Nf88d5c00 [stack 0]
+set N210d5c00 [stack 0]
  Dot {
   name LayoutDot20
   xpos 1114
@@ -1913,14 +1913,14 @@ set Nf88d5c00 [stack 0]
   xpos 470
   ypos 3459
  }
-push $Nf88ef400
-push $Nf8970400
-push $Nf8970400
-push $Nf8970400
-push $Nf8970400
-push $Nf893b400
-push $Nf8922800
-push $Nf88d5c00
+push $N210ef400
+push $N211f0400
+push $N211f0400
+push $N211f0400
+push $N211f0400
+push $N211bb400
+push $N211a2800
+push $N210d5c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2167,24 +2167,24 @@ push $Nf88d5c00
   xpos 314
   ypos 3399
  }
-push $Nf8954800
+push $N211d4800
  Dot {
   name LayoutDot55
   xpos 592
   ypos 567
  }
-set Nf8954c00 [stack 0]
-push $Nf8954c00
-push $Nf8954c00
-push $Nf8954c00
-push $Nf8954c00
-push $Nf8906400
+set N211d4c00 [stack 0]
+push $N211d4c00
+push $N211d4c00
+push $N211d4c00
+push $N211d4c00
+push $N21186400
  Dot {
   name LayoutDot31
   xpos 574
   ypos 537
  }
-push $Nf8954c00
+push $N211d4c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2382,13 +2382,13 @@ push $Nf8954c00
   xpos 650
   ypos 1143
  }
-set Nf89a3800 [stack 0]
+set N21223800 [stack 0]
  Dot {
   name LayoutDot85
   xpos 650
   ypos 1287
  }
-set Nf89bc400 [stack 0]
+set N2123c400 [stack 0]
  Dot {
   name LayoutDot86
   xpos 650
@@ -2404,25 +2404,25 @@ set Nf89bc400 [stack 0]
   xpos 626
   ypos 2271
  }
-push $Nf8954c00
+push $N211d4c00
  Dot {
   name LayoutDot56
   xpos 412
   ypos 567
  }
-set Nf8955000 [stack 0]
-push $Nf8955000
-push $Nf8955000
-push $Nf8955000
-push $Nf8955000
-push $Nf8906400
+set N211d5000 [stack 0]
+push $N211d5000
+push $N211d5000
+push $N211d5000
+push $N211d5000
+push $N21186400
  Dot {
   name LayoutDot30
   xpos 394
   ypos 537
  }
-set Nf8906800 [stack 0]
-push $Nf8955000
+set N21186800 [stack 0]
+push $N211d5000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2620,13 +2620,13 @@ push $Nf8955000
   xpos 494
   ypos 1083
  }
-set Nf8989400 [stack 0]
+set N21209400 [stack 0]
  Dot {
   name LayoutDot76
   xpos 494
   ypos 1192
  }
-set Nf89a2000 [stack 0]
+set N21222000 [stack 0]
  Dot {
   name LayoutDot79
   xpos 494
@@ -2637,24 +2637,24 @@ set Nf89a2000 [stack 0]
   xpos 592
   ypos 2109
  }
-push $Nf8955000
+push $N211d5000
  Dot {
   name LayoutDot57
   xpos 232
   ypos 567
  }
-set Nf8955400 [stack 0]
-push $Nf8955400
-push $Nf8955400
-push $Nf8955400
-push $Nf8955400
-push $Nf8906800
+set N211d5400 [stack 0]
+push $N211d5400
+push $N211d5400
+push $N211d5400
+push $N211d5400
+push $N21186800
  Dot {
   name LayoutDot32
   xpos 214
   ypos 537
  }
-push $Nf8955400
+push $N211d5400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2852,13 +2852,13 @@ push $Nf8955400
   xpos 290
   ypos 993
  }
-set Nf8971000 [stack 0]
+set N211f1000 [stack 0]
  Dot {
   name LayoutDot67
   xpos 290
   ypos 1206
  }
-set Nf8971c00 [stack 0]
+set N211f1c00 [stack 0]
  Dot {
   name LayoutDot70
   xpos 290
@@ -2929,7 +2929,7 @@ set Nf8971c00 [stack 0]
   xpos 338
   ypos 3279
  }
-push $Nf89f1800
+push $N21271800
  Dot {
   name LayoutDot107
   xpos 266
@@ -2940,33 +2940,33 @@ push $Nf89f1800
   xpos 266
   ypos 3219
  }
-push $Nf88ee400
+push $N210ee400
  Dot {
   name LayoutDot27
   xpos 86
   ypos 1674
  }
-push $Nf8971000
+push $N211f1000
  Dot {
   name LayoutDot65
   xpos 214
   ypos 993
  }
-set Nf8971400 [stack 0]
-push $Nf89a3800
+set N211f1400 [stack 0]
+push $N21223800
  Dot {
   name LayoutDot84
   xpos 250
   ypos 1143
  }
-push $Nf8989400
+push $N21209400
  Dot {
   name LayoutDot75
   xpos 196
   ypos 1083
  }
-push $Nf8971400
-push $Nf8853800
+push $N211f1400
+push $N21053800
  Dot {
   name LayoutDot3
   xpos 754
@@ -2999,14 +2999,14 @@ push $Nf8853800
   xpos 178
   ypos 1173
  }
-set Nf89bdc00 [stack 0]
-push $Nf8907800
+set N2123dc00 [stack 0]
+push $N21187800
  Dot {
   name LayoutDot36
   xpos 232
   ypos 1023
  }
-push $Nf89bdc00
+push $N2123dc00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3193,14 +3193,14 @@ push $Nf89bdc00
   ypos 1224
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set N89e7c000 [stack 0]
+set N3607c000 [stack 0]
  Dot {
   name LayoutDot159
   xpos 46
   ypos 1227
  }
-push $Nf89bc400
-push $Nf89a2000
+push $N2123c400
+push $N21222000
  Dot {
   name LayoutDot77
   xpos 134
@@ -3211,7 +3211,7 @@ push $Nf89a2000
   xpos 134
   ypos 1287
  }
-push $Nf8971c00
+push $N211f1c00
  Dot {
   name LayoutDot68
   xpos 110
@@ -3222,7 +3222,7 @@ push $Nf8971c00
   xpos 110
   ypos 1275
  }
-push $Nf893a400
+push $N211ba400
  Dot {
   name LayoutDot51
   xpos 470
@@ -3233,7 +3233,7 @@ push $Nf893a400
   xpos 124
   ypos 1252
  }
-push $Nf8907400
+push $N21187400
  Dot {
   name LayoutDot40
   xpos 446
@@ -3244,7 +3244,7 @@ push $Nf8907400
   xpos 124
   ypos 1266
  }
-push $Nb5d97c00
+push $N5e047c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3447,7 +3447,7 @@ push $Nb5d97c00
   xpos 0
   ypos 1752
  }
-set N8af58000 [stack 0]
+set N20e98000 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -3464,40 +3464,40 @@ set N8af58000 [stack 0]
   xpos 180
   ypos 1812
  }
-set N8af59400 [stack 0]
+set N20e99400 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 1815
  }
-push $Nf88ef000
-push $N89e7c000
+push $N210ef000
+push $N3607c000
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1275
  }
-push $Nf89a3800
+push $N21223800
  Dot {
   name LayoutDot83
   xpos 808
   ypos 1143
  }
-push $Nf8989400
+push $N21209400
  Dot {
   name LayoutDot74
   xpos 718
   ypos 1083
  }
-push $Nf8971000
+push $N211f1000
  Dot {
   name LayoutDot66
   xpos 772
   ypos 993
  }
-push $Nf893b000
-push $Nf8922400
-push $Nf88d5800
+push $N211bb000
+push $N211a2400
+push $N210d5800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3735,15 +3735,15 @@ push $Nf88d5800
   xpos 806
   ypos 2865
  }
-set Nf8a3e800 [stack 0]
+set N3909e800 [stack 0]
  Dot {
   name LayoutDot127
   xpos 412
   ypos 2865
  }
-set Nf8a3ec00 [stack 0]
-push $N8af59400
-push $N8af58000
+set N3909ec00 [stack 0]
+push $N20e99400
+push $N20e98000
  Merge2 {
   inputs 2
   operation multiply
@@ -3753,7 +3753,7 @@ push $N8af58000
   ypos 1872
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N8af59800 [stack 0]
+set N20e99800 [stack 0]
  Dot {
   name LayoutDot92
   xpos 86
@@ -3764,19 +3764,19 @@ set N8af59800 [stack 0]
   xpos 86
   ypos 2457
  }
-set Nf89d4400 [stack 0]
+set N21254400 [stack 0]
  Dot {
   name LayoutDot95
   xpos 86
   ypos 2775
  }
-set Nf89d4c00 [stack 0]
+set N21254c00 [stack 0]
  Dot {
   name LayoutDot96
   xpos 214
   ypos 2775
  }
-set Nf89d5000 [stack 0]
+set N21255000 [stack 0]
  Dot {
   name LayoutDot97
   xpos 394
@@ -3795,7 +3795,7 @@ set Nf89d5000 [stack 0]
   xpos 394
   ypos 3159
  }
-push $Nf8a3ec00
+push $N3909ec00
  Dot {
   name LayoutDot128
   xpos 290
@@ -3806,15 +3806,15 @@ push $Nf8a3ec00
   xpos 290
   ypos 3099
  }
-push $Nf89d5000
-push $Nf88eec00
-push $Nf8955c00
-push $Nf8955c00
-push $Nf8955c00
-push $Nf8955c00
-push $Nf893a800
-push $Nf8907c00
-push $Nf88d5400
+push $N21255000
+push $N210eec00
+push $N211d5c00
+push $N211d5c00
+push $N211d5c00
+push $N211d5c00
+push $N211ba800
+push $N21187c00
+push $N210d5400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -4044,19 +4044,19 @@ push $Nf88d5400
   xpos 674
   ypos 2958
  }
-set Nf8a22800 [stack 0]
+set N39082800 [stack 0]
  Dot {
   name LayoutDot119
   xpos 110
   ypos 2958
  }
-push $Nf89d4400
+push $N21254400
  Dot {
   name LayoutDot94
   xpos 214
   ypos 2457
  }
-push $Nf89f1000
+push $N21271000
  Dot {
   name LayoutDot105
   xpos 214
@@ -4072,7 +4072,7 @@ push $Nf89f1000
   xpos 180
   ypos 2220
  }
-push $Nb5d7c000
+push $N5e02c000
  Dot {
   name LayoutDot11
   xpos 266
@@ -4118,7 +4118,7 @@ push $Nb5d7c000
   xpos 180
   ypos 2538
  }
-push $N8af59800
+push $N20e99800
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -4135,7 +4135,7 @@ push $N8af59800
   xpos 0
   ypos 2976
  }
-set N8bfb2400 [stack 0]
+set N20f22400 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -4204,7 +4204,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3276
   disable {{!parent.sun_map_out}}
  }
-push $N8bfb2400
+push $N20f22400
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -4213,7 +4213,7 @@ push $N8bfb2400
   xpos 0
   ypos 3336
  }
-set Nb5da6800 [stack 0]
+set N5e056800 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -4234,7 +4234,7 @@ set Nb5da6800 [stack 0]
   xpos 180
   ypos 3456
  }
-push $Nb5da6800
+push $N5e056800
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -4243,7 +4243,7 @@ push $Nb5da6800
   xpos 0
   ypos 3516
  }
-set Nb5da6d00 [stack 0]
+set N5e056d00 [stack 0]
  Dot {
   name LayoutDot153
   xpos 110
@@ -4259,19 +4259,19 @@ set Nb5da6d00 [stack 0]
   xpos 232
   ypos 3723
  }
-set Nf8a8dc00 [stack 0]
+set N390edc00 [stack 0]
  Dot {
   name LayoutDot156
   xpos 394
   ypos 3723
  }
-set Nf8aa2000 [stack 0]
+set N39102000 [stack 0]
  Dot {
   name LayoutDot157
   xpos 574
   ypos 3723
  }
-set Nf8aa2400 [stack 0]
+set N39102400 [stack 0]
  Dot {
   name LayoutDot158
   xpos 754
@@ -4289,7 +4289,7 @@ set Nf8aa2400 [stack 0]
   xpos 754
   ypos 4527
  }
-push $Nf89d4c00
+push $N21254c00
  Dot {
   name LayoutDot98
   xpos 86
@@ -4300,7 +4300,7 @@ push $Nf89d4c00
   xpos 214
   ypos 3693
  }
-push $Nf8a8dc00
+push $N390edc00
  Copy {
   inputs 2
   channels rgba
@@ -4308,7 +4308,7 @@ push $Nf8a8dc00
   xpos 180
   ypos 3864
  }
-set N8c005800 [stack 0]
+set N20f75800 [stack 0]
  Expression {
   expr0 r+(1-a)*0.14
   expr1 g+(1-a)*0.22
@@ -4508,7 +4508,7 @@ set N8c005800 [stack 0]
   xpos 180
   ypos 4464
  }
-push $Nf8a22800
+push $N39082800
  Dot {
   name LayoutDot120
   xpos 674
@@ -4519,7 +4519,7 @@ push $Nf8a22800
   xpos 592
   ypos 3783
  }
-push $Nf8aa2400
+push $N39102400
  Copy {
   inputs 2
   channels rgba
@@ -4532,7 +4532,7 @@ push $Nf8aa2400
   xpos 574
   ypos 4527
  }
-push $Nf8a3e800
+push $N3909e800
  Dot {
   name LayoutDot130
   xpos 806
@@ -4543,7 +4543,7 @@ push $Nf8a3e800
   xpos 412
   ypos 3813
  }
-push $Nf8aa2000
+push $N39102000
  Copy {
   inputs 2
   channels rgba
@@ -4556,13 +4556,13 @@ push $Nf8aa2000
   xpos 394
   ypos 4515
  }
-push $N8c005800
+push $N20f75800
  Dot {
   name LayoutDot7
   xpos 46
   ypos 3867
  }
-push $Nb5da6d00
+push $N5e056d00
  Switch {
   inputs 6
   which {{parent.view}}
