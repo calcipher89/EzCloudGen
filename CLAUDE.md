@@ -46,6 +46,10 @@ That prototype has no volumes or erosion stack, so the kernel is the source of t
   `build_group.py` (`CLOUD_CALLS`) gives each pass kind a copy with only its own. Inside
   `cloud()`, `baseField()` (the shape and weather) is likewise called once, in a loop that also
   takes the even-detail slope samples.
+- `blink/EzCirrusSheet.blink` is the cirrus sheet: a separate small kernel (one ray-shell hit, a
+  2D patch x fibre texture filtered by the pixel's footprint, single scattering), composited under
+  the layers' colour and sun passes (`Sheet_Under*`). It has no `cloud()` call; check it on the CPU
+  with `reference/blink_check/run_sheet.py` and `tests/test_sheet.py`.
 - `python/build_group.py` builds the whole Group inside Nuke:
   - one BlinkScript per pass for all the layers, and one sun map pass per layer;
   - the depth, shadow, motion-vector and preview chains;

@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.52.0"
+VERSION = "0.53.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -199,9 +199,9 @@ def layer_sun_tint(layer, channel):
     sun through a third of that air and no haze: at a 2 degree sun about 3 times brighter and far
     less red, so it isn't lit by a deep red sun (which, with the blue sky light, read brown).
     The atmos's own Rayleigh and haze amounts and heights, Kasten-Young air mass at the sun's
-    elevation. 1 with manual light or no atmos."""
+    elevation. 1 with manual light or no atmos. Layer 0 is the cirrus sheet."""
     i = ("red", "green", "blue").index(channel)
-    p = "l%d_" % layer
+    p = "l%d_" % layer if layer else "sheet_"
     return py(FIND_ATMOS +
               "ret = 1.0\n"
               "n = nuke.thisNode()\n"
@@ -212,7 +212,9 @@ def layer_sun_tint(layer, channel):
               "    el = max(math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0))), 0.0)\n"
               "    am = 1.0 / (math.sin(math.radians(el)) + 0.50572 * (el + 6.07995) ** -1.6364)\n"
               "    hc = a['camera_height'].value() / 1000.0\n"
-              "    if n['%(p)svolume'].value():\n"
+              "    if n.knob('%(p)sheight') is not None:\n"
+              "        hl = n['%(p)sheight'].value() / 1000.0\n"
+              "    elif n['%(p)svolume'].value():\n"
               "        hl = (n['%(p)svol_position'].getValue(1) - n['ground_height'].value()) * n['scene_scale'].value() / 1000.0\n"
               "    else:\n"
               "        hl = (n['%(p)sbase'].value() + 0.5 * n['%(p)sthickness'].value()) / 1000.0\n"
@@ -710,8 +712,10 @@ def add_easy_tab(g):
     add(g, nuke.Text_Knob("easy_intro", "", "A few big sliders over one layer's knobs. They start from the layer as it is; "
                                             "the layer tab shows what they changed. Editing a layer knob by hand starts "
                                             "them again from there."))
-    add(g, nuke.Enumeration_Knob("easy_layer", "easy layer", ["Layer 1", "Layer 2", "Layer 3"]),
-        "The layer the sliders work on. Each layer keeps its own slider settings.")
+    add(g, nuke.Enumeration_Knob("easy_layer", "easy layer", ["Layer 1", "Layer 2", "Layer 3", "Cirrus sheet"]),
+        "The layer the sliders work on. Each layer keeps its own slider settings. On the cirrus sheet: cover, "
+        "size (patches and fibres), softness (softer, fainter edges and a thinner sheet), wisps (more fibre) "
+        "and underside (a darker sky-lit side).")
     for name, label, lo, hi, neutral, tip in EASY:
         k = add(g, nuke.Double_Knob(name, label), tip)
         k.setRange(lo, hi)
@@ -723,10 +727,42 @@ def add_easy_tab(g):
 # knobChanged, last: hand the Easy knobs and the layer knobs they write to python/easy_mode.py.
 EASY_DISPATCH = ("if n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n"
                  "    _kn = k.name()\n"
-                 "    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn[:3] in ('l1_', 'l2_', 'l3_'):\n"
+                 "    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn[:3] in ('l1_', 'l2_', 'l3_') or _kn.startswith('sheet_'):\n"
                  "        _ez = {}\n"
                  "        exec(__import__('base64').b64decode(n['tool_code'].value()).decode(), _ez)\n"
                  "        _ez['on_knob'](n, _kn)\n")
+
+
+# The cirrus sheet (blink/EzCirrusSheet.blink): (name, label, default, lo, hi, tooltip).
+SHEET = [
+    ("height", "height", 9000.0, 4000, 14000, "The sheet's height above the ground, in metres."),
+    ("cover", "cover", 0.5, 0, 1, "How much of the sky the sheet covers: 0 none, 0.5 about half, 1 all of it."),
+    ("scale_km", "patch size", 6.0, 0.5, 30, "The size of the sheet's patches and gaps, in km."),
+    ("edge", "edge softness", 0.6, 0, 2, "How softly the patches fade out at their edges."),
+    ("opacity", "opacity", 0.3, 0, 2, "How much the sheet hides looking straight up (it thickens towards the horizon)."),
+    ("fibres", "fibres", 0.8, 0, 1, "How much of the sheet is long strands rather than an even veil."),
+    ("fibre_size", "fibre width", 150.0, 20, 1000, "The width of the strands, in metres."),
+    ("fibre_length", "fibre length", 20.0, 2, 80, "How many times longer the strands are than they are wide."),
+    ("direction", "direction", 35.0, -180, 180, "The way the strands and patches run, in degrees from north (-z) towards +x."),
+    ("wind_speed", "wind speed", 15.0, 0, 80, "How fast the sheet drifts along its strands, in m/s."),
+    ("forward", "forward scatter", 0.6, 0, 0.95, "How much light the sheet throws forward: its glow around the sun."),
+    ("ambient", "sky light", 1.0, 0, 3, "How much sky light the sheet takes: its brightness on the side away from the sun."),
+    ("seed", "seed", 0.0, 0, 100, "Another sheet of the same kind."),
+]
+
+
+def add_sheet_tab(g):
+    add(g, nuke.Tab_Knob("sheet_tab", "Cirrus sheet"))
+    add(g, nuke.Text_Knob("sheet_intro", "", "A thin sheet of fibrous high cloud: one quick pass of its own, drawn "
+                                             "behind the layers. For cirrus and cirrostratus veils."))
+    add(g, nuke.Boolean_Knob("sheet_enable", "enable"), "Draw the cirrus sheet.").setValue(False)
+    for name, label, val, lo, hi, tip in SHEET:
+        k = add(g, nuke.Double_Knob("sheet_" + name, label), tip)
+        k.setRange(lo, hi)
+        k.setValue(val)
+    k = hidden(g, nuke.Color_Knob("sheet_sun_tint", "sun tint"))
+    for j, ch in enumerate(("red", "green", "blue")):
+        k.setExpression(layer_sun_tint(0, ch), j)
 
 
 def hidden(g, knob):
@@ -1209,6 +1245,8 @@ def build_knobs(g):
         for name in (DECK_ONLY if vals["volume"] else VOL_ONLY):
             g[p + name].setVisible(False)
 
+    add_sheet_tab(g)
+
     k = hidden(g, nuke.Multiline_Eval_String_Knob("box_lib", "box lib"))
     k.setValue(BOX_LIB)
     k = hidden(g, nuke.Multiline_Eval_String_Knob("shape_lib", "shape lib"))
@@ -1538,6 +1576,67 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
 
 
 
+SHEET_KERNEL = "EzCirrusSheet"
+SHEET_ON = "parent.sheet_enable && parent.view!=4"
+
+
+def sheet_copy():
+    """An LF-only copy of the cirrus sheet kernel in the temp folder."""
+    import tempfile
+    with open(os.path.join(ROOT, "blink", SHEET_KERNEL + ".blink")) as f:
+        text = f.read().replace("\r\n", "\n")
+    path = os.path.join(tempfile.gettempdir(), SHEET_KERNEL + ".blink").replace("\\", "/")
+    with open(path, "w", newline="\n") as f:
+        f.write(text)
+    return path
+
+
+def sheet_blink(name, output, src, zin, source_file):
+    """The cirrus sheet pass (output 0 colour, 1 its sun share), lit and placed like the layers."""
+    n = compiled(name, source_file)
+    n.setInput(0, src)
+    n.setInput(1, zin)
+    k = SHEET_KERNEL + "_"
+    n[k + "output"].setValue(output)
+    rows = ((0, 1, 2), (4, 5, 6), (8, 9, 10))
+    for r, idx in enumerate(rows):
+        for j, m in enumerate(idx):
+            n[k + "cam_row%d" % r].setExpression("parent.cam_world_matrix.%d" % m, j)
+    for j, m in enumerate((3, 7, 11)):
+        n[k + "cam_position"].setExpression("parent.cam_world_matrix.%d" % m, j)
+    n[k + "focal"].setExpression("parent.cam_focal")
+    n[k + "haperture"].setExpression("parent.cam_haperture")
+    n[k + "frame_size"].setExpression("width", 0)
+    n[k + "frame_size"].setExpression("height", 1)
+    n[k + "pixel_aspect"].setExpression("parent.bg_pixel_aspect")
+    n[k + "scene_scale"].setExpression("parent.scene_scale")
+    n[k + "ground_height"].setExpression("parent.ground_height")
+    n[k + "earth_curvature"].setExpression("parent.earth")
+    for j, c in enumerate("xyz"):
+        n[k + "sun_direction"].setExpression("parent.sun_in_use.%s" % c, j)
+    n[k + "sun_rotation"].setExpression("parent.sun_rotation_in_use")
+    for j, c in enumerate("rgb"):
+        n[k + "sun_color"].setExpression("parent.sun_color_in_use.%s * parent.sheet_sun_tint.%s" % (c, c), j)
+        n[k + "sky_color"].setExpression("parent.sky_color_in_use.%s" % c, j)
+        n[k + "haze_color"].setExpression("parent.haze_color_in_use.%s" % c, j)
+    n[k + "haze_distance"].setExpression("parent.haze_distance * 1000")
+    n[k + "max_distance"].setExpression("parent.max_distance * 1000")
+    n[k + "sun_glow"].setExpression("parent.sun_glow")
+    n[k + "occlude"].setExpression("parent.occlude && parent.bg_found")
+    n[k + "depth_mode"].setExpression("parent.depth_mode")
+    n[k + "sky_depth"].setExpression("parent.sky_depth * 1000 / max(parent.scene_scale, 1e-6)")
+    for name in ("height", "cover", "edge", "scale_km", "fibre_size", "fibre_length", "fibres", "opacity",
+                 "forward", "ambient"):
+        n[k + name].setExpression("parent.sheet_" + name)
+    n[k + "direction_deg"].setExpression("parent.sheet_direction")
+    n[k + "seed"].setExpression("parent.seed + parent.sheet_seed")
+    # Drift along the strands with the wind: the texture is sampled upwind.
+    n[k + "drift"].setExpression("-parent.sheet_wind_speed * parent.time_s * sin(radians(parent.sheet_direction))", 0)
+    n[k + "drift"].setExpression("parent.sheet_wind_speed * parent.time_s * cos(radians(parent.sheet_direction))", 1)
+    n["disable"].setExpression("!(%s)" % SHEET_ON)
+    return n
+
+
 # The kernel's three cloud() calls, one per kind of pass. Blink inlines cloud() at every call site,
 # and the CPU (LLVM) compile time grows much faster than their number (one: about 11 minutes, two:
 # 51, four: well over an hour), so each pass gets a copy of the kernel with only its own call; in
@@ -1719,6 +1818,21 @@ def build():
             r.setInput(0, src)
             return r
 
+        # The cirrus sheet, behind the layers: they go over it ('under' with the layers as B, so
+        # the merge passes the layers through when the sheet is off).
+        sheet_src = sheet_copy()
+        sheet_col = sheet_blink("Sheet_Color", 0, work, zwork, sheet_src)
+        sheet_sun = sheet_blink("Sheet_Sun", 1, work, zwork, sheet_src)
+        sheet_sun["disable"].setExpression("!(%s) || !((parent.breakout && !parent.preview) || parent.view==2)"
+                                           % SHEET_ON)
+        merged = []
+        for nm, layers_pass, sheet_pass in (("Sheet_UnderColor", col, sheet_col), ("Sheet_UnderSun", sunm, sheet_sun)):
+            m = nuke.nodes.Merge2(name=nm, operation="under", bbox="B")
+            m.setInput(0, layers_pass)
+            m.setInput(1, sheet_pass)
+            m["disable"].setExpression("!(%s)" % SHEET_ON)
+            merged.append(m)
+        col, sunm = merged
         col_up = up("ColorUp", col)
         sun_up = up("SunUp", sunm)
         # Exposure and highlight rolloff: one scale per pixel, from the cloud colour's brightest
@@ -1912,6 +2026,7 @@ MODULES = [
     ("Sun maps", 0x3a5a4aff, r"(L\d_SunMap)"),
     ("Depth ramp graphs (UI only)", 0x444444ff, r"(L\d_DepthRamp)"),
     ("Clouds (all layers in one march)", 0x4a5a6aff, r"(Clouds_.*)"),
+    ("Cirrus sheet", 0x5a6a7aff, r"(Sheet_.*)"),
     ("Back to full size", 0x444444ff, r"(ColorUp.*|SunUp.*|DepthUp.*|ShadowUp.*|FwdUp.*|BwdUp.*|FwdScale|BwdScale|ToneScale|ToneColor|ToneSun|SunMapUp)"),
     ("Shadows", 0x4a4a3aff, r"(Shadow_.*|SunMap_All.*)"),
     ("Comp", 0x3a4a6aff, r"(CompOver|CompOrClouds)"),

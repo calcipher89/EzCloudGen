@@ -73,6 +73,9 @@ SETUPS = [
     ("FlyThrough", "Fly-through (its own camera, FlyCam, 1001-1024): climbs to 3 km and dives back through a Stratocumulus deck; the clouds stay put in the world and nothing trims them",
      [("Stratocumulus", {"coverage": 0.6}), None, None],
      {"sun_direction": sun(25, 30), "horizon_haze": 1, "highlight_rolloff": 0.6, "_cam": "Nflycam"}),
+    ("CirrusSheet", "Cirrus sheet over a few cumulus, late afternoon sun to the left: fibrous strands with gaps out to the horizon",
+     [("Cumulus", {"coverage": 0.25}), None, None],
+     {"sun_direction": sun(14, -40), "sheet_enable": "true", "sheet_cover": 0.55, "highlight_rolloff": 0.6}),
 ]
 
 
