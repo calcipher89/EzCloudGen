@@ -160,11 +160,11 @@ def apply_easy(n):
 def apply_sheet(put, b, cover, size, s, w, u):
     """The sliders on the cirrus sheet."""
     put("cover", b.get("cover", 0.5) + cover, 0.0, 1.0)
-    put("scale_km", b.get("scale_km", 6.0) * size)
+    put("scale_km", b.get("scale_km", 4.0) * size)
     put("fibre_size", b.get("fibre_size", 150.0) * math.sqrt(size))
     # Softness: softer patch edges and a thinner, more veil-like sheet (or crisper, denser).
     put("edge", b.get("edge", 0.6) * 2.0 ** s, 0.0, 2.0)
-    put("opacity", b.get("opacity", 0.3) * 2.0 ** (-0.7 * s), 0.0, 2.0)
+    put("opacity", b.get("opacity", 0.5) * 2.0 ** (-0.7 * s), 0.0, 2.0)
     # Wisps: more of the sheet in strands.
     put("fibres", b.get("fibres", 0.8) + 0.4 * w, 0.0, 1.0)
     # Underside: a darker side away from the sun (less sky light).

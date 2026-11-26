@@ -737,15 +737,15 @@ EASY_DISPATCH = ("if n.knob('tool_code') is not None and not getattr(nuke, '_ezc
 SHEET = [
     ("height", "height", 9000.0, 4000, 14000, "The sheet's height above the ground, in metres."),
     ("cover", "cover", 0.5, 0, 1, "How much of the sky the sheet covers: 0 none, 0.5 about half, 1 all of it."),
-    ("scale_km", "patch size", 6.0, 0.5, 30, "The size of the sheet's patches and gaps, in km."),
+    ("scale_km", "patch size", 4.0, 0.5, 30, "The size of the sheet's patches and gaps, in km."),
     ("edge", "edge softness", 0.6, 0, 2, "How softly the patches fade out at their edges."),
-    ("opacity", "opacity", 0.3, 0, 2, "How much the sheet hides looking straight up (it thickens towards the horizon)."),
+    ("opacity", "opacity", 0.5, 0, 2, "How much the sheet hides looking straight up (it thickens towards the horizon)."),
     ("fibres", "fibres", 0.8, 0, 1, "How much of the sheet is long strands rather than an even veil."),
     ("fibre_size", "fibre width", 150.0, 20, 1000, "The width of the strands, in metres."),
     ("fibre_length", "fibre length", 20.0, 2, 80, "How many times longer the strands are than they are wide."),
     ("direction", "direction", 35.0, -180, 180, "The way the strands and patches run, in degrees from north (-z) towards +x."),
     ("wind_speed", "wind speed", 15.0, 0, 80, "How fast the sheet drifts along its strands, in m/s."),
-    ("forward", "forward scatter", 0.6, 0, 0.95, "How much light the sheet throws forward: its glow around the sun."),
+    ("forward", "forward scatter", 0.45, 0, 0.95, "How much light the sheet throws forward: its glow around the sun."),
     ("ambient", "sky light", 1.0, 0, 3, "How much sky light the sheet takes: its brightness on the side away from the sun."),
     ("seed", "seed", 0.0, 0, 100, "Another sheet of the same kind."),
 ]

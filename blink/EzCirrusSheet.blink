@@ -88,7 +88,7 @@ local:
     defineParam(hazeColor, "haze_color", float3(0.6f, 0.68f, 0.8f));
     defineParam(hazeDistance, "haze_distance", 60000.0f);
     defineParam(maxDistance, "max_distance", 400000.0f);
-    defineParam(forward, "forward", 0.6f);
+    defineParam(forward, "forward", 0.45f);
     defineParam(sunGlow, "sun_glow", 0.0f);
     defineParam(occlude, "occlude", 0);
     defineParam(depthMode, "depth_mode", 0);
@@ -96,11 +96,11 @@ local:
     defineParam(height, "height", 9000.0f);
     defineParam(cover, "cover", 0.5f);
     defineParam(edge, "edge", 0.6f);
-    defineParam(scaleKm, "scale_km", 6.0f);
+    defineParam(scaleKm, "scale_km", 4.0f);
     defineParam(fibreSize, "fibre_size", 150.0f);
     defineParam(fibreLength, "fibre_length", 20.0f);
     defineParam(fibres, "fibres", 0.8f);
-    defineParam(opacity, "opacity", 0.3f);
+    defineParam(opacity, "opacity", 0.5f);
     defineParam(directionDeg, "direction_deg", 35.0f);
     defineParam(drift, "drift", float2(0.0f, 0.0f));
     defineParam(seed, "seed", 0.0f);
@@ -216,7 +216,7 @@ local:
     float e = max(edge, 0.01f) * 0.12f + 0.35f * lost / wsum;
     // The fibres fray the patch edges.
     float fl01 = clamp(fibres, 0.0f, 1.0f);
-    n += 0.12f * fl01 * (fib - 0.5f);
+    n += 0.06f * fl01 * (fib - 0.5f);
     float patch = cover <= 0.0f ? 0.0f : sstep(thr - e, thr + e, n);
     if (cover >= 1.0f)
       patch = max(patch, 0.85f + 0.15f * n);
@@ -285,12 +285,14 @@ local:
       return;
     }
     // Opacity through the sheet along the view (slanted: longer near the horizon, capped).
-    float tau = clamp(opacity, 0.0f, 4.0f) * den * min(1.0f / mu, 5.0f);
+    float tau = clamp(opacity, 0.0f, 4.0f) * den * min(1.0f / mu, 3.0f);
     float alpha = 1.0f - exp(-tau);
     // Light: single scattering, the sun dimmed by the sheet along its own slant.
     float cosT = dot(d, sun);
     float sunUp = max(dot(up, sun), 0.0f);
-    float ph = 0.8f * hg(clamp(forward, -0.95f, 0.95f), cosT) + 0.2f * hg(-0.2f, cosT) + sunGlow * hg(0.93f, cosT);
+    // A broad forward lobe (ice crystals scatter some light far forward, but a sheet seen at a
+    // grazing angle near the sun read as flat white with a narrow one) and a back lobe.
+    float ph = 0.6f * hg(clamp(forward, -0.95f, 0.95f), cosT) + 0.4f * hg(-0.15f, cosT) + sunGlow * hg(0.93f, cosT);
     float tauSun = 0.6f * clamp(opacity, 0.0f, 4.0f) * den * min(1.0f / max(sunUp, 0.02f), 4.0f);
     // The sun sets on the sheet a little after it sets on the ground.
     float lit = exp(-tauSun) * sstep(-0.06f, 0.0f, dot(up, sun));
