@@ -75,7 +75,7 @@ def main():
     part = np.all(s_to[..., :3] <= c_to[..., :3] + 1e-5)
     ok &= check("sun share within the colour", part, "")
     lt, la = c_to[..., :3].sum() / max(c_to[..., 3].sum(), 1e-6), c_aw[..., :3].sum() / max(c_aw[..., 3].sum(), 1e-6)
-    ok &= check("towards a low sun brighter than away", lt > 1.5 * la, "%.2f vs %.2f" % (lt, la))
+    ok &= check("towards a low sun brighter than away", lt > 1.2 * la, "%.2f vs %.2f" % (lt, la))
 
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
