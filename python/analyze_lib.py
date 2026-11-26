@@ -747,9 +747,9 @@ def debug_report(n):
                 continue
             vol = n[p + 'volume'].value() > 0.5
             sd = n[p + 'sigma'].value() * n[p + 'density'].value()
-            w('  layer %d: %s, %s; coverage %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '
+            w('  layer %d: %s, %s; cover %g, sigma x density %.4g, size %g km, detail %g m, erosion %g, '
               'edge %g, model %s, wind %g deg %g m/s, wisp stretch %g'
-              % (i, n[p + 'type'].value(), 'volume' if vol else 'deck', n[p + 'coverage'].value(), sd,
+              % (i, n[p + 'type'].value(), 'volume' if vol else 'deck', n[p + 'cover'].value(), sd,
                  n[p + 'scale_km'].value(), n[p + 'detail_size'].value(), n[p + 'erosion'].value(),
                  n[p + 'edge'].value(), n[p + 'detail_model'].value(), n[p + 'wind_deg'].value(),
                  n[p + 'wind_speed'].value(),

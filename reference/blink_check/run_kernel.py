@@ -38,6 +38,8 @@ LAYER_DEFAULTS = {
     "other_vol_center": "0,20000,-60000", "vol_axes": "0", "vol_axis_x": "1,0,0", "vol_axis_y": "0,1,0",
     "vol_axis_z": "0,0,1", "layer_seed": "0",
     "map_mode": "0", "detail_model": "0", "sil_distance": "10000", "sil_depth": "6000",
+    "wisp_stretch": "1", "shape_3d": "0", "depth_ramp_a": "-1", "depth_ramp_b": "0", "depth_ramp_c": "0",
+    "depth_ramp_d": "0", "depth_ramp_sh": "0", "depth_ramp_smooth": "0",
 }
 
 MAIN = r'''

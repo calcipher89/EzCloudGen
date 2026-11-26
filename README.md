@@ -6,8 +6,16 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.50.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
-render in NukeX 15.1. `reference/` holds the Python prototype the kernel was ported from.
+v0.51.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+render in NukeX 15.1.
+
+New in 0.51:
+- Each layer's **cover** (it was 'coverage') is now the share of the sky the layer hides, seen
+  straight up, calibrated per cloud type. 0.5 looks half covered whatever the type. The presets
+  look exactly as before. Thin types (fog, mist, cirrus) never hide the whole sky, so their 1 is
+  their fullest.
+- An **Easy** tab has six sliders over one layer: cover, size, softness, wisps, underside and lit.
+  They follow the other ezTools' Easy tabs (EzMatch can drive them). `reference/` holds the Python prototype the kernel was ported from.
 
 ## Using it
 
@@ -105,6 +113,22 @@ a normal or reference pass (values within -1..1) or doesn't match the depth and 
 The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
 lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three
 **Layer** tabs and **About**.
+
+**Easy** works on one layer at a time (**easy layer**), from the layer's knobs as they are:
+
+| slider | what it moves (on the easy layer) |
+|---|---|
+| cover | adds to 'cover' |
+| size | 'size', 'cell size' and 'lump size' times it; 'billow size' times its square root |
+| softness | 'edge softness' x 4^s and 'thickness of cloud' x 2^-s: softer, thinner edges up |
+| wisps | 'wisps' + 0.6 w; 'wisp stretch' x 4^w going up |
+| underside | 'sky occlusion' + 0.8 u, 'shadow depth' + 0.5 u, 'sky light' x 2^(-u/2): darker undersides up |
+| lit | the node's 'sun intensity', in stops (every layer) |
+
+Each layer keeps its own slider settings, and the layer tab always shows what they did. Editing
+one of those knobs by hand, or changing the layer's type, starts the sliders again from there.
+The calibration tables come from `reference/calibration/measure_cover.py`, which renders the
+kernel's sun-map pass on the CPU with the sun straight overhead.
 Each of the three Layer tabs has a type menu that fills in its knobs. A layer is either a sky
 deck (Cumulus ... Cirrocumulus) or a placed volume (Hero Cumulus, Soft Cumulus, Storm Anvil, Fog Bank, Puff):
 picking a volume type drops it 'distance' ahead of the camera ('place in front of camera' does

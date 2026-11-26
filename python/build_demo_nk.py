@@ -125,8 +125,13 @@ def instance(body, name, layers, knobs, x, y, inputs=4):
         vals = cloud_types.full(tname)
         vals.update(extra)
         across = vals.pop("across", 0.0)
+        # 'coverage' in the setups is the kernel's: the node's knob is the visible cover, through
+        # the type's table.
+        table = cloud_types.cover_table(tname)
+        vals["cover"] = round(cloud_types.to_cover(table, vals.pop("coverage")), 4)
         for k, v in vals.items():
             lines.append("%s%s %s" % (p, k, knob_value(k, v)))
+        lines.append("%scover_table {%s}" % (p, " ".join("%g" % v for v in table)))
         if vals["volume"]:
             # What 'place in front of camera' does for the camera at frame 1001 (at 0, 3000, 0,
             # looking down -Z), plus 'across' km to the side so the pan carries it over the frame.

@@ -28,6 +28,7 @@ OP3(+) OP3(-) OP3(*) OP3(/)
   inline float4 operator op(float4 a, float b) { return float4(a.x op b, a.y op b, a.z op b, a.w op b); }
 OP4(+) OP4(-) OP4(*) OP4(/)
 inline float3 &operator+=(float3 &a, float3 b) { a = a + b; return a; }
+inline float3 operator-(float3 a) { return float3(-a.x, -a.y, -a.z); }
 inline float4 &operator+=(float4 &a, float4 b) { a = a + b; return a; }
 inline float dot(float3 a, float3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 inline float length(float3 a) { return std::sqrt(dot(a, a)); }
@@ -55,6 +56,8 @@ template <int... A> struct Image {
   Recti bounds;
   const float *pix = nullptr;
   float4 &operator()() { return value; }
+  // Random access (eAccessRandom): the held pixels if any, else the current pixel's value.
+  float4 operator()(int x, int y) const { return pix ? at(x, y) : value; }
   float4 at(int x, int y) const {
     x = std::min(std::max(x, bounds.x1), bounds.x2 - 1) - bounds.x1;
     y = std::min(std::max(y, bounds.y1), bounds.y2 - 1) - bounds.y1;

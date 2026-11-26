@@ -143,3 +143,52 @@ def full(name):
     d = dict(DEFAULTS)
     d.update(TYPES[name])
     return dict((KERNEL[k], v) for k, v in d.items())
+
+
+# Visible cover -> kernel coverage, per deck type: the kernel's coverage at cover 0, .25, .5, .75
+# and 1, measured by reference/calibration/measure_cover.py (the share of the ground, seen
+# straight up, that the layer hides: optical depth over min(0.7, a tenth of sigma x thickness)).
+# Thin types (fog, mist, cirrus) never hide the whole sky: their cover 1 is their fullest.
+# Placed volumes use IDENTITY (cover = fullness).
+IDENTITY = (0.0, 0.25, 0.5, 0.75, 1.0)
+COVER_TABLE = {
+    "Cumulus": (0.0, 0.346, 0.552, 0.755, 1.0),
+    "Cumulus Congestus": (0.0, 0.357, 0.549, 0.744, 1.0),
+    "Stratocumulus": (0.0, 0.324, 0.558, 0.795, 1.0),
+    "Stratus": (0.0, 0.468, 0.633, 0.783, 1.0),
+    "Altocumulus": (0.0, 0.399, 0.597, 0.79, 1.0),
+    "Altostratus": (0.0, 0.461, 0.617, 0.773, 1.0),
+    "Valley Fog": (0.0, 0.597, 0.83, 1.0, 1.0),
+    "Canopy Mist": (0.0, 0.591, 0.855, 1.0, 1.0),
+    "Cirrus": (0.0, 0.614, 0.834, 0.994, 1.0),
+    "Cirrocumulus": (0.0, 0.475, 0.654, 0.851, 1.0),
+}
+
+
+def cover_table(name):
+    return COVER_TABLE.get(name, IDENTITY)
+
+
+def to_coverage(table, cover):
+    """Kernel coverage for a visible cover (piecewise linear, as the knob expression)."""
+    c = min(max(cover, 0.0), 1.0) * 4.0
+    out = table[0]
+    for i in range(4):
+        out += (table[i + 1] - table[i]) * min(max(c - i, 0.0), 1.0)
+    return out
+
+
+def to_cover(table, coverage):
+    """The visible cover that gives this kernel coverage (the table inverted)."""
+    if coverage <= table[0]:
+        return 0.0
+    for i in range(4):
+        a, b = table[i], table[i + 1]
+        if coverage <= b and b > a:
+            return (i + (coverage - a) / (b - a)) / 4.0
+    return 1.0
+
+
+def preset_cover(name):
+    """The type's preset coverage as visible cover, so the looks don't change."""
+    return round(to_cover(cover_table(name), full(name)["coverage"]), 4)

@@ -249,7 +249,7 @@ def main():
     g["l3_enable"].setValue(False)
     set_type("l1_", "Cumulus")
     set_type("l2_", "Altocumulus")
-    g["l2_coverage"].setValue(0.75)
+    g["l2_cover"].setValue(0.7)
 
     def mean_sun():
         n, tot = 0, 0.0
