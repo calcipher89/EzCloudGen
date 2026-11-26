@@ -128,7 +128,7 @@ def instance(body, name, layers, knobs, x, y, inputs=4):
         # 'coverage' in the setups is the kernel's: the node's knob is the visible cover, through
         # the type's table.
         table = cloud_types.cover_table(tname)
-        vals["cover"] = round(cloud_types.to_cover(table, vals.pop("coverage")), 4)
+        vals["cover"] = round(cloud_types.to_cover(table, vals.pop("coverage")), 6)
         for k, v in vals.items():
             lines.append("%s%s %s" % (p, k, knob_value(k, v)))
         lines.append("%scover_table {%s}" % (p, " ".join("%g" % v for v in table)))

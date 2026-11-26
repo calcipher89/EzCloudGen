@@ -25,7 +25,8 @@ import run_kernel  # noqa: E402
 TAU_VIS = 0.7          # exp(-0.7) ~ 0.5: hides half the sky behind it
 # ... but a thin type (cirrus, mist) never gets there: count what reaches
 # own full column (sigma x thickness): a tenth of it, as visible.
-COVERAGES = [round(0.05 * i, 2) for i in range(21)]
+# Below 0 too: kernel coverage 0 still leaves a few wisps, so visible cover 0 sits a little under it.
+COVERAGES = [round(-0.3 + 0.1 * i, 2) for i in range(14)]
 
 
 def args_for(name):
@@ -59,8 +60,10 @@ def cover(exe, base_args, cov, res, seeds, tv):
 
 
 def main(argv):
-    res = int(argv[argv.index("--res") + 1]) if "--res" in argv else 192
-    seeds = int(argv[argv.index("--seeds") + 1]) if "--seeds" in argv else 3
+    # The texel must be as fine as Nuke's own sun map (1536 over the same tile): at a coarse
+    # footprint the kernel fades the erosion detail out and the clouds come out fuller.
+    res = int(argv[argv.index("--res") + 1]) if "--res" in argv else 1024
+    seeds = int(argv[argv.index("--seeds") + 1]) if "--seeds" in argv else 4
     exe = run_kernel.build()
     tables = {}
     for name in cloud_types.TYPES:
@@ -74,7 +77,12 @@ def main(argv):
         cs = [r[0] for r in rows]
         vs = list(np.maximum.accumulate([r[1] for r in rows]))
         five = []
-        for target in (0.0, 0.25, 0.5, 0.75, 1.0):
+        # Cover 0: the highest coverage that still leaves (almost) nothing.
+        empty = [c for c, v in zip(cs, vs) if v <= 0.005]
+        # ... less a margin: under the visibility threshold a few faint wisps are left, which a
+        # normal view still shows.
+        five.append(round(max(cs[0], (max(empty) if empty else cs[0]) - 0.15), 3))
+        for target in (0.25, 0.5, 0.75, 1.0):
             if target <= vs[0]:
                 five.append(cs[0])
             elif target >= vs[-1]:
@@ -82,8 +90,7 @@ def main(argv):
             else:
                 five.append(round(float(np.interp(target, vs, cs)), 3))
         tables[name] = {"curve": rows, "table": five, "tau_vis": round(tv, 3)}
-        print("%-18s tau %.2f preset %.2f -> cover %.2f | table %s | max cover %.2f" % (
-            name, tv, full["coverage"], cover(exe, base, full["coverage"], res, seeds, tv), five, vs[-1]))
+        print("%-18s tau %.2f | table %s | max cover %.2f" % (name, tv, five, vs[-1]), flush=True)
     with open(os.path.join(HERE, "cover_tables.json"), "w") as f:
         json.dump(tables, f, indent=1)
 

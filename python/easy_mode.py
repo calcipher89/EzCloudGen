@@ -151,8 +151,8 @@ def match_begin(n):
     d["_match_keep"] = keep
     _save(n, d)
     with _Busy():
-        # The draft preset's values set directly: a knobChanged may not run for setValue.
-        n["render_preset"].setValue("draft")
+        # The draft preset's values, at Quarter (the render preset menu then reads 'custom';
+        # match_end puts it back).
         n["quality"].setValue(0.5)
         n["edge_steps"].setValue(2.0)
         n["sampling"].setValue("Low")
