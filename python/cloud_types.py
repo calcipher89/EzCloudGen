@@ -143,3 +143,54 @@ def full(name):
     d = dict(DEFAULTS)
     d.update(TYPES[name])
     return dict((KERNEL[k], v) for k, v in d.items())
+
+
+# Visible cover -> kernel coverage, per deck type: the kernel's coverage at cover 0, .25, .5, .75
+# and 1, measured by reference/calibration/measure_cover.py (the share of the ground, seen
+# straight up, that the layer hides: optical depth over min(0.7, a tenth of sigma x thickness)).
+# Thin types (fog, mist, cirrus) never hide the whole sky: their cover 1 is their fullest. Cover 0
+# sits 0.15 under where the visible cover runs out, so the faint wisps below it go too
+# (Altocumulus and Cirrus lower, checked in Nuke).
+# Placed volumes use IDENTITY (cover = fullness).
+IDENTITY = (0.0, 0.25, 0.5, 0.75, 1.0)
+COVER_TABLE = {
+    "Cumulus": (-0.05, 0.494, 0.648, 0.807, 1.0),
+    "Cumulus Congestus": (-0.15, 0.435, 0.591, 0.747, 1.0),
+    "Stratocumulus": (-0.15, 0.395, 0.555, 0.715, 1.0),
+    "Stratus": (-0.05, 0.481, 0.628, 0.765, 1.0),
+    "Altocumulus": (-0.25, 0.415, 0.584, 0.748, 1.0),
+    "Altostratus": (-0.05, 0.469, 0.618, 0.761, 1.0),
+    "Valley Fog": (0.15, 0.669, 0.833, 0.993, 1.0),
+    "Canopy Mist": (-0.05, 0.615, 0.853, 1.0, 1.0),
+    "Cirrus": (-0.3, 0.616, 0.813, 0.967, 1.0),
+    "Cirrocumulus": (-0.05, 0.478, 0.644, 0.813, 1.0),
+}
+
+
+def cover_table(name):
+    return COVER_TABLE.get(name, IDENTITY)
+
+
+def to_coverage(table, cover):
+    """Kernel coverage for a visible cover (piecewise linear, as the knob expression)."""
+    c = min(max(cover, 0.0), 1.0) * 4.0
+    out = table[0]
+    for i in range(4):
+        out += (table[i + 1] - table[i]) * min(max(c - i, 0.0), 1.0)
+    return out
+
+
+def to_cover(table, coverage):
+    """The visible cover that gives this kernel coverage (the table inverted)."""
+    if coverage <= table[0]:
+        return 0.0
+    for i in range(4):
+        a, b = table[i], table[i + 1]
+        if coverage <= b and b > a:
+            return (i + (coverage - a) / (b - a)) / 4.0
+    return 1.0
+
+
+def preset_cover(name):
+    """The type's preset coverage as visible cover, so the looks don't change."""
+    return round(to_cover(cover_table(name), full(name)["coverage"]), 6)

@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.50.0"
+VERSION = "0.51.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -41,7 +41,10 @@ LAYER_DEFAULTS = [("Cumulus", True), ("Hero Cumulus", False), ("Cirrus", False)]
 MAIN = [
     ("base", "base height", "Height of the cloud base above the ground, in metres.", 0, 12000),
     ("thickness", "thickness", "Depth of the layer, base to top, in metres.", 50, 6000),
-    ("coverage", "coverage", "How much of the sky the layer covers.", 0, 1),
+    ("cover", "cover", "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky "
+                       "covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), "
+                       "so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all "
+                       "of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little.", 0, 1),
     ("scale_km", "size", "Size of the cloud shapes across the ground, in km.", 0.1, 10),
     ("wind_deg", "wind direction", "Direction the shapes stretch and drift along, in degrees "
                                    "(0 = away from the world -Z axis, 90 = +X).", -180, 180),
@@ -464,7 +467,8 @@ SAMPLES_EXPR = ("parent.preview ? 1 : parent.sampling == 4 ? max(1, parent.sampl
 def knob_changed():
     # Plain top-level code: Nuke runs knob scripts with separate locals, which functions and
     # comprehensions can't see.
-    table = dict((name, cloud_types.full(name)) for name in TYPE_NAMES)
+    table = dict((name, dict(cloud_types.full(name), cover=cloud_types.preset_cover(name),
+                             cover_table=list(cloud_types.cover_table(name)))) for name in TYPE_NAMES)
     return ("RENDER_PRESETS = " + repr(RENDER_PRESETS) + "\n"
             "k = nuke.thisKnob()\n"
             "n = nuke.thisNode()\n"
@@ -521,7 +525,7 @@ def knob_changed():
             "    for name in %r:\n"
             "        n[p + name].setVisible(not vol)\n"
             "    for name in %r:\n"
-            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY))
+            "        n[p + name].setVisible(vol)\n" % (table, BOX_INPUT, DECK_ONLY, VOL_ONLY) + EASY_DISPATCH)
 
 
 def place_script(p):
@@ -639,6 +643,48 @@ def add(g, knob, tooltip=None, flags=()):
         knob.setFlag(f)
     g.addKnob(knob)
     return knob
+
+
+# The Easy tab (python/easy_mode.py does the work): (knob, label, min, max, neutral, tooltip).
+EASY = [
+    ("easy_cover", "cover", -1, 1, 0.0, "More or less of the sky covered (adds to the layer's 'cover')."),
+    ("easy_size", "size", 0.25, 4, 1.0, "Bigger or smaller clouds: the shapes, cells and lumps, and a little the billows."),
+    ("easy_softness", "softness", -1, 1, 0.0, "Softer, thinner, more veil-like edges (up) or harder, denser ones (down)."),
+    ("easy_wisps", "wisps", -1, 1, 0.0, "More fine wisps eating into the edges, combed along the wind (up), or fewer."),
+    ("easy_underside", "underside", -1, 1, 0.0, "Darker, deeper undersides and folds (up), or lighter, glowing ones (down)."),
+    ("easy_lit", "lit", -2, 2, 0.0, "Brightness of the sunlit side, in stops (the node's 'sun intensity', every layer)."),
+]
+
+
+def easy_code():
+    """python/easy_mode.py, base64-encoded for the hidden tool_code knob."""
+    import base64
+    with open(os.path.join(ROOT, "python", "easy_mode.py")) as f:
+        return base64.b64encode(f.read().encode()).decode()
+
+
+def add_easy_tab(g):
+    add(g, nuke.Tab_Knob("easy_tab", "Easy"))
+    add(g, nuke.Text_Knob("easy_intro", "", "A few big sliders over one layer's knobs. They start from the layer as it is; "
+                                            "the layer tab shows what they changed. Editing a layer knob by hand starts "
+                                            "them again from there."))
+    add(g, nuke.Enumeration_Knob("easy_layer", "easy layer", ["Layer 1", "Layer 2", "Layer 3"]),
+        "The layer the sliders work on. Each layer keeps its own slider settings.")
+    for name, label, lo, hi, neutral, tip in EASY:
+        k = add(g, nuke.Double_Knob(name, label), tip)
+        k.setRange(lo, hi)
+        k.setValue(neutral)
+    hidden(g, nuke.String_Knob("easy_base", "easy base"))
+    hidden(g, nuke.String_Knob("tool_code", "tool code")).setValue(easy_code())
+
+
+# knobChanged, last: hand the Easy knobs and the layer knobs they write to python/easy_mode.py.
+EASY_DISPATCH = ("if n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n"
+                 "    _kn = k.name()\n"
+                 "    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn[:3] in ('l1_', 'l2_', 'l3_'):\n"
+                 "        _ez = {}\n"
+                 "        exec(__import__('base64').b64decode(n['tool_code'].value()).decode(), _ez)\n"
+                 "        _ez['on_knob'](n, _kn)\n")
 
 
 def hidden(g, knob):
@@ -984,6 +1030,8 @@ def build_knobs(g):
         "thinning cloud instead of a straight wall through a tall deck. 0: the map as painted.").setValue(0.5)
     g["map_softness"].setRange(0, 2)
 
+    add_easy_tab(g)
+
     for i, (tname, on) in enumerate(LAYER_DEFAULTS):
         p = "l%d_" % (i + 1)
         add(g, nuke.Tab_Knob(p + "tab", "Layer %d" % (i + 1)))
@@ -993,10 +1041,15 @@ def build_knobs(g):
                 "Sets this layer's shape knobs to the type's values (they can be tuned after).")
         t.setValue(tname)
         vals = cloud_types.full(tname)
+        vals["cover"] = cloud_types.preset_cover(tname)
         for name, label, tip, lo, hi in MAIN:
             k = add(g, nuke.Double_Knob(p + name, label), tip)
             k.setRange(lo, hi)
             k.setValue(vals[name])
+        # The type's cover table: the kernel's coverage at cover 0, .25, .5, .75 and 1.
+        k = hidden(g, nuke.Array_Knob(p + "cover_table", "cover table", 5))
+        for j, v in enumerate(cloud_types.cover_table(tname)):
+            k.setValue(v, j)
         k = add(g, nuke.Double_Knob(p + "map_amount", "follow map"),
                 "How much this deck follows the coverage map (when 'map' is plugged in).")
         k.setValue(1.0)
@@ -1390,7 +1443,12 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
         vec("offset", ("-%swind_speed * parent.time_s * sin(radians(%swind_deg))" % (p, p),
                        "%swind_speed * parent.time_s * cos(radians(%swind_deg))" % (p, p)))
         for name, _, _, _, _ in MAIN + SHAPE + EROSION + VOLUME:
-            one(name, p + name)
+            if name != "cover":
+                one(name, p + name)
+        # Visible cover through the type's table (piecewise linear, so it animates).
+        tb, c4 = p + "cover_table", "clamp(%scover, 0, 1) * 4" % p
+        one("coverage", "%s.0" % tb + "".join(" + (%s.%d - %s.%d) * clamp(%s - %d, 0, 1)" % (tb, j + 1, tb, j, c4, j)
+                                             for j in range(4)))
         # The preview drops the small lumps: they cost a second lobe lookup at every step.
         one("small_lumps", "parent.preview ? 0 : %ssmall_lumps" % p)
         one("volume", p + "volume")
