@@ -1,7 +1,7 @@
 version 15.1 v3
 Gizmo {
  name EzCloudGen
- knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.220588, 'cover_table': \[-0.05, 0.494, 0.648, 0.807, 1.0]\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.24359, 'cover_table': \[-0.15, 0.435, 0.591, 0.747, 1.0]\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.664062, 'cover_table': \[-0.15, 0.395, 0.555, 0.715, 1.0]\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.968085, 'cover_table': \[-0.05, 0.481, 0.628, 0.765, 1.0]\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.554878, 'cover_table': \[-0.15, 0.415, 0.584, 0.748, 1.0]\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 1.0, 'cover_table': \[-0.05, 0.469, 0.618, 0.761, 1.0]\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.419207, 'cover_table': \[0.15, 0.669, 0.833, 0.993, 1.0]\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.381303, 'cover_table': \[-0.05, 0.615, 0.853, 1.0, 1.0]\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.212141, 'cover_table': \[-0.15, 0.616, 0.813, 0.967, 1.0]\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.358434, 'cover_table': \[-0.05, 0.478, 0.644, 0.813, 1.0]\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.55, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows', 'cover': 0.43, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.45, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.52, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.38, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\nif n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n    _kn = k.name()\n    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn\[:3] in ('l1_', 'l2_', 'l3_'):\n        _ez = \{\}\n        exec(__import__('base64').b64decode(n\['tool_code'].value()).decode(), _ez)\n        _ez\['on_knob'](n, _kn)\n"
+ knobChanged "RENDER_PRESETS = \{'draft': \{'resolution': 'Half', 'quality': 0.5, 'edge_steps': 2.0, 'sampling': 'Low'\}, 'shot': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'Medium'\}, 'hero': \{'resolution': 'Full', 'quality': 1.0, 'edge_steps': 3.0, 'sampling': 'High'\}\}\nk = nuke.thisKnob()\nn = nuke.thisNode()\nlayers = \[]\nif k.name() in ('l1_type', 'l2_type', 'l3_type'):\n    p = k.name()\[:3]\n    t = \{'Cumulus': \{'base': 1400, 'thickness': 1300, 'coverage': 0.43, 'scale_km': 1.6, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.6, 'bottom_round': 0.1, 'top_round': 0.25, 'detail_size': 180, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.25, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 4.5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.08, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.6, 'lump_size': 520, 'small_lumps': 0.3, 'skirt': 0.6, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.220588, 'cover_table': \[-0.05, 0.494, 0.648, 0.807, 1.0]\}, 'Cumulus Congestus': \{'base': 1400, 'thickness': 4200, 'coverage': 0.42, 'scale_km': 2.2, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 1.4, 'bottom_round': 0.1, 'top_round': 0.12, 'detail_size': 420, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.55, 'lump_size': 1400, 'small_lumps': 0.55, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.24359, 'cover_table': \[-0.15, 0.435, 0.591, 0.747, 1.0]\}, 'Stratocumulus': \{'base': 1300, 'thickness': 600, 'coverage': 0.66, 'scale_km': 1.1, 'stretch': 1.4, 'wind_deg': 20, 'edge': 0.16, 'taper': 0.35, 'bottom_round': 0.15, 'top_round': 0.35, 'detail_size': 120, 'erosion': 0.45, 'sigma': 0.035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.8, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.7, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.664062, 'cover_table': \[-0.15, 0.395, 0.555, 0.715, 1.0]\}, 'Stratus': \{'base': 500, 'thickness': 450, 'coverage': 0.97, 'scale_km': 4.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.35, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.25, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.5, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.3, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.968085, 'cover_table': \[-0.05, 0.481, 0.628, 0.765, 1.0]\}, 'Altocumulus': \{'base': 4200, 'thickness': 350, 'coverage': 0.62, 'scale_km': 2.5, 'stretch': 2.0, 'wind_deg': 20, 'edge': 0.14, 'taper': 0.3, 'bottom_round': 0.25, 'top_round': 0.35, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.03, 'cells': 0.85, 'cell_km': 0.35, 'warp': 1.6, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.9, 'streaks': 0.0, 'vary': 0.25, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.554878, 'cover_table': \[-0.25, 0.415, 0.584, 0.748, 1.0]\}, 'Altostratus': \{'base': 3000, 'thickness': 1500, 'coverage': 1.0, 'scale_km': 6.0, 'stretch': 1.5, 'wind_deg': 20, 'edge': 0.4, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.3, 'detail_size': 300, 'erosion': 0.2, 'sigma': 0.006, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.3, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 1.0, 'cover_table': \[-0.05, 0.469, 0.618, 0.761, 1.0]\}, 'Valley Fog': \{'base': 100, 'thickness': 420, 'coverage': 0.78, 'scale_km': 1.2, 'stretch': 2.2, 'wind_deg': 20, 'edge': 0.6, 'taper': 0.0, 'bottom_round': 0.15, 'top_round': 0.6, 'detail_size': 50, 'erosion': 0.45, 'sigma': 0.0035, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.3, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.35, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 30, 'wisp_amount': 1.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.6, 'swirl_size': 250, 'turbulence': 0.8, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.419207, 'cover_table': \[0.15, 0.669, 0.833, 0.993, 1.0]\}, 'Canopy Mist': \{'base': 20, 'thickness': 90, 'coverage': 0.74, 'scale_km': 0.15, 'stretch': 2.5, 'wind_deg': 20, 'edge': 0.5, 'taper': 0.0, 'bottom_round': 0.3, 'top_round': 0.6, 'detail_size': 25, 'erosion': 0.4, 'sigma': 0.011, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.0, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 0.1, 'streaks': 0.0, 'vary': 0.2, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 15, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 80, 'turbulence': 0.6, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.381303, 'cover_table': \[-0.05, 0.615, 0.853, 1.0, 1.0]\}, 'Cirrus': \{'base': 9000, 'thickness': 500, 'coverage': 0.5, 'scale_km': 5.0, 'stretch': 7.0, 'wind_deg': 35, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.4, 'detail_size': 150, 'erosion': 0.6, 'sigma': 0.0012, 'cells': 0.0, 'cell_km': 0.5, 'warp': 2.5, 'forward': 0.85, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.0, 'streaks': 1.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'classic', 'cover': 0.218341, 'cover_table': \[-0.3, 0.616, 0.813, 0.967, 1.0]\}, 'Cirrocumulus': \{'base': 7500, 'thickness': 250, 'coverage': 0.55, 'scale_km': 3.0, 'stretch': 2.5, 'wind_deg': -30, 'edge': 0.15, 'taper': 0.0, 'bottom_round': 0.35, 'top_round': 0.35, 'detail_size': 40, 'erosion': 0.45, 'sigma': 0.008, 'cells': 1.0, 'cell_km': 0.22, 'warp': 2.0, 'forward': 0.85, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.7, 'streaks': 0.0, 'vary': 0.0, 'volume': 0, 'vol_shape': 1, 'vol_size': (3000, 1800, 3000), 'lumps': 0.0, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 10, 'wisp_size': 60, 'wisp_amount': 0.0, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.358434, 'cover_table': \[-0.05, 0.478, 0.644, 0.813, 1.0]\}, 'Hero Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (5000, 2600, 4000), 'lumps': 0.8, 'lump_size': 900, 'small_lumps': 0.35, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 20, 'grain_amount': 0.04, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Towering Cumulus': \{'base': 1500, 'thickness': 1000, 'coverage': 0.55, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.06, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 220, 'erosion': 0.45, 'sigma': 0.08, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 4, 'vol_size': (10000, 7500, 8000), 'lumps': 0.85, 'lump_size': 1300, 'small_lumps': 0.5, 'skirt': 0.0, 'place_km': 12, 'wisp_size': 80, 'wisp_amount': 0.08, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.55, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Shelf Cloud': \{'base': 1500, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 200, 'erosion': 0.45, 'sigma': 0.06, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.6, 'shadow_depth': 0.4, 'octaves': 4, 'billow': 0.8, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 5, 'vol_size': (9000, 2600, 6000), 'lumps': 0.5, 'lump_size': 700, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 9, 'wisp_size': 150, 'wisp_amount': 0.35, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Storm Anvil': \{'base': 1200, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.05, 'taper': 0.0, 'bottom_round': 0.02, 'top_round': 0.3, 'detail_size': 450, 'erosion': 0.4, 'sigma': 0.07, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 0.35, 'shadow_depth': 0.7, 'octaves': 4, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 2, 'vol_size': (15000, 11000, 15000), 'lumps': 0.6, 'lump_size': 1500, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 40, 'wisp_size': 200, 'wisp_amount': 0.25, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.3, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Fog Bank': \{'base': 0, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.3, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 120, 'erosion': 0.3, 'sigma': 0.01, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 1.2, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (8000, 600, 8000), 'lumps': 0.6, 'lump_size': 600, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 6, 'wisp_size': 40, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.4, 'swirl_size': 200, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Ground Fog': \{'base': 0, 'thickness': 1000, 'coverage': 0.43, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.4, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.35, 'sigma': 0.02, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.75, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.2, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 3, 'vol_size': (3000, 400, 3000), 'lumps': 1.3, 'lump_size': 550, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 90, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.7, 'fade_bottom': 0.2, 'fade_left': 0.25, 'fade_right': 0.25, 'fade_front': 0.3, 'fade_back': 0.2, 'detail_model': 'soft billows', 'cover': 0.43, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Wispy Fog': \{'base': 50, 'thickness': 1000, 'coverage': 0.45, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 1.0, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 50, 'erosion': 0.4, 'sigma': 0.015, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 0.9, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 2.5, 'billow': 0.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1500, 300, 1200), 'lumps': 1.0, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 1.5, 'wisp_size': 20, 'wisp_amount': 0.8, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.45, 'swirl_size': 90, 'turbulence': 0.5, 'crumble': 0.9, 'crumble_size': 40, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.4, 'fade_bottom': 0.3, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.45, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Torn Low Cloud': \{'base': 200, 'thickness': 1000, 'coverage': 0.52, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.25, 'taper': 0.0, 'bottom_round': 0.2, 'top_round': 0.3, 'detail_size': 70, 'erosion': 0.5, 'sigma': 0.04, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.7, 'ambient': 0.85, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 0.6, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (1200, 500, 900), 'lumps': 1.1, 'lump_size': 250, 'small_lumps': 0.0, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 25, 'wisp_amount': 0.7, 'grain_size': 8, 'grain_amount': 0.3, 'swirl': 0.5, 'swirl_size': 150, 'turbulence': 0.5, 'crumble': 1.0, 'crumble_size': 70, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.25, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.52, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Puff': \{'base': 800, 'thickness': 1000, 'coverage': 0.5, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.08, 'taper': 0.0, 'bottom_round': 0.08, 'top_round': 0.3, 'detail_size': 60, 'erosion': 0.5, 'sigma': 0.05, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.5, 'forward': 0.8, 'ambient': 1.0, 'sky_occlusion': 1.0, 'shadow_depth': 0.0, 'octaves': 3, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 0, 'vol_size': (600, 450, 600), 'lumps': 0.4, 'lump_size': 150, 'small_lumps': 0.3, 'skirt': 0.0, 'place_km': 2, 'wisp_size': 20, 'wisp_amount': 0.4, 'grain_size': 6, 'grain_amount': 0.3, 'swirl': 0.0, 'swirl_size': 400, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.0, 'fade_left': 0.0, 'fade_right': 0.0, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.5, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}, 'Soft Cumulus': \{'base': 1400, 'thickness': 1000, 'coverage': 0.38, 'scale_km': 2.0, 'stretch': 1.0, 'wind_deg': 20, 'edge': 0.09, 'taper': 0.0, 'bottom_round': 0.04, 'top_round': 0.3, 'detail_size': 160, 'erosion': 0.45, 'sigma': 0.09, 'cells': 0.0, 'cell_km': 0.5, 'warp': 1.2, 'forward': 0.8, 'ambient': 1.4, 'sky_occlusion': 0.4, 'shadow_depth': 0.0, 'octaves': 5, 'billow': 1.0, 'streaks': 0.0, 'vary': 0.0, 'volume': 1, 'vol_shape': 1, 'vol_size': (6400, 3100, 5200), 'lumps': 1.0, 'lump_size': 900, 'small_lumps': 0.2, 'skirt': 1.0, 'place_km': 12, 'wisp_size': 300, 'wisp_amount': 0.6, 'grain_size': 15, 'grain_amount': 0.0, 'swirl': 0.18, 'swirl_size': 500, 'turbulence': 0.0, 'crumble': 0.0, 'crumble_size': 120, 'shear': 0.0, 'wisp_stretch': 1.0, 'shape_3d': 0.0, 'fade_top': 0.0, 'fade_bottom': 0.18, 'fade_left': 0.12, 'fade_right': 0.12, 'fade_front': 0.0, 'fade_back': 0.0, 'detail_model': 'soft billows', 'cover': 0.38, 'cover_table': \[0.0, 0.25, 0.5, 0.75, 1.0]\}\}\n    box = n.input(4 + int(p\[1]))\n    box = box if box is not None and box.knob('scaling') else None\n    for key, v in t\[k.value()].items():\n        if key == 'vol_size' and box is not None:\n            # A box plugged in: size the box instead.\n            s = n\['scene_scale'].value() or 1.0\n            box\['uniform_scale'].setValue(1)\n            box\['scaling'].setValue(\[v\[0] / s, v\[1] / s, v\[2] / s])\n        elif n.knob(p + key) is not None:\n            n\[p + key].setValue(list(v) if isinstance(v, tuple) else v)\n    # A PyScript button can't be executed from inside knobChanged ('already executing'), so\n    # its code runs here. Every volume type re-places (base and distance come with the type),\n    # unless the position is animated or linked.\n    if n\[p + 'volume'].value() > 0.5 and (box is not None or not n\[p + 'vol_position'].isAnimated()):\n        exec(n\[p + 'place'].value(), \{'nuke': nuke\})\n    layers = \[p]\nelif k.name() == 'depth_channel':\n    # The knob gives short names; a Copy reads 'depth' as cutout.depth, not depth.Z.\n    c = \{'depth': 'depth.Z'\}.get(k.value(), k.value())\n    n.node('DepthEnsure')\['channels'].setValue(c)\n    n.node('DepthSource')\['from0'].setValue(c)\nelif k.name() == 'render_preset' and k.value() != 'custom':\n    for key, v in RENDER_PRESETS\[k.value()].items():\n        n\[key].setValue(v)\nelif k.name() in ('resolution', 'quality', 'edge_steps', 'sampling'):\n    pr = n\['render_preset'].value()\n    if pr != 'custom' and n\[k.name()].value() != RENDER_PRESETS\[pr]\[k.name()]:\n        n\['render_preset'].setValue('custom')\nif k.name() in ('sampling', 'showPanel'):\n    n\['samples'].setEnabled(n\['sampling'].value() == 'Manual')\nif k.name() in ('debug', 'showPanel'):\n    n\['print_debug'].setVisible(bool(n\['debug'].value()))\n    n\['position_pass'].setVisible(bool(n\['debug'].value()))\n# The ramp graphs' range isn't saved with the script: fit it to the values when the panel\n# opens or a ramp changes.\nif k.name() in ('showPanel', 'l1_depth_ramp', 'l2_depth_ramp', 'l3_depth_ramp'):\n    for i in (1, 2, 3):\n        kr = n.node('L%d_DepthRamp' % i)\n        if kr is not None:\n            top = max(kr\['range'].value(3) * 1.25, 1000.0)\n            if k.name() == 'showPanel' or not (0.5 * kr\['range'].max() < top <= kr\['range'].max()):\n                kr\['range'].setRange(0, top)\nif k.name() == 'showPanel':\n    layers = \['l1_', 'l2_', 'l3_']\nfor p in layers:\n    vol = n\[p + 'volume'].value() > 0.5\n    for name in \['thickness', 'scale_km', 'stretch', 'shape_3d', 'taper', 'top_round', 'cells', 'cell_km', 'warp', 'streaks', 'vary', 'map_amount', 'map_channel', 'map_use', 'sil_distance', 'sil_depth', 'depth_ramp_on', 'depth_ramp_shadows', 'depth_ramp_falloff', 'depth_ramp']:\n        n\[p + name].setVisible(not vol)\n    for name in \['vol_divider', 'vol_shape', 'vol_position', 'vol_rotate', 'vol_size', 'place', 'place_km', 'make_box', 'release_box', 'fade_top', 'fade_bottom', 'fade_left', 'fade_right', 'fade_front', 'fade_back']:\n        n\[p + name].setVisible(vol)\nif n.knob('tool_code') is not None and not getattr(nuke, '_ezcloudgen_busy', False):\n    _kn = k.name()\n    if _kn.startswith('easy_') or _kn == 'sun_intensity' or _kn\[:3] in ('l1_', 'l2_', 'l3_'):\n        _ez = \{\}\n        exec(__import__('base64').b64decode(n\['tool_code'].value()).decode(), _ez)\n        _ez\['on_knob'](n, _kn)\n"
  tile_color 0x8fb3d9ff
  label "\[expr \{\[value preview] ? \"PREVIEW\" : \"\"\}]"
  selected true
@@ -684,13 +684,13 @@ Gizmo {
  addUserKnob {7 l3_thickness l thickness t "Depth of the layer, base to top, in metres." R 50 6000}
  l3_thickness 500
  addUserKnob {7 l3_cover l cover t "How much of the sky the layer hides, seen straight up: 0.3 is three tenths of the sky covered. Calibrated per cloud type (the type's table turns it into the kernel's coverage), so 0.5 looks half covered whatever the type. Thin types (fog, mist, cirrus) never hide all of it: their 1 is their fullest. Tuning edge, erosion or wisps moves it a little."}
- l3_cover 0.212141
+ l3_cover 0.218341
  addUserKnob {7 l3_scale_km l size t "Size of the cloud shapes across the ground, in km." R 0.1 10}
  l3_scale_km 5
  addUserKnob {7 l3_wind_deg l "wind direction" t "Direction the shapes stretch and drift along, in degrees (0 = away from the world -Z axis, 90 = +X)." R -180 180}
  l3_wind_deg 35
  addUserKnob {78 l3_cover_table l "cover table" +INVISIBLE n 5}
- l3_cover_table {-0.15 0.616 0.813 0.967 1}
+ l3_cover_table {-0.3 0.616 0.813 0.967 1}
  addUserKnob {7 l3_map_amount l "follow map" t "How much this deck follows the coverage map (when 'map' is plugged in)."}
  l3_map_amount 1
  addUserKnob {4 l3_map_channel l "map channel" t "Which channel of the map this deck reads: paint each deck in its own channel to place them separately." -STARTLINE M {luminance red green blue alpha}}
@@ -1076,7 +1076,7 @@ Gizmo {
   name bg
   xpos 180
  }
-set N5e02c000 [stack 0]
+set N99ecc000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -1104,14 +1104,14 @@ set N5e02c000 [stack 0]
   xpos 0
   ypos 180
  }
-set N5e047000 [stack 0]
+set N99ee7000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $N5e047000
+push $N99ee7000
  Merge2 {
   inputs 2
   operation plus
@@ -1128,7 +1128,7 @@ push $N5e047000
   xpos 0
   ypos 360
  }
-set N5e047c00 [stack 0]
+set N99ee7c00 [stack 0]
  Dot {
   name LayoutDot14
   xpos 86
@@ -1139,32 +1139,32 @@ set N5e047c00 [stack 0]
   xpos 86
   ypos 963
  }
-set N210d4c00 [stack 0]
+set Ndcad4c00 [stack 0]
  Dot {
   name LayoutDot21
   xpos 86
   ypos 1491
  }
-set N210ee400 [stack 0]
+set Ndcaee400 [stack 0]
  Dot {
   name LayoutDot22
   xpos 394
   ypos 1491
  }
-set N210ee800 [stack 0]
-push $N5e047000
+set Ndcaee800 [stack 0]
+push $N99ee7000
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set N21053400 [stack 0]
+set Ndca53400 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set N21053800 [stack 0]
+set Ndca53800 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -1187,29 +1187,29 @@ set N21053800 [stack 0]
   xpos 626
   ypos 567
  }
-set N211d4800 [stack 0]
+set Ndcb54800 [stack 0]
  Dot {
   name LayoutDot58
   xpos 626
   ypos 1113
  }
-set N211d5800 [stack 0]
+set Ndcb55800 [stack 0]
  Dot {
   name LayoutDot59
   xpos 610
   ypos 1113
  }
-set N211d5c00 [stack 0]
+set Ndcb55c00 [stack 0]
  Dot {
   name LayoutDot60
   xpos 430
   ypos 1113
  }
-set N211f0000 [stack 0]
-push $N211f0000
-push $N211f0000
-push $N211f0000
-push $N5e02c000
+set Ndcb70000 [stack 0]
+push $Ndcb70000
+push $Ndcb70000
+push $Ndcb70000
+push $N99ecc000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -1226,7 +1226,7 @@ push $N5e02c000
   xpos 290
   ypos 243
  }
-push $N21053400
+push $Ndca53400
  Copy {
   inputs 2
   from0 depth.Z
@@ -1254,7 +1254,7 @@ push $N21053400
   xpos 470
   ypos 1053
  }
-set N211ba400 [stack 0]
+set Ndcb3a400 [stack 0]
  Dot {
   name LayoutDot47
   xpos 376
@@ -1288,26 +1288,26 @@ set N211ba400 [stack 0]
   xpos 446
   ypos 537
  }
-set N21186400 [stack 0]
+set Ndcb06400 [stack 0]
  Dot {
   name LayoutDot33
   xpos 446
   ypos 1023
  }
-set N21187400 [stack 0]
+set Ndcb07400 [stack 0]
  Dot {
   name LayoutDot34
   xpos 412
   ypos 1023
  }
-set N21187800 [stack 0]
-push $N210d4c00
+set Ndcb07800 [stack 0]
+push $Ndcad4c00
  Dot {
   name LayoutDot16
   xpos 394
   ypos 963
  }
-set N210d5000 [stack 0]
+set Ndcad5000 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1536,13 +1536,13 @@ set N210d5000 [stack 0]
   xpos 446
   ypos 2139
  }
-set N21271000 [stack 0]
+set Ndcbf1000 [stack 0]
  Dot {
   name LayoutDot106
   xpos 446
   ypos 2835
  }
-set N21271800 [stack 0]
+set Ndcbf1800 [stack 0]
  Dot {
   name LayoutDot109
   xpos 446
@@ -1553,113 +1553,113 @@ set N21271800 [stack 0]
   xpos 772
   ypos 3753
  }
-push $N210ee800
+push $Ndcaee800
  Dot {
   name LayoutDot23
   xpos 574
   ypos 1491
  }
-set N210eec00 [stack 0]
+set Ndcaeec00 [stack 0]
  Dot {
   name LayoutDot24
   xpos 754
   ypos 1491
  }
-set N210ef000 [stack 0]
+set Ndcaef000 [stack 0]
  Dot {
   name LayoutDot25
   xpos 934
   ypos 1491
  }
-set N210ef400 [stack 0]
+set Ndcaef400 [stack 0]
  Dot {
   name LayoutDot26
   xpos 1114
   ypos 1491
  }
-push $N211d5800
+push $Ndcb55800
  Dot {
   name LayoutDot61
   xpos 970
   ypos 1113
  }
-set N211f0400 [stack 0]
+set Ndcb70400 [stack 0]
  Dot {
   name LayoutDot62
   xpos 1150
   ypos 1113
  }
-set N211f0800 [stack 0]
-push $N211f0800
-push $N211f0800
-push $N211f0800
-push $N211ba400
+set Ndcb70800 [stack 0]
+push $Ndcb70800
+push $Ndcb70800
+push $Ndcb70800
+push $Ndcb3a400
  Dot {
   name LayoutDot46
   xpos 556
   ypos 1053
  }
-set N211ba800 [stack 0]
+set Ndcb3a800 [stack 0]
  Dot {
   name LayoutDot48
   xpos 790
   ypos 1053
  }
-set N211bb000 [stack 0]
+set Ndcb3b000 [stack 0]
  Dot {
   name LayoutDot49
   xpos 916
   ypos 1053
  }
-set N211bb400 [stack 0]
+set Ndcb3b400 [stack 0]
  Dot {
   name LayoutDot50
   xpos 1096
   ypos 1053
  }
-push $N21187400
+push $Ndcb07400
  Dot {
   name LayoutDot35
   xpos 592
   ypos 1023
  }
-set N21187c00 [stack 0]
+set Ndcb07c00 [stack 0]
  Dot {
   name LayoutDot37
   xpos 736
   ypos 1023
  }
-set N211a2400 [stack 0]
+set Ndcb22400 [stack 0]
  Dot {
   name LayoutDot38
   xpos 952
   ypos 1023
  }
-set N211a2800 [stack 0]
+set Ndcb22800 [stack 0]
  Dot {
   name LayoutDot39
   xpos 1132
   ypos 1023
  }
-push $N210d5000
+push $Ndcad5000
  Dot {
   name LayoutDot17
   xpos 574
   ypos 963
  }
-set N210d5400 [stack 0]
+set Ndcad5400 [stack 0]
  Dot {
   name LayoutDot18
   xpos 754
   ypos 963
  }
-set N210d5800 [stack 0]
+set Ndcad5800 [stack 0]
  Dot {
   name LayoutDot19
   xpos 934
   ypos 963
  }
-set N210d5c00 [stack 0]
+set Ndcad5c00 [stack 0]
  Dot {
   name LayoutDot20
   xpos 1114
@@ -1911,14 +1911,14 @@ set N210d5c00 [stack 0]
   xpos 470
   ypos 3459
  }
-push $N210ef400
-push $N211f0400
-push $N211f0400
-push $N211f0400
-push $N211f0400
-push $N211bb400
-push $N211a2800
-push $N210d5c00
+push $Ndcaef400
+push $Ndcb70400
+push $Ndcb70400
+push $Ndcb70400
+push $Ndcb70400
+push $Ndcb3b400
+push $Ndcb22800
+push $Ndcad5c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2165,24 +2165,24 @@ push $N210d5c00
   xpos 314
   ypos 3399
  }
-push $N211d4800
+push $Ndcb54800
  Dot {
   name LayoutDot55
   xpos 592
   ypos 567
  }
-set N211d4c00 [stack 0]
-push $N211d4c00
-push $N211d4c00
-push $N211d4c00
-push $N211d4c00
-push $N21186400
+set Ndcb54c00 [stack 0]
+push $Ndcb54c00
+push $Ndcb54c00
+push $Ndcb54c00
+push $Ndcb54c00
+push $Ndcb06400
  Dot {
   name LayoutDot31
   xpos 574
   ypos 537
  }
-push $N211d4c00
+push $Ndcb54c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2380,13 +2380,13 @@ push $N211d4c00
   xpos 650
   ypos 1143
  }
-set N21223800 [stack 0]
+set Ndcba3800 [stack 0]
  Dot {
   name LayoutDot85
   xpos 650
   ypos 1287
  }
-set N2123c400 [stack 0]
+set Ndcbbc400 [stack 0]
  Dot {
   name LayoutDot86
   xpos 650
@@ -2402,25 +2402,25 @@ set N2123c400 [stack 0]
   xpos 626
   ypos 2271
  }
-push $N211d4c00
+push $Ndcb54c00
  Dot {
   name LayoutDot56
   xpos 412
   ypos 567
  }
-set N211d5000 [stack 0]
-push $N211d5000
-push $N211d5000
-push $N211d5000
-push $N211d5000
-push $N21186400
+set Ndcb55000 [stack 0]
+push $Ndcb55000
+push $Ndcb55000
+push $Ndcb55000
+push $Ndcb55000
+push $Ndcb06400
  Dot {
   name LayoutDot30
   xpos 394
   ypos 537
  }
-set N21186800 [stack 0]
-push $N211d5000
+set Ndcb06800 [stack 0]
+push $Ndcb55000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2618,13 +2618,13 @@ push $N211d5000
   xpos 494
   ypos 1083
  }
-set N21209400 [stack 0]
+set Ndcb89400 [stack 0]
  Dot {
   name LayoutDot76
   xpos 494
   ypos 1192
  }
-set N21222000 [stack 0]
+set Ndcba2000 [stack 0]
  Dot {
   name LayoutDot79
   xpos 494
@@ -2635,24 +2635,24 @@ set N21222000 [stack 0]
   xpos 592
   ypos 2109
  }
-push $N211d5000
+push $Ndcb55000
  Dot {
   name LayoutDot57
   xpos 232
   ypos 567
  }
-set N211d5400 [stack 0]
-push $N211d5400
-push $N211d5400
-push $N211d5400
-push $N211d5400
-push $N21186800
+set Ndcb55400 [stack 0]
+push $Ndcb55400
+push $Ndcb55400
+push $Ndcb55400
+push $Ndcb55400
+push $Ndcb06800
  Dot {
   name LayoutDot32
   xpos 214
   ypos 537
  }
-push $N211d5400
+push $Ndcb55400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2850,13 +2850,13 @@ push $N211d5400
   xpos 290
   ypos 993
  }
-set N211f1000 [stack 0]
+set Ndcb71000 [stack 0]
  Dot {
   name LayoutDot67
   xpos 290
   ypos 1206
  }
-set N211f1c00 [stack 0]
+set Ndcb71c00 [stack 0]
  Dot {
   name LayoutDot70
   xpos 290
@@ -2927,7 +2927,7 @@ set N211f1c00 [stack 0]
   xpos 338
   ypos 3279
  }
-push $N21271800
+push $Ndcbf1800
  Dot {
   name LayoutDot107
   xpos 266
@@ -2938,33 +2938,33 @@ push $N21271800
   xpos 266
   ypos 3219
  }
-push $N210ee400
+push $Ndcaee400
  Dot {
   name LayoutDot27
   xpos 86
   ypos 1674
  }
-push $N211f1000
+push $Ndcb71000
  Dot {
   name LayoutDot65
   xpos 214
   ypos 993
  }
-set N211f1400 [stack 0]
-push $N21223800
+set Ndcb71400 [stack 0]
+push $Ndcba3800
  Dot {
   name LayoutDot84
   xpos 250
   ypos 1143
  }
-push $N21209400
+push $Ndcb89400
  Dot {
   name LayoutDot75
   xpos 196
   ypos 1083
  }
-push $N211f1400
-push $N21053800
+push $Ndcb71400
+push $Ndca53800
  Dot {
   name LayoutDot3
   xpos 754
@@ -2997,14 +2997,14 @@ push $N21053800
   xpos 178
   ypos 1173
  }
-set N2123dc00 [stack 0]
-push $N21187800
+set Ndcbbdc00 [stack 0]
+push $Ndcb07800
  Dot {
   name LayoutDot36
   xpos 232
   ypos 1023
  }
-push $N2123dc00
+push $Ndcbbdc00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3191,14 +3191,14 @@ push $N2123dc00
   ypos 1224
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set N3607c000 [stack 0]
+set Nef77c000 [stack 0]
  Dot {
   name LayoutDot159
   xpos 46
   ypos 1227
  }
-push $N2123c400
-push $N21222000
+push $Ndcbbc400
+push $Ndcba2000
  Dot {
   name LayoutDot77
   xpos 134
@@ -3209,7 +3209,7 @@ push $N21222000
   xpos 134
   ypos 1287
  }
-push $N211f1c00
+push $Ndcb71c00
  Dot {
   name LayoutDot68
   xpos 110
@@ -3220,7 +3220,7 @@ push $N211f1c00
   xpos 110
   ypos 1275
  }
-push $N211ba400
+push $Ndcb3a400
  Dot {
   name LayoutDot51
   xpos 470
@@ -3231,7 +3231,7 @@ push $N211ba400
   xpos 124
   ypos 1252
  }
-push $N21187400
+push $Ndcb07400
  Dot {
   name LayoutDot40
   xpos 446
@@ -3242,7 +3242,7 @@ push $N21187400
   xpos 124
   ypos 1266
  }
-push $N5e047c00
+push $N99ee7c00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3445,7 +3445,7 @@ push $N5e047c00
   xpos 0
   ypos 1752
  }
-set N20e98000 [stack 0]
+set Ndc898000 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -3462,40 +3462,40 @@ set N20e98000 [stack 0]
   xpos 180
   ypos 1812
  }
-set N20e99400 [stack 0]
+set Ndc899400 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 1815
  }
-push $N210ef000
-push $N3607c000
+push $Ndcaef000
+push $Nef77c000
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1275
  }
-push $N21223800
+push $Ndcba3800
  Dot {
   name LayoutDot83
   xpos 808
   ypos 1143
  }
-push $N21209400
+push $Ndcb89400
  Dot {
   name LayoutDot74
   xpos 718
   ypos 1083
  }
-push $N211f1000
+push $Ndcb71000
  Dot {
   name LayoutDot66
   xpos 772
   ypos 993
  }
-push $N211bb000
-push $N211a2400
-push $N210d5800
+push $Ndcb3b000
+push $Ndcb22400
+push $Ndcad5800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3733,15 +3733,15 @@ push $N210d5800
   xpos 806
   ypos 2865
  }
-set N3909e800 [stack 0]
+set Ndcc3e800 [stack 0]
  Dot {
   name LayoutDot127
   xpos 412
   ypos 2865
  }
-set N3909ec00 [stack 0]
-push $N20e99400
-push $N20e98000
+set Ndcc3ec00 [stack 0]
+push $Ndc899400
+push $Ndc898000
  Merge2 {
   inputs 2
   operation multiply
@@ -3751,7 +3751,7 @@ push $N20e98000
   ypos 1872
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N20e99800 [stack 0]
+set Ndc899800 [stack 0]
  Dot {
   name LayoutDot92
   xpos 86
@@ -3762,19 +3762,19 @@ set N20e99800 [stack 0]
   xpos 86
   ypos 2457
  }
-set N21254400 [stack 0]
+set Ndcbd4400 [stack 0]
  Dot {
   name LayoutDot95
   xpos 86
   ypos 2775
  }
-set N21254c00 [stack 0]
+set Ndcbd4c00 [stack 0]
  Dot {
   name LayoutDot96
   xpos 214
   ypos 2775
  }
-set N21255000 [stack 0]
+set Ndcbd5000 [stack 0]
  Dot {
   name LayoutDot97
   xpos 394
@@ -3793,7 +3793,7 @@ set N21255000 [stack 0]
   xpos 394
   ypos 3159
  }
-push $N3909ec00
+push $Ndcc3ec00
  Dot {
   name LayoutDot128
   xpos 290
@@ -3804,15 +3804,15 @@ push $N3909ec00
   xpos 290
   ypos 3099
  }
-push $N21255000
-push $N210eec00
-push $N211d5c00
-push $N211d5c00
-push $N211d5c00
-push $N211d5c00
-push $N211ba800
-push $N21187c00
-push $N210d5400
+push $Ndcbd5000
+push $Ndcaeec00
+push $Ndcb55c00
+push $Ndcb55c00
+push $Ndcb55c00
+push $Ndcb55c00
+push $Ndcb3a800
+push $Ndcb07c00
+push $Ndcad5400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -4042,19 +4042,19 @@ push $N210d5400
   xpos 674
   ypos 2958
  }
-set N39082800 [stack 0]
+set Ndcc22800 [stack 0]
  Dot {
   name LayoutDot119
   xpos 110
   ypos 2958
  }
-push $N21254400
+push $Ndcbd4400
  Dot {
   name LayoutDot94
   xpos 214
   ypos 2457
  }
-push $N21271000
+push $Ndcbf1000
  Dot {
   name LayoutDot105
   xpos 214
@@ -4070,7 +4070,7 @@ push $N21271000
   xpos 180
   ypos 2220
  }
-push $N5e02c000
+push $N99ecc000
  Dot {
   name LayoutDot11
   xpos 266
@@ -4116,7 +4116,7 @@ push $N5e02c000
   xpos 180
   ypos 2538
  }
-push $N20e99800
+push $Ndc899800
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -4133,7 +4133,7 @@ push $N20e99800
   xpos 0
   ypos 2976
  }
-set N20f22400 [stack 0]
+set Ndc922400 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -4202,7 +4202,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3276
   disable {{!parent.sun_map_out}}
  }
-push $N20f22400
+push $Ndc922400
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -4211,7 +4211,7 @@ push $N20f22400
   xpos 0
   ypos 3336
  }
-set N5e056800 [stack 0]
+set N99ef6800 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -4232,7 +4232,7 @@ set N5e056800 [stack 0]
   xpos 180
   ypos 3456
  }
-push $N5e056800
+push $N99ef6800
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -4241,7 +4241,7 @@ push $N5e056800
   xpos 0
   ypos 3516
  }
-set N5e056d00 [stack 0]
+set N99ef6d00 [stack 0]
  Dot {
   name LayoutDot153
   xpos 110
@@ -4257,19 +4257,19 @@ set N5e056d00 [stack 0]
   xpos 232
   ypos 3723
  }
-set N390edc00 [stack 0]
+set Ndcc8dc00 [stack 0]
  Dot {
   name LayoutDot156
   xpos 394
   ypos 3723
  }
-set N39102000 [stack 0]
+set Ndcca2000 [stack 0]
  Dot {
   name LayoutDot157
   xpos 574
   ypos 3723
  }
-set N39102400 [stack 0]
+set Ndcca2400 [stack 0]
  Dot {
   name LayoutDot158
   xpos 754
@@ -4287,7 +4287,7 @@ set N39102400 [stack 0]
   xpos 754
   ypos 4527
  }
-push $N21254c00
+push $Ndcbd4c00
  Dot {
   name LayoutDot98
   xpos 86
@@ -4298,7 +4298,7 @@ push $N21254c00
   xpos 214
   ypos 3693
  }
-push $N390edc00
+push $Ndcc8dc00
  Copy {
   inputs 2
   channels rgba
@@ -4306,7 +4306,7 @@ push $N390edc00
   xpos 180
   ypos 3864
  }
-set N20f75800 [stack 0]
+set Ndc975800 [stack 0]
  Expression {
   expr0 r+(1-a)*0.14
   expr1 g+(1-a)*0.22
@@ -4506,7 +4506,7 @@ set N20f75800 [stack 0]
   xpos 180
   ypos 4464
  }
-push $N39082800
+push $Ndcc22800
  Dot {
   name LayoutDot120
   xpos 674
@@ -4517,7 +4517,7 @@ push $N39082800
   xpos 592
   ypos 3783
  }
-push $N39102400
+push $Ndcca2400
  Copy {
   inputs 2
   channels rgba
@@ -4530,7 +4530,7 @@ push $N39102400
   xpos 574
   ypos 4527
  }
-push $N3909e800
+push $Ndcc3e800
  Dot {
   name LayoutDot130
   xpos 806
@@ -4541,7 +4541,7 @@ push $N3909e800
   xpos 412
   ypos 3813
  }
-push $N39102000
+push $Ndcca2000
  Copy {
   inputs 2
   channels rgba
@@ -4554,13 +4554,13 @@ push $N39102000
   xpos 394
   ypos 4515
  }
-push $N20f75800
+push $Ndc975800
  Dot {
   name LayoutDot7
   xpos 46
   ypos 3867
  }
-push $N5e056d00
+push $N99ef6d00
  Switch {
   inputs 6
   which {{parent.view}}
