@@ -6,8 +6,18 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.51.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.52.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1.
+
+New in 0.52: no more brown thin cloud at a low sun with EzAtmosScatter light.
+- Each layer takes the sun at its **own height**. The atmos light is the sun seen from the
+  camera, through all the air above it; a cirrus at 9 km sees it through a third of that air and
+  no haze, so at a 2 degree sun it is about 3 times brighter and far less red. Hidden per layer
+  (`lN_sun tint`, 1 with manual light).
+- The **sky light** takes its hue from the atmos's cosine-weighted sky (EzAtmosScatter 1.2.1),
+  at the same brightness as before. At a low sun the plain sky mean is warm from the bright band
+  at the horizon; thin cloud lit by it came out brown.
+- Cirrus cover 0 is now fully clear.
 
 New in 0.51:
 - Each layer's **cover** (it was 'coverage') is now the share of the sky the layer hides, seen

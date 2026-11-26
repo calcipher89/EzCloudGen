@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.51.0"
+VERSION = "0.52.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -151,7 +151,8 @@ def py(code):
 
 def atmos_light(pixel, channel, fallback):
     """Python expression: one channel of the EzAtmosScatter's light. Pixel 1 is the sun
-    (irradiance), 2 the sky (mean radiance). With an HDRI it is what the atmos measured in it.
+    (irradiance), 2 the sky (mean radiance; its hue from the cosine-weighted mean, pixel 3, when
+    the atmos measures it). With an HDRI it is what the atmos measured in it.
     A self-lit atmos (no HDRI) has measured nothing: its sky is its own sky's mean (SelfLight),
     and its sun is its manual sun dimmed by the air it crosses on the way down (Kasten-Young
     air mass, the atmos's own Rayleigh and haze amounts, and from EzAtmosScatter 1.1 its ozone,
@@ -164,6 +165,15 @@ def atmos_light(pixel, channel, fallback):
               "    lnode = nuke.toNode(a.fullName() + ('.SelfLight' if selflit and %d == 2 else '.Light'))\n"
               "    if lnode is not None and not (selflit and %d == 1):\n"
               "        ret = lnode.sample('%s', %g, 0.5)\n"
+              "        if %d == 2:\n"
+              "            # The sky's hue from its cosine-weighted mean (EzAtmosScatter 1.2.1 pixel 3), at the\n"
+              "            # plain mean's brightness: at a low sun the plain mean is warm from the bright\n"
+              "            # horizon band, and thin cloud lit by it came out brown.\n"
+              "            # Plain code: [python -execlocal] lambdas and comprehensions can't see its locals.\n"
+              "            lc = 0.2126 * lnode.sample('red', 3.5, 0.5) + 0.7152 * lnode.sample('green', 3.5, 0.5) + 0.0722 * lnode.sample('blue', 3.5, 0.5)\n"
+              "            lp = 0.2126 * lnode.sample('red', 2.5, 0.5) + 0.7152 * lnode.sample('green', 2.5, 0.5) + 0.0722 * lnode.sample('blue', 2.5, 0.5)\n"
+              "            if lc > 1e-8:\n"
+              "                ret = lnode.sample('%s', 3.5, 0.5) * lp / lc\n"
               "    elif selflit:\n"
               "        import math\n"
               "        sk = a['sun_in_use']\n"
@@ -179,7 +189,39 @@ def atmos_light(pixel, channel, fallback):
               "        if a.knob('ozone') is not None:\n"
               "            oz = (0.000650, 0.001881, 0.000085)[%d] * 15.0 * a['ozone'].value() / math.sqrt(math.sin(math.radians(max(el, 0.0))) ** 2 + 50.0 / a['planet_radius'].value())\n"
               "        ret = tint * a['manual_sun_brightness'].value() * a['sun_strength'].value() * math.exp(-(tr + tm) * am - oz) if el > -1 else 0.0\n"
-              % (fallback, pixel, pixel, channel, pixel + 0.5, i, i, i))
+              % (fallback, pixel, pixel, channel, pixel + 0.5, pixel, channel, i, i, i))
+
+
+def layer_sun_tint(layer, channel):
+    """Python expression: one channel of how much brighter (and less red) the sun is at the layer's
+    height than at the atmos's camera height. The atmos light (self lit, or measured in an HDRI)
+    is the sun as seen from the camera, through all the air above it. A cirrus at 9 km sees the
+    sun through a third of that air and no haze: at a 2 degree sun about 3 times brighter and far
+    less red, so it isn't lit by a deep red sun (which, with the blue sky light, read brown).
+    The atmos's own Rayleigh and haze amounts and heights, Kasten-Young air mass at the sun's
+    elevation. 1 with manual light or no atmos."""
+    i = ("red", "green", "blue").index(channel)
+    p = "l%d_" % layer
+    return py(FIND_ATMOS +
+              "ret = 1.0\n"
+              "n = nuke.thisNode()\n"
+              "if a is not None and n['light_source'].value():\n"
+              "    import math\n"
+              "    sk = a['sun_in_use']\n"
+              "    sx, sy, sz = sk.getValueAt(nuke.frame(), 0), sk.getValueAt(nuke.frame(), 1), sk.getValueAt(nuke.frame(), 2)\n"
+              "    el = max(math.degrees(math.asin(max(min(sy / (math.sqrt(sx * sx + sy * sy + sz * sz) or 1.0), 1.0), -1.0))), 0.0)\n"
+              "    am = 1.0 / (math.sin(math.radians(el)) + 0.50572 * (el + 6.07995) ** -1.6364)\n"
+              "    hc = a['camera_height'].value() / 1000.0\n"
+              "    if n['%(p)svolume'].value():\n"
+              "        hl = (n['%(p)svol_position'].getValue(1) - n['ground_height'].value()) * n['scene_scale'].value() / 1000.0\n"
+              "    else:\n"
+              "        hl = (n['%(p)sbase'].value() + 0.5 * n['%(p)sthickness'].value()) / 1000.0\n"
+              "    hl = max(hl, hc)\n"
+              "    hr, hm = a['rayleigh_scale_height'].value(), max(a['haze_height'].value(), 1e-3)\n"
+              "    br = a['rayleigh_coefficients'].getValueAt(nuke.frame(), %(i)d) * a['sky_amount'].value() * hr\n"
+              "    bm = a['mie_coefficient'].value() / 0.9 * a['haze_amount'].value() * hm\n"
+              "    d = br * (math.exp(-hc / hr) - math.exp(-hl / hr)) + bm * (math.exp(-hc / hm) - math.exp(-hl / hm))\n"
+              "    ret = min(math.exp(d * am), 50.0)\n" % {"p": p, "i": i})
 
 
 # ---- 3D box inputs ------------------------------------------------------------------------
@@ -1050,6 +1092,10 @@ def build_knobs(g):
         k = hidden(g, nuke.Array_Knob(p + "cover_table", "cover table", 5))
         for j, v in enumerate(cloud_types.cover_table(tname)):
             k.setValue(v, j)
+        # The sun at this layer's height against the camera's (atmos light only).
+        k = hidden(g, nuke.Color_Knob(p + "sun_tint", "sun tint"))
+        for j, ch in enumerate(("red", "green", "blue")):
+            k.setExpression(layer_sun_tint(int(p[1]), ch), j)
         k = add(g, nuke.Double_Knob(p + "map_amount", "follow map"),
                 "How much this deck follows the coverage map (when 'map' is plugged in).")
         k.setValue(1.0)
@@ -1464,6 +1510,7 @@ def blink(name, output, src, cmap, zin, smaps, source_file, step=1, only=-1, lgr
         vec("vol_size", ["%s ? %sbox_size.%s : %svol_size.%s" % (bf, p, c, p, c) for c in "xyz"])
         for a in "xyz":
             vec("vol_axis_" + a, ["%sbox_axis_%s.%s" % (p, a, c) for c in "xyz"])
+        vec("sun_tint", ["%ssun_tint.%s" % (p, c) for c in "rgb"])
         one("density", p + "density")
         # The coverage map, drifting with the wind since the map frame.
         one("map_amount", p + "map_amount")
