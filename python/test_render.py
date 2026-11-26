@@ -249,7 +249,8 @@ def main():
     g["l3_enable"].setValue(False)
     set_type("l1_", "Cumulus")
     set_type("l2_", "Altocumulus")
-    g["l2_cover"].setValue(0.7)
+    # Kernel coverage 0.75, as before cover was calibrated.
+    g["l2_cover"].setValue(cloud_types.to_cover(cloud_types.cover_table("Altocumulus"), 0.75))
 
     def mean_sun():
         n, tot = 0, 0.0
