@@ -470,6 +470,36 @@ def main():
         raise RuntimeError("no believable cloud shadow on the ridge")
     if region_mean("cloud_shadow.red", False) > 1e-4:
         raise RuntimeError("cloud shadow on the sky")
+    # 'depth out' comp (the default): a land pixel keeps the bg's depth, a solid cloud pixel has the
+    # clouds' depth, clear sky is 0; 'clouds only' gives the clouds' depth alone (0 on the land).
+    land = cloud_px = sky_px = None
+    for y in range(H // 60, H, H // 30):
+        for x in range(W // 96, W, W // 48):
+            top = H * (0.3 + 0.05 * math.sin(x / (W / 14.0)))
+            a = g.sample("cloud.alpha", x + 0.5, y + 0.5, frame=1001)
+            if land is None and y < top - 4 and a < 0.05:
+                land = (x, y)
+            if cloud_px is None and y > top + H * 0.08 and a > 0.9:
+                cloud_px = (x, y)
+            if sky_px is None and y > top + H * 0.08 and a < 0.001:
+                sky_px = (x, y)
+    zs = dict((k, g.sample("depth.Z", p[0] + 0.5, p[1] + 0.5, frame=1001)) for k, p in
+              (("land", land), ("cloud", cloud_px), ("sky", sky_px)) if p is not None)
+    print("depth out comp: land %s, cloud %s, clear sky %s" % (zs.get("land"), zs.get("cloud"), zs.get("sky")))
+    if land is None or abs(zs["land"] - 80000) > 1.0:
+        raise RuntimeError("depth out comp: a land pixel lost its bg depth (%s)" % zs.get("land"))
+    if cloud_px is None or not 0.0 < zs["cloud"] < 1e9 or abs(zs["cloud"] - 80000) < 1.0:
+        raise RuntimeError("depth out comp: a cloud pixel has no cloud depth (%s)" % zs.get("cloud"))
+    if sky_px is None or zs["sky"] != 0.0:
+        raise RuntimeError("depth out comp: clear sky isn't 0 (%s)" % zs.get("sky"))
+    g["depth_out"].setValue("clouds only")
+    render("depth_out_clouds_only")
+    zl = g.sample("depth.Z", land[0] + 0.5, land[1] + 0.5, frame=1001)
+    zcl = g.sample("depth.Z", cloud_px[0] + 0.5, cloud_px[1] + 0.5, frame=1001)
+    print("depth out clouds only: land %s, cloud %s" % (zl, zcl))
+    if zl != 0.0 or abs(zcl - zs["cloud"]) > 1e-3 * max(abs(zs["cloud"]), 1.0):
+        raise RuntimeError("depth out clouds only: land %s (want 0), cloud %s (want %s)" % (zl, zcl, zs["cloud"]))
+    g["depth_out"].setValue("comp")
     # 'depth ramp' hiding the whole deck: its shadow stays unless 'hide shadows too' is on.
     g["l1_depth_ramp_on"].setValue(True)
     g.node("L1_DepthRamp")["range"].setValue([0, 0, 1, 1])

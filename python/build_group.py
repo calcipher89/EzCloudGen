@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.53.0"
+VERSION = "0.54.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -889,6 +889,11 @@ def build_knobs(g):
     k.setValue(50)
     c = add(g, nuke.Channel_Knob("depth_channel", "depth"), "The bg channel holding its depth.")
     c.setValue("depth.Z")
+    add(g, nuke.Enumeration_Knob("depth_out", "depth out", ["comp", "clouds only"]),
+        "What the output's depth.Z holds. comp: the clouds' depth where they are solid (alpha 0.5 and "
+        "over), the bg's depth everywhere else, so land under clear sky keeps its depth for the tools "
+        "after this one. clouds only: the clouds' depth alone, 0 elsewhere (as before 0.54). The clouds' "
+        "depth is Planar Z in scene units; with 'comp' the bg's depth passes as it came in.").setValue(0)
     m = add(g, nuke.Enumeration_Knob("depth_mode", "depth is", DEPTH_MODES),
             "Planar Z: distance along the camera's view axis (Arnold, Karma, V-Ray Z). "
             "1/Z: Nuke's ScanlineRender. Distance: from the camera to the point.")
@@ -1902,9 +1907,23 @@ def build():
         comp["which"].setExpression("parent.bg_found")
 
         # The layers.
-        z = nuke.nodes.Copy(name="Layer_DepthZ", from0="rgba.red", to0="depth.Z")
-        z.setInput(0, comp)
-        z.setInput(1, dep_up)
+        # depth.Z: the clouds' depth where they are solid (alpha 0.5 and over), the bg's depth
+        # elsewhere ('depth out' comp), so land keeps its depth under clear sky; or the clouds'
+        # depth alone ('depth out' clouds only, as before 0.54).
+        zc = nuke.nodes.Copy(name="DepthClouds", from0="rgba.red", to0="depth.Z")
+        zc.setInput(0, comp)
+        zc.setInput(1, dep_up)
+        zmask = nuke.nodes.Expression(name="DepthCloudMask", channel0="none", channel1="none", channel2="none",
+                                      channel3="alpha", expr3="a >= 0.5 ? 1 : 0")
+        zmask.setInput(0, col_up)
+        zmix = nuke.nodes.Keymix(name="DepthOverBg", channels="depth", maskChannel="rgba.alpha")
+        zmix.setInput(0, comp)
+        zmix.setInput(1, zc)
+        zmix.setInput(2, zmask)
+        z = nuke.nodes.Switch(name="Layer_DepthZ")
+        z.setInput(0, zmix)
+        z.setInput(1, zc)
+        z["which"].setExpression("parent.depth_out")
         cl = nuke.nodes.Copy(name="Layer_Cloud")
         for j, c in enumerate(("red", "green", "blue", "alpha")):
             cl["from%d" % j].setValue("rgba." + c)
