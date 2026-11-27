@@ -6,8 +6,13 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.53.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.54.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1.
+
+New in 0.54: **depth out** (EzCloudGen tab, bg depth). With 'comp' (the default) the output's depth.Z
+is the clouds' depth where they are solid (alpha 0.5 and over) and the bg's depth everywhere else,
+so land under clear sky keeps its depth for the tools after EzCloudGen (EzDepthHaze, EzMatch).
+'clouds only' gives the clouds' depth alone, as before.
 
 New in 0.53: a **Cirrus sheet** tab (off by default). A thin sheet of fibrous high cloud for
 cirrus and cirrostratus skies, drawn behind the layers by a quick pass of its own
