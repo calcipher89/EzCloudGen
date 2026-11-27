@@ -41,6 +41,9 @@ def main():
         v["cover"] = cloud_types.preset_cover(t)
         for k in ns["LOOK"]:
             n["l%d_%s" % (i, k)] = Knob(v.get(k, 1.0))
+    for k, v in (("cover", 0.5), ("scale_km", 6.0), ("fibre_size", 150.0), ("edge", 0.6), ("opacity", 0.3),
+                 ("fibres", 0.8), ("ambient", 1.0)):
+        n["sheet_" + k] = Knob(v)
     n["sun_intensity"] = Knob(1.0)
     n["easy_base"] = Knob("")
     n["easy_layer"] = Knob(0)
@@ -95,6 +98,23 @@ def main():
     n["l1_edge"].v = 0.3
     ns["on_knob"](n, "l1_edge")
     ok &= check("hand edit centres softness, keeps the edit", [n["easy_softness"].v, n["l1_edge"].v], [0.0, 0.3])
+    # The cirrus sheet (4th entry): its own knobs, layer 1 left alone.
+    l1 = dict((k, kn.v) for k, kn in n.items() if k.startswith("l1_"))
+    n["easy_layer"].v = 3
+    ns["on_knob"](n, "easy_layer")
+    n["easy_cover"].v = -0.2
+    ns["on_knob"](n, "easy_cover")
+    n["easy_softness"].v = 1.0
+    ns["on_knob"](n, "easy_softness")
+    n["easy_wisps"].v = 0.5
+    ns["on_knob"](n, "easy_wisps")
+    ok &= check("sheet: cover -0.2, edge x2, opacity thinner, fibres +0.2",
+                [n["sheet_cover"].v, n["sheet_edge"].v, n["sheet_opacity"].v, n["sheet_fibres"].v],
+                [0.3, 1.2, 0.3 * 2 ** -0.7, 1.0])
+    ok &= check("sheet sliders leave layer 1 alone", [n[k].v - v for k, v in l1.items()], [0.0] * len(l1), 1e-9)
+    n["sheet_cover"].v = 0.7
+    ns["on_knob"](n, "sheet_cover")
+    ok &= check("sheet hand edit centres the sliders", [n["easy_cover"].v, n["easy_softness"].v], [0.0, 0.0])
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 

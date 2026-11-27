@@ -6,8 +6,21 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.52.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.53.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1.
+
+New in 0.53: a **Cirrus sheet** tab (off by default). A thin sheet of fibrous high cloud for
+cirrus and cirrostratus skies, drawn behind the layers by a quick pass of its own
+(`blink/EzCirrusSheet.blink`: one hit on the curved shell at its height, no march, so it costs
+little and adds nothing to the main kernel's compile time).
+- Soft patches cut by **cover** (0.5 reads as about half the sky), running with long hooked
+  **fibres** along **direction**. Far off, strands too fine for a pixel fade to their mean and the
+  patch edges widen, so the sheet keeps its gaps out to the horizon instead of turning to a veil.
+- Lit like the layers: the sun at the sheet's own height (as 0.52), a forward glow towards the
+  sun, the sky light, the haze; hidden behind the bg's depth; drifts along its strands with
+  **wind speed**. Its sun share goes into the sun pass.
+- **Easy** has a fourth 'easy layer', Cirrus sheet (see the Easy table).
+- `tests/test_sheet.py` checks it on the CPU (g++), `reference/blink_check/run_sheet.py` renders it.
 
 New in 0.52: no more brown thin cloud at a low sun with EzAtmosScatter light.
 - Each layer takes the sun at its **own height**. The atmos light is the sun seen from the
@@ -122,7 +135,7 @@ a normal or reference pass (values within -1..1) or doesn't match the depth and 
 
 The panel: **EzCloudGen** (view, render settings, scene units, bg depth), **Light** (sun, sky,
 lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, coverage map), the three
-**Layer** tabs and **About**.
+**Layer** tabs, **Cirrus sheet** and **About**.
 
 **Easy** works on one layer at a time (**easy layer**), from the layer's knobs as they are:
 
@@ -134,6 +147,10 @@ lighting and look), **Air, time & map** (haze, sun gap, evolve, variations, cove
 | wisps | 'wisps' + 0.6 w; 'wisp stretch' x 4^w going up |
 | underside | 'sky occlusion' + 0.8 u, 'shadow depth' + 0.5 u, 'sky light' x 2^(-u/2): darker undersides up |
 | lit | the node's 'sun intensity', in stops (every layer) |
+
+On the Cirrus sheet (the fourth 'easy layer'): cover adds to its 'cover'; size multiplies 'patch
+size' (and 'fibre width' by its square root); softness: 'edge softness' x 2^s and 'opacity'
+x 2^(-0.7 s); wisps: 'fibres' + 0.4 w; underside: 'sky light' x 2^(-0.7 u); lit as above.
 
 Each layer keeps its own slider settings, and the layer tab always shows what they did. Editing
 one of those knobs by hand, or changing the layer's type, starts the sliders again from there.

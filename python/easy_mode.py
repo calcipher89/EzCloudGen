@@ -10,7 +10,8 @@ kept per layer in the hidden easy_base knob (JSON) with the sliders' own values,
 'easy layer' brings each layer's sliders back. Every slider change rewrites the layer's knobs
 from its base, so the layer tab always shows exactly what Easy did. Editing one of those knobs by
 hand, or changing the layer's type, makes the new values the base and centres the sliders.
-'lit' is global (the sun intensity) and stays where it is.
+'lit' is global (the sun intensity) and stays where it is. The fourth 'easy layer' is the cirrus
+sheet (knobs sheet_*), with its own mapping (apply_sheet).
 """
 import json
 import math
@@ -25,6 +26,9 @@ LAYER_SLIDERS = [name for name, _ in SLIDERS if name != "easy_lit"]
 # The layer knobs (without the lN_ prefix) the sliders write.
 LOOK = ["cover", "scale_km", "cell_km", "lump_size", "detail_size", "edge", "sigma", "wisp_amount",
         "wisp_stretch", "sky_occlusion", "shadow_depth", "ambient"]
+# The cirrus sheet's knobs (without sheet_) the sliders write.
+SHEET_LOOK = ["cover", "scale_km", "fibre_size", "edge", "opacity", "fibres", "ambient"]
+PREFIXES = ("l1_", "l2_", "l3_", "sheet_")
 GLOBAL = ["sun_intensity"]
 
 
@@ -44,8 +48,12 @@ def busy():
 
 
 def layer(n):
-    """The easy layer's knob prefix, 'l1_' .. 'l3_'."""
-    return "l%d_" % (int(n["easy_layer"].getValue()) + 1)
+    """The easy layer's knob prefix, 'l1_' .. 'l3_', or 'sheet_' for the cirrus sheet."""
+    return PREFIXES[min(int(n["easy_layer"].getValue()), 3)]
+
+
+def look(p):
+    return SHEET_LOOK if p == "sheet_" else LOOK
 
 
 def _all(n):
@@ -70,7 +78,7 @@ def rebase(n, centre=True, p=None):
     """Make the easy layer's knob values its base and centre its sliders ('lit' stays)."""
     p = p or layer(n)
     d = _all(n)
-    d[p] = {"base": dict((k, n[p + k].value()) for k in LOOK if n.knob(p + k) is not None),
+    d[p] = {"base": dict((k, n[p + k].value()) for k in look(p) if n.knob(p + k) is not None),
             "sliders": dict((name, neutral) for name, neutral in SLIDERS if name != "easy_lit")}
     d["sun_intensity"] = n["sun_intensity"].value() / 2.0 ** n["easy_lit"].value()
     _save(n, d)
@@ -123,6 +131,11 @@ def apply_easy(n):
     s = max(-1.0, min(1.0, e["easy_softness"]))
     w = max(-1.0, min(1.0, e["easy_wisps"]))
     u = max(-1.0, min(1.0, e["easy_underside"]))
+    if p == "sheet_":
+        with _Busy():
+            apply_sheet(put, b, e["easy_cover"], size, s, w, u)
+            n["sun_intensity"].setValue(lit * 2.0 ** e["easy_lit"])
+        return
     with _Busy():
         # Cover: more or less of the sky hidden, in the type's visible-cover units.
         put("cover", b.get("cover", 0.5) + e["easy_cover"], 0.0, 1.0)
@@ -142,6 +155,20 @@ def apply_easy(n):
         put("ambient", b.get("ambient", 1.0) * 2.0 ** (-0.5 * u), 0.0, 3.0)
         # Lit: the sunlit side's brightness, in stops (the whole node's sun).
         n["sun_intensity"].setValue(lit * 2.0 ** e["easy_lit"])
+
+
+def apply_sheet(put, b, cover, size, s, w, u):
+    """The sliders on the cirrus sheet."""
+    put("cover", b.get("cover", 0.5) + cover, 0.0, 1.0)
+    put("scale_km", b.get("scale_km", 4.0) * size)
+    put("fibre_size", b.get("fibre_size", 150.0) * math.sqrt(size))
+    # Softness: softer patch edges and a thinner, more veil-like sheet (or crisper, denser).
+    put("edge", b.get("edge", 0.6) * 2.0 ** s, 0.0, 2.0)
+    put("opacity", b.get("opacity", 0.5) * 2.0 ** (-0.7 * s), 0.0, 2.0)
+    # Wisps: more of the sheet in strands.
+    put("fibres", b.get("fibres", 0.8) + 0.4 * w, 0.0, 1.0)
+    # Underside: a darker side away from the sun (less sky light).
+    put("ambient", b.get("ambient", 1.0) * 2.0 ** (-0.7 * u), 0.0, 3.0)
 
 
 def match_begin(n):
@@ -178,7 +205,7 @@ def on_knob(n, k):
         show_layer(n)
     elif k in EASY_KNOBS:
         apply_easy(n)
-    elif len(k) > 3 and k[:3] in ("l1_", "l2_", "l3_") and k[:3] == layer(n) and (k[3:] in LOOK or k[3:] == "type"):
+    elif any(k.startswith(q) and q == layer(n) and (k[len(q):] in look(q) or k[len(q):] == "type") for q in PREFIXES):
         # Tuned by hand, or a new type: that becomes the sliders' starting point.
         rebase(n)
     elif k == "sun_intensity":
