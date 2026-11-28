@@ -10,9 +10,10 @@ v0.55.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.
 render in NukeX 15.1.
 
 New in 0.55: a **starting look** on the Easy tab. Pick 'Aerial Sunset' and press **apply look**: layer 1
-is turned on with its base 1900 m above the camera and cover 0.3, and the Easy sliders are centred
-on it (easy layer 1). A camera high above the valleys then sees the deck's underside overhead, not
-a flat strip of cloud tops along the horizon. EzMatch's 'apply starting look' sets it together with
+is turned off (the look adds no cloud) with its base moved 1900 m above the camera, and the Easy
+sliders are centred on it (easy layer 1). The default deck sits below a high aerial camera and
+draws a flat strip of cloud tops along the horizon; a deck above the camera, tried at cover 0.3,
+made a dark overcast sky. For high cloud bands, turn layer 1 on and pick a high type by hand. EzMatch's 'apply starting look' sets it together with
 EzAtmosScatter's and EzDepthHaze's Aerial Sunset looks; then press match all.
 
 New in 0.54: **depth out** (EzCloudGen tab, bg depth). With 'comp' (the default) the output's depth.Z

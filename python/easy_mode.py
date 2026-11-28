@@ -173,9 +173,9 @@ def apply_sheet(put, b, cover, size, s, w, u):
 
 # Starting looks: layer 1 knobs set before a match ('apply look' on the Easy tab, or EzMatch's
 # 'apply starting look'). "base_above_camera" puts the deck's base that many metres above the
-# camera, so an aerial camera sees the deck's underside overhead instead of a flat strip of cloud
-# tops along the horizon.
-LOOKS = {"Aerial Sunset": {"enable": True, "base_above_camera": 1900.0, "cover": 0.3}}
+# camera, so an aerial camera never sees a flat strip of cloud tops along the horizon. Aerial
+# Sunset adds no cloud (layer 1 off): turning layer 1 on by hand starts from a deck above the camera.
+LOOKS = {"Aerial Sunset": {"enable": False, "base_above_camera": 1900.0}}
 LOOK_NAMES = sorted(LOOKS)
 
 
