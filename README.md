@@ -6,8 +6,14 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.54.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.55.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1.
+
+New in 0.55: a **starting look** on the Easy tab. Pick 'Aerial Sunset' and press **apply look**: layer 1
+is turned on with its base 1900 m above the camera and cover 0.3, and the Easy sliders are centred
+on it (easy layer 1). A camera high above the valleys then sees the deck's underside overhead, not
+a flat strip of cloud tops along the horizon. EzMatch's 'apply starting look' sets it together with
+EzAtmosScatter's and EzDepthHaze's Aerial Sunset looks; then press match all.
 
 New in 0.54: **depth out** (EzCloudGen tab, bg depth). With 'comp' (the default) the output's depth.Z
 is the clouds' depth where they are solid (alpha 0.5 and over) and the bg's depth everywhere else,

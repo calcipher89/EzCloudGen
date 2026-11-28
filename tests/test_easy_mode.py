@@ -115,6 +115,35 @@ def main():
     n["sheet_cover"].v = 0.7
     ns["on_knob"](n, "sheet_cover")
     ok &= check("sheet hand edit centres the sliders", [n["easy_cover"].v, n["easy_softness"].v], [0.0, 0.0])
+    # Starting look: layer 1 deck 1900 m above the camera, cover 0.3, sliders centred on it.
+    class Matrix(Knob):
+        def getValue(self, i=None):
+            return self.v[i] if i is not None else self.v
+    m = [0.0] * 16
+    m[7] = 41000.0  # 4100 m in decimetres
+    n["cam_world_matrix"] = Matrix(m)
+    n["ground_height"] = Knob(0.0)
+    n["scene_scale"] = Knob(0.1)
+    n["l1_base"] = Knob(1400.0)
+    n["l1_enable"] = Knob(False)
+    n["easy_look"] = Knob("Aerial Sunset")
+    n["easy_layer"].v = 2
+    n["easy_cover"].v = 0.4
+    got = ns["apply_look"](n)
+    ok &= check("look: base = camera + 1900, cover 0.3, enabled", [n["l1_base"].v, n["l1_cover"].v, float(n["l1_enable"].v)],
+                [6000.0, 0.3, 1.0])
+    ok &= check("look: easy layer 1, sliders centred", [n["easy_layer"].v, n["easy_cover"].v], [0, 0.0])
+    ok &= (got == "Aerial Sunset")
+    n["easy_cover"].v = 0.1
+    ns["on_knob"](n, "easy_cover")
+    ok &= check("look: cover slider adds to the look", [n["l1_cover"].v], [0.4])
+    n["easy_cover"].v = 0.0
+    ns["on_knob"](n, "easy_cover")
+    ok &= check("look: sliders at neutral give the look exactly", [n["l1_cover"].v, n["l1_base"].v], [0.3, 6000.0])
+    m[7] = 0.0
+    ns["apply_look"](n, "Aerial Sunset")
+    ok &= check("look without a camera: base 300 + 1900", [n["l1_base"].v], [2200.0])
+    ok &= (ns["apply_look"](n, "Nope") is None)
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 
