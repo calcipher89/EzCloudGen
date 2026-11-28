@@ -171,6 +171,42 @@ def apply_sheet(put, b, cover, size, s, w, u):
     put("ambient", b.get("ambient", 1.0) * 2.0 ** (-0.7 * u), 0.0, 3.0)
 
 
+# Starting looks: layer 1 knobs set before a match ('apply look' on the Easy tab, or EzMatch's
+# 'apply starting look'). "base_above_camera" puts the deck's base that many metres above the
+# camera, so an aerial camera never sees a flat strip of cloud tops along the horizon. Aerial
+# Sunset adds no cloud (layer 1 off): turning layer 1 on by hand starts from a deck above the camera.
+LOOKS = {"Aerial Sunset": {"enable": False, "base_above_camera": 1900.0}}
+LOOK_NAMES = sorted(LOOKS)
+
+
+def camera_height(n):
+    """The camera's height above the ground in metres (300 m without a camera matrix)."""
+    try:
+        y = n["cam_world_matrix"].getValue(7)
+        h = (y - n["ground_height"].value()) * (n["scene_scale"].value() or 0.1)
+    except Exception:
+        return 300.0
+    return h if h > 0.0 else 300.0
+
+
+def apply_look(n, name=None):
+    """Set a starting look's layer 1 knobs, then centre the Easy sliders on it (layer 1)."""
+    name = name or (n["easy_look"].value() if n.knob("easy_look") is not None else None)
+    if name not in LOOKS:
+        return None
+    p = "l1_"
+    with _Busy():
+        if n.knob("easy_layer") is not None:
+            n["easy_layer"].setValue(0)
+        for k, v in LOOKS[name].items():
+            if k == "base_above_camera":
+                n[p + "base"].setValue(max(0.0, min(12000.0, camera_height(n) + v)))
+            elif n.knob(p + k) is not None:
+                n[p + k].setValue(v)
+    rebase(n, p=p)
+    return name
+
+
 def match_begin(n):
     """Before a match: draft quality at Quarter resolution, so each try renders fast."""
     keep = dict((k, n[k].value()) for k in ("render_preset", "resolution", "quality", "edge_steps", "sampling"))
