@@ -407,11 +407,11 @@ Group {
  addUserKnob {7 easy_wisps l wisps t "More fine wisps eating into the edges, combed along the wind (up), or fewer." R -1 1}
  addUserKnob {7 easy_underside l underside t "Darker, deeper undersides and folds (up), or lighter, glowing ones (down)." R -1 1}
  addUserKnob {7 easy_lit l lit t "Brightness of the sunlit side, in stops (the node's 'sun intensity', every layer)." R -2 2}
- addUserKnob {4 easy_look l "starting look" t "A starting point for a kind of shot, on layer 1. Aerial Sunset: a camera high above the valleys toward a low sun; layer 1 off (no cloud), its base moved 1900 m above the camera for when you turn it on. Aerial Day: a fair-weather day from high above; layer 1 on, its base 1700 m above the camera. Pair it with EzAtmosScatter's and EzDepthHaze's Aerial Sunset looks (EzMatch's 'apply starting look' sets all three), then match all." M {"Aerial Day" "Aerial Sunset"}}
+ addUserKnob {4 easy_look l "starting look" t "A starting point for a kind of shot, on layer 1. Aerial Sunset: a camera high above the valleys toward a low sun; layer 1 off (no cloud), its base moved 1900 m above the camera for when you turn it on. Aerial Day: a fair-weather day from high above; layer 1 on, its base 1200 m above the camera. Pair it with EzAtmosScatter's and EzDepthHaze's Aerial Sunset looks (EzMatch's 'apply starting look' sets all three), then match all." M {"Aerial Day" "Aerial Sunset"}}
  addUserKnob {22 apply_easy_look l "apply look" t "Sets the starting look's layer 1 knobs and centres the Easy sliders on layer 1." -STARTLINE T "_n = nuke.thisNode()\n_ez = \{\}\nexec(__import__('base64').b64decode(_n\['tool_code'].value()).decode(), _ez)\n_ez\['apply_look'](_n)\n"}
  addUserKnob {1 easy_base l "easy base" +INVISIBLE}
  addUserKnob {1 tool_code l "tool code" +INVISIBLE}
- tool_code IiIiRWFzeSB0YWI6IGEgZmV3IGFydGlzdC1sYW5ndWFnZSBzbGlkZXJzIG92ZXIgb25lIGxheWVyJ3Mga25vYnMgKHRoZSAnZWFzeSBsYXllcicpLgoKYnVpbGRfZ3JvdXAucHkgc3RvcmVzIHRoaXMgZmlsZSBiYXNlNjQtZW5jb2RlZCBpbiB0aGUgaGlkZGVuIHRvb2xfY29kZSBrbm9iOyBrbm9iQ2hhbmdlZCBydW5zCml0IGZyb20gdGhlcmUsIHNvIHRoZSBub2RlIG5lZWRzIG5vIFB5dGhvbiBtb2R1bGUgYXQgdGhlIHN0dWRpby4gRXpNYXRjaCBydW5zIGl0IHRoZSBzYW1lIHdheQphbmQgY2FsbHMgYXBwbHlfZWFzeSAvIHJlYmFzZSAoYW5kIG1hdGNoX2JlZ2luIC8gbWF0Y2hfZW5kIGFyb3VuZCBhIG1hdGNoKSwgc28gaXQgb25seSBldmVyCm1vdmVzIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlOiB0aGUgbGF5ZXIncyBrbm9iIHZhbHVlcyB3aGVuIHRoZSBzbGlkZXJzIHdlcmUgbGFzdCBjZW50cmVkLAprZXB0IHBlciBsYXllciBpbiB0aGUgaGlkZGVuIGVhc3lfYmFzZSBrbm9iIChKU09OKSB3aXRoIHRoZSBzbGlkZXJzJyBvd24gdmFsdWVzLCBzbyBzd2l0Y2hpbmcKJ2Vhc3kgbGF5ZXInIGJyaW5ncyBlYWNoIGxheWVyJ3Mgc2xpZGVycyBiYWNrLiBFdmVyeSBzbGlkZXIgY2hhbmdlIHJld3JpdGVzIHRoZSBsYXllcidzIGtub2JzCmZyb20gaXRzIGJhc2UsIHNvIHRoZSBsYXllciB0YWIgYWx3YXlzIHNob3dzIGV4YWN0bHkgd2hhdCBFYXN5IGRpZC4gRWRpdGluZyBvbmUgb2YgdGhvc2Uga25vYnMgYnkKaGFuZCwgb3IgY2hhbmdpbmcgdGhlIGxheWVyJ3MgdHlwZSwgbWFrZXMgdGhlIG5ldyB2YWx1ZXMgdGhlIGJhc2UgYW5kIGNlbnRyZXMgdGhlIHNsaWRlcnMuCidsaXQnIGlzIGdsb2JhbCAodGhlIHN1biBpbnRlbnNpdHkpIGFuZCBzdGF5cyB3aGVyZSBpdCBpcy4gVGhlIGZvdXJ0aCAnZWFzeSBsYXllcicgaXMgdGhlIGNpcnJ1cwpzaGVldCAoa25vYnMgc2hlZXRfKiksIHdpdGggaXRzIG93biBtYXBwaW5nIChhcHBseV9zaGVldCkuCiIiIgppbXBvcnQganNvbgppbXBvcnQgbWF0aAoKaW1wb3J0IG51a2UKCiMgKGtub2IsIG5ldXRyYWwpClNMSURFUlMgPSBbKCJlYXN5X2NvdmVyIiwgMC4wKSwgKCJlYXN5X3NpemUiLCAxLjApLCAoImVhc3lfc29mdG5lc3MiLCAwLjApLCAoImVhc3lfd2lzcHMiLCAwLjApLAogICAgICAgICAgICgiZWFzeV91bmRlcnNpZGUiLCAwLjApLCAoImVhc3lfbGl0IiwgMC4wKV0KRUFTWV9LTk9CUyA9IFtuYW1lIGZvciBuYW1lLCBfIGluIFNMSURFUlNdICsgWyJlYXN5X2xheWVyIl0KTEFZRVJfU0xJREVSUyA9IFtuYW1lIGZvciBuYW1lLCBfIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiXQojIFRoZSBsYXllciBrbm9icyAod2l0aG91dCB0aGUgbE5fIHByZWZpeCkgdGhlIHNsaWRlcnMgd3JpdGUuCkxPT0sgPSBbImNvdmVyIiwgInNjYWxlX2ttIiwgImNlbGxfa20iLCAibHVtcF9zaXplIiwgImRldGFpbF9zaXplIiwgImVkZ2UiLCAic2lnbWEiLCAid2lzcF9hbW91bnQiLAogICAgICAgICJ3aXNwX3N0cmV0Y2giLCAic2t5X29jY2x1c2lvbiIsICJzaGFkb3dfZGVwdGgiLCAiYW1iaWVudCJdCiMgVGhlIGNpcnJ1cyBzaGVldCdzIGtub2JzICh3aXRob3V0IHNoZWV0XykgdGhlIHNsaWRlcnMgd3JpdGUuClNIRUVUX0xPT0sgPSBbImNvdmVyIiwgInNjYWxlX2ttIiwgImZpYnJlX3NpemUiLCAiZWRnZSIsICJvcGFjaXR5IiwgImZpYnJlcyIsICJhbWJpZW50Il0KUFJFRklYRVMgPSAoImwxXyIsICJsMl8iLCAibDNfIiwgInNoZWV0XyIpCkdMT0JBTCA9IFsic3VuX2ludGVuc2l0eSJdCgoKY2xhc3MgX0J1c3kob2JqZWN0KToKICAgICIiIldoaWxlIHRoZSBzbGlkZXJzIHNldCBrbm9icywga25vYkNoYW5nZWQgbGVhdmVzIHRoZW0gYWxvbmUuIiIiCgogICAgZGVmIF9fZW50ZXJfXyhzZWxmKToKICAgICAgICBzZWxmLndhcyA9IGdldGF0dHIobnVrZSwgIl9lemNsb3VkZ2VuX2J1c3kiLCBGYWxzZSkKICAgICAgICBudWtlLl9lemNsb3VkZ2VuX2J1c3kgPSBUcnVlCgogICAgZGVmIF9fZXhpdF9fKHNlbGYsICphcmdzKToKICAgICAgICBudWtlLl9lemNsb3VkZ2VuX2J1c3kgPSBzZWxmLndhcwoKCmRlZiBidXN5KCk6CiAgICByZXR1cm4gZ2V0YXR0cihudWtlLCAiX2V6Y2xvdWRnZW5fYnVzeSIsIEZhbHNlKQoKCmRlZiBsYXllcihuKToKICAgICIiIlRoZSBlYXN5IGxheWVyJ3Mga25vYiBwcmVmaXgsICdsMV8nIC4uICdsM18nLCBvciAnc2hlZXRfJyBmb3IgdGhlIGNpcnJ1cyBzaGVldC4iIiIKICAgIHJldHVybiBQUkVGSVhFU1ttaW4oaW50KG5bImVhc3lfbGF5ZXIiXS5nZXRWYWx1ZSgpKSwgMyldCgoKZGVmIGxvb2socCk6CiAgICByZXR1cm4gU0hFRVRfTE9PSyBpZiBwID09ICJzaGVldF8iIGVsc2UgTE9PSwoKCmRlZiBfYWxsKG4pOgogICAgdHJ5OgogICAgICAgIHJldHVybiBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIHJldHVybiB7fQoKCmRlZiBfc2F2ZShuLCBkKToKICAgIHdpdGggX0J1c3koKToKICAgICAgICBuWyJlYXN5X2Jhc2UiXS5zZXRWYWx1ZShqc29uLmR1bXBzKGQpKQoKCmRlZiBfbGl0X2Jhc2UobiwgZCk6CiAgICBpZiAic3VuX2ludGVuc2l0eSIgbm90IGluIGQ6CiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICByZXR1cm4gZFsic3VuX2ludGVuc2l0eSJdCgoKZGVmIHJlYmFzZShuLCBjZW50cmU9VHJ1ZSwgcD1Ob25lKToKICAgICIiIk1ha2UgdGhlIGVhc3kgbGF5ZXIncyBrbm9iIHZhbHVlcyBpdHMgYmFzZSBhbmQgY2VudHJlIGl0cyBzbGlkZXJzICgnbGl0JyBzdGF5cykuIiIiCiAgICBwID0gcCBvciBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGRbcF0gPSB7ImJhc2UiOiBkaWN0KChrLCBuW3AgKyBrXS52YWx1ZSgpKSBmb3IgayBpbiBsb29rKHApIGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmUpLAogICAgICAgICAgICAic2xpZGVycyI6IGRpY3QoKG5hbWUsIG5ldXRyYWwpIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiKX0KICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICAgICAgbltuYW1lXS5zZXRWYWx1ZShuZXV0cmFsKQoKCmRlZiBzaG93X2xheWVyKG4pOgogICAgIiIiJ2Vhc3kgbGF5ZXInIGNoYW5nZWQ6IGJyaW5nIHRoYXQgbGF5ZXIncyBzbGlkZXJzIGJhY2sgKG9yIHN0YXJ0IGl0IGZyb20gaXRzIGtub2JzKS4iIiIKICAgIHAgPSBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGlmIHAgbm90IGluIGQ6CiAgICAgICAgcmViYXNlKG4sIHA9cCkKICAgICAgICByZXR1cm4KICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgbmFtZSwgbmV1dHJhbCBpbiBTTElERVJTOgogICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKGRbcF1bInNsaWRlcnMiXS5nZXQobmFtZSwgbmV1dHJhbCkpCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBlYXN5IGxheWVyJ3Mga25vYnMgKGFuZCB0aGUgc3VuIGludGVuc2l0eSkgZnJvbSB0aGUgYmFzZSBhbmQgdGhlIHNsaWRlcnMuIiIiCiAgICBwID0gbGF5ZXIobikKICAgIGQgPSBfYWxsKG4pCiAgICBpZiBwIG5vdCBpbiBkOgogICAgICAgICMgTmV2ZXIgc2V0IHVwOiB0aGUga25vYnMgc3RpbGwgaG9sZCB0aGUgbG9vayB0aGUgc2xpZGVyIGp1c3QgbW92ZWQgYXdheSBmcm9tLgogICAgICAgIGtlZXAgPSBkaWN0KChuYW1lLCBuW25hbWVdLnZhbHVlKCkpIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICAgICAgcmViYXNlKG4sIGNlbnRyZT1GYWxzZSwgcD1wKQogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFtwXVsic2xpZGVycyJdID0ga2VlcAogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGRbcF1bInNsaWRlcnMiXSA9IGRpY3QoKG5hbWUsIGVbbmFtZV0pIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICBiID0gZFtwXVsiYmFzZSJdCiAgICBsaXQgPSBfbGl0X2Jhc2UobiwgZCkKICAgIF9zYXZlKG4sIGQpCgogICAgZGVmIHB1dChrLCB2LCBsbz1Ob25lLCBoaT1Ob25lKToKICAgICAgICBpZiBuLmtub2IocCArIGspIGlzIE5vbmUgb3IgayBub3QgaW4gYjoKICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgaWYgbG8gaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtYXgobG8sIHYpCiAgICAgICAgaWYgaGkgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtaW4oaGksIHYpCiAgICAgICAgbltwICsga10uc2V0VmFsdWUodikKCiAgICBzaXplID0gbWF4KGVbImVhc3lfc2l6ZSJdLCAxZS0zKQogICAgcyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3NvZnRuZXNzIl0pKQogICAgdyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3dpc3BzIl0pKQogICAgdSA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3VuZGVyc2lkZSJdKSkKICAgIGlmIHAgPT0gInNoZWV0XyI6CiAgICAgICAgd2l0aCBfQnVzeSgpOgogICAgICAgICAgICBhcHBseV9zaGVldChwdXQsIGIsIGVbImVhc3lfY292ZXIiXSwgc2l6ZSwgcywgdywgdSkKICAgICAgICAgICAgblsic3VuX2ludGVuc2l0eSJdLnNldFZhbHVlKGxpdCAqIDIuMCAqKiBlWyJlYXN5X2xpdCJdKQogICAgICAgIHJldHVybgogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgQ292ZXI6IG1vcmUgb3IgbGVzcyBvZiB0aGUgc2t5IGhpZGRlbiwgaW4gdGhlIHR5cGUncyB2aXNpYmxlLWNvdmVyIHVuaXRzLgogICAgICAgIHB1dCgiY292ZXIiLCBiLmdldCgiY292ZXIiLCAwLjUpICsgZVsiZWFzeV9jb3ZlciJdLCAwLjAsIDEuMCkKICAgICAgICAjIFNpemU6IHRoZSBjbG91ZCBzaGFwZXMgYW5kIHRoZWlyIGNlbGxzIGFuZCBsdW1wczsgdGhlIGJpbGxvd3MgZ3JvdyBtb3JlIHNsb3dseS4KICAgICAgICBmb3IgayBpbiAoInNjYWxlX2ttIiwgImNlbGxfa20iLCAibHVtcF9zaXplIik6CiAgICAgICAgICAgIHB1dChrLCBiLmdldChrLCAxLjApICogc2l6ZSkKICAgICAgICBwdXQoImRldGFpbF9zaXplIiwgYi5nZXQoImRldGFpbF9zaXplIiwgMTAwLjApICogbWF0aC5zcXJ0KHNpemUpKQogICAgICAgICMgU29mdG5lc3M6IHNvZnRlciwgdGhpbm5lciBlZGdlcyAob3IgaGFyZGVyLCBkZW5zZXIgb25lcykuCiAgICAgICAgcHV0KCJlZGdlIiwgYi5nZXQoImVkZ2UiLCAwLjEpICogNC4wICoqIHMsIDAuMDEsIDAuNSkKICAgICAgICBwdXQoInNpZ21hIiwgYi5nZXQoInNpZ21hIiwgMC4wNCkgKiAyLjAgKiogLXMsIDAuMDAwNSwgMC4xKQogICAgICAgICMgV2lzcHM6IGZpbmUgd2lzcHMgZWF0aW5nIHRoZSBlZGdlcywgY29tYmVkIGFsb25nIHRoZSB3aW5kIGFzIGl0IGdvZXMgdXAuCiAgICAgICAgcHV0KCJ3aXNwX2Ftb3VudCIsIGIuZ2V0KCJ3aXNwX2Ftb3VudCIsIDAuMCkgKyAwLjYgKiB3LCAwLjAsIDEuMCkKICAgICAgICBwdXQoIndpc3Bfc3RyZXRjaCIsIGIuZ2V0KCJ3aXNwX3N0cmV0Y2giLCAxLjApICogNC4wICoqIG1heCh3LCAwLjApLCAxLjAsIDEyLjApCiAgICAgICAgIyBVbmRlcnNpZGU6IGRhcmtlciwgZGVlcGVyIHVuZGVyc2lkZXMgYW5kIGZvbGRzIChvciBsaWdodGVyLCBnbG93aW5nIG9uZXMpLgogICAgICAgIHB1dCgic2t5X29jY2x1c2lvbiIsIGIuZ2V0KCJza3lfb2NjbHVzaW9uIiwgMS4wKSArIDAuOCAqIHUsIDAuMCwgMi4wKQogICAgICAgIHB1dCgic2hhZG93X2RlcHRoIiwgYi5nZXQoInNoYWRvd19kZXB0aCIsIDAuMCkgKyAwLjUgKiB1LCAwLjAsIDEuMCkKICAgICAgICBwdXQoImFtYmllbnQiLCBiLmdldCgiYW1iaWVudCIsIDEuMCkgKiAyLjAgKiogKC0wLjUgKiB1KSwgMC4wLCAzLjApCiAgICAgICAgIyBMaXQ6IHRoZSBzdW5saXQgc2lkZSdzIGJyaWdodG5lc3MsIGluIHN0b3BzICh0aGUgd2hvbGUgbm9kZSdzIHN1bikuCiAgICAgICAgblsic3VuX2ludGVuc2l0eSJdLnNldFZhbHVlKGxpdCAqIDIuMCAqKiBlWyJlYXN5X2xpdCJdKQoKCmRlZiBhcHBseV9zaGVldChwdXQsIGIsIGNvdmVyLCBzaXplLCBzLCB3LCB1KToKICAgICIiIlRoZSBzbGlkZXJzIG9uIHRoZSBjaXJydXMgc2hlZXQuIiIiCiAgICBwdXQoImNvdmVyIiwgYi5nZXQoImNvdmVyIiwgMC41KSArIGNvdmVyLCAwLjAsIDEuMCkKICAgIHB1dCgic2NhbGVfa20iLCBiLmdldCgic2NhbGVfa20iLCA0LjApICogc2l6ZSkKICAgIHB1dCgiZmlicmVfc2l6ZSIsIGIuZ2V0KCJmaWJyZV9zaXplIiwgMTUwLjApICogbWF0aC5zcXJ0KHNpemUpKQogICAgIyBTb2Z0bmVzczogc29mdGVyIHBhdGNoIGVkZ2VzIGFuZCBhIHRoaW5uZXIsIG1vcmUgdmVpbC1saWtlIHNoZWV0IChvciBjcmlzcGVyLCBkZW5zZXIpLgogICAgcHV0KCJlZGdlIiwgYi5nZXQoImVkZ2UiLCAwLjYpICogMi4wICoqIHMsIDAuMCwgMi4wKQogICAgcHV0KCJvcGFjaXR5IiwgYi5nZXQoIm9wYWNpdHkiLCAwLjUpICogMi4wICoqICgtMC43ICogcyksIDAuMCwgMi4wKQogICAgIyBXaXNwczogbW9yZSBvZiB0aGUgc2hlZXQgaW4gc3RyYW5kcy4KICAgIHB1dCgiZmlicmVzIiwgYi5nZXQoImZpYnJlcyIsIDAuOCkgKyAwLjQgKiB3LCAwLjAsIDEuMCkKICAgICMgVW5kZXJzaWRlOiBhIGRhcmtlciBzaWRlIGF3YXkgZnJvbSB0aGUgc3VuIChsZXNzIHNreSBsaWdodCkuCiAgICBwdXQoImFtYmllbnQiLCBiLmdldCgiYW1iaWVudCIsIDEuMCkgKiAyLjAgKiogKC0wLjcgKiB1KSwgMC4wLCAzLjApCgoKIyBTdGFydGluZyBsb29rczogbGF5ZXIgMSBrbm9icyBzZXQgYmVmb3JlIGEgbWF0Y2ggKCdhcHBseSBsb29rJyBvbiB0aGUgRWFzeSB0YWIsIG9yIEV6TWF0Y2gncwojICdhcHBseSBzdGFydGluZyBsb29rJykuICJiYXNlX2Fib3ZlX2NhbWVyYSIgcHV0cyB0aGUgZGVjaydzIGJhc2UgdGhhdCBtYW55IG1ldHJlcyBhYm92ZSB0aGUKIyBjYW1lcmEsIHNvIGFuIGFlcmlhbCBjYW1lcmEgbmV2ZXIgc2VlcyBhIGZsYXQgc3RyaXAgb2YgY2xvdWQgdG9wcyBhbG9uZyB0aGUgaG9yaXpvbi4gQWVyaWFsCiMgU3Vuc2V0IGFkZHMgbm8gY2xvdWQgKGxheWVyIDEgb2ZmKTogdHVybmluZyBsYXllciAxIG9uIGJ5IGhhbmQgc3RhcnRzIGZyb20gYSBkZWNrIGFib3ZlIHRoZSBjYW1lcmEuCkxPT0tTID0geyJBZXJpYWwgU3Vuc2V0IjogeyJlbmFibGUiOiBGYWxzZSwgImJhc2VfYWJvdmVfY2FtZXJhIjogMTkwMC4wfSwKICAgICAgICAgIyBBIGZhaXItd2VhdGhlciBkYXkgZnJvbSBoaWdoIGFib3ZlOiBsYXllciAxIChDdW11bHVzIGJ5IGRlZmF1bHQ7IGl0cyB0eXBlIGlzIGtlcHQpIG9uLAogICAgICAgICAjIGl0cyBiYXNlIDEuNyBrbSBhYm92ZSB0aGUgY2FtZXJhIHNvIHRoZSBjdW11bHVzIHNob3cgaW4gdGhlIHNreSwgbm90IGFzIGEgc3RyaXAgb2YgdG9wcwogICAgICAgICAjIGFsb25nIHRoZSBob3Jpem9uIChwbGFubmVyIHIxOSwgb3VyIGRlbW8gZmFpci13ZWF0aGVyIHJlbmRlcjogY2FtZXJhIDQzMDAgbSwgYmFzZSA2MDAwIG0pLgogICAgICAgICAiQWVyaWFsIERheSI6IHsiZW5hYmxlIjogVHJ1ZSwgImJhc2VfYWJvdmVfY2FtZXJhIjogMTcwMC4wfX0KTE9PS19OQU1FUyA9IHNvcnRlZChMT09LUykKCgpkZWYgY2FtZXJhX2hlaWdodChuKToKICAgICIiIlRoZSBjYW1lcmEncyBoZWlnaHQgYWJvdmUgdGhlIGdyb3VuZCBpbiBtZXRyZXMgKDMwMCBtIHdpdGhvdXQgYSBjYW1lcmEgbWF0cml4KS4iIiIKICAgIHRyeToKICAgICAgICB5ID0gblsiY2FtX3dvcmxkX21hdHJpeCJdLmdldFZhbHVlKDcpCiAgICAgICAgaCA9ICh5IC0gblsiZ3JvdW5kX2hlaWdodCJdLnZhbHVlKCkpICogKG5bInNjZW5lX3NjYWxlIl0udmFsdWUoKSBvciAwLjEpCiAgICBleGNlcHQgRXhjZXB0aW9uOgogICAgICAgIHJldHVybiAzMDAuMAogICAgcmV0dXJuIGggaWYgaCA+IDAuMCBlbHNlIDMwMC4wCgoKZGVmIGFwcGx5X2xvb2sobiwgbmFtZT1Ob25lKToKICAgICIiIlNldCBhIHN0YXJ0aW5nIGxvb2sncyBsYXllciAxIGtub2JzLCB0aGVuIGNlbnRyZSB0aGUgRWFzeSBzbGlkZXJzIG9uIGl0IChsYXllciAxKS4iIiIKICAgIG5hbWUgPSBuYW1lIG9yIChuWyJlYXN5X2xvb2siXS52YWx1ZSgpIGlmIG4ua25vYigiZWFzeV9sb29rIikgaXMgbm90IE5vbmUgZWxzZSBOb25lKQogICAgaWYgbmFtZSBub3QgaW4gTE9PS1M6CiAgICAgICAgcmV0dXJuIE5vbmUKICAgIHAgPSAibDFfIgogICAgd2l0aCBfQnVzeSgpOgogICAgICAgIGlmIG4ua25vYigiZWFzeV9sYXllciIpIGlzIG5vdCBOb25lOgogICAgICAgICAgICBuWyJlYXN5X2xheWVyIl0uc2V0VmFsdWUoMCkKICAgICAgICBmb3IgaywgdiBpbiBMT09LU1tuYW1lXS5pdGVtcygpOgogICAgICAgICAgICBpZiBrID09ICJiYXNlX2Fib3ZlX2NhbWVyYSI6CiAgICAgICAgICAgICAgICBuW3AgKyAiYmFzZSJdLnNldFZhbHVlKG1heCgwLjAsIG1pbigxMjAwMC4wLCBjYW1lcmFfaGVpZ2h0KG4pICsgdikpKQogICAgICAgICAgICBlbGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmU6CiAgICAgICAgICAgICAgICBuW3AgKyBrXS5zZXRWYWx1ZSh2KQogICAgcmViYXNlKG4sIHA9cCkKICAgIHJldHVybiBuYW1lCgoKZGVmIG1hdGNoX2JlZ2luKG4pOgogICAgIiIiQmVmb3JlIGEgbWF0Y2g6IGRyYWZ0IHF1YWxpdHkgYXQgUXVhcnRlciByZXNvbHV0aW9uLCBzbyBlYWNoIHRyeSByZW5kZXJzIGZhc3QuIiIiCiAgICBrZWVwID0gZGljdCgoaywgbltrXS52YWx1ZSgpKSBmb3IgayBpbiAoInJlbmRlcl9wcmVzZXQiLCAicmVzb2x1dGlvbiIsICJxdWFsaXR5IiwgImVkZ2Vfc3RlcHMiLCAic2FtcGxpbmciKSkKICAgIGQgPSBfYWxsKG4pCiAgICBkWyJfbWF0Y2hfa2VlcCJdID0ga2VlcAogICAgX3NhdmUobiwgZCkKICAgIHdpdGggX0J1c3koKToKICAgICAgICAjIFRoZSBkcmFmdCBwcmVzZXQncyB2YWx1ZXMsIGF0IFF1YXJ0ZXIgKHRoZSByZW5kZXIgcHJlc2V0IG1lbnUgdGhlbiByZWFkcyAnY3VzdG9tJzsKICAgICAgICAjIG1hdGNoX2VuZCBwdXRzIGl0IGJhY2spLgogICAgICAgIG5bInF1YWxpdHkiXS5zZXRWYWx1ZSgwLjUpCiAgICAgICAgblsiZWRnZV9zdGVwcyJdLnNldFZhbHVlKDIuMCkKICAgICAgICBuWyJzYW1wbGluZyJdLnNldFZhbHVlKCJMb3ciKQogICAgICAgIG5bInJlc29sdXRpb24iXS5zZXRWYWx1ZSgiUXVhcnRlciIpCgoKZGVmIG1hdGNoX2VuZChuKToKICAgICIiIkFmdGVyIGEgbWF0Y2g6IHRoZSByZW5kZXIgc2V0dGluZ3MgYXMgdGhleSB3ZXJlLiIiIgogICAgZCA9IF9hbGwobikKICAgIGtlZXAgPSBkLnBvcCgiX21hdGNoX2tlZXAiLCBOb25lKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGtlZXA6CiAgICAgICAgd2l0aCBfQnVzeSgpOgogICAgICAgICAgICBmb3IgayBpbiAoInJlc29sdXRpb24iLCAicXVhbGl0eSIsICJlZGdlX3N0ZXBzIiwgInNhbXBsaW5nIiwgInJlbmRlcl9wcmVzZXQiKToKICAgICAgICAgICAgICAgIG5ba10uc2V0VmFsdWUoa2VlcFtrXSkKCgpkZWYgb25fa25vYihuLCBrKToKICAgICIiImtub2JDaGFuZ2VkLCBmb3IgYSBrbm9iIHRoZSBFYXN5IHRhYiBsb29rcyBhZnRlci4iIiIKICAgIGlmIGJ1c3koKToKICAgICAgICByZXR1cm4KICAgIGlmIGsgPT0gImVhc3lfbGF5ZXIiOgogICAgICAgIHNob3dfbGF5ZXIobikKICAgIGVsaWYgayBpbiBFQVNZX0tOT0JTOgogICAgICAgIGFwcGx5X2Vhc3kobikKICAgIGVsaWYgYW55KGsuc3RhcnRzd2l0aChxKSBhbmQgcSA9PSBsYXllcihuKSBhbmQgKGtbbGVuKHEpOl0gaW4gbG9vayhxKSBvciBrW2xlbihxKTpdID09ICJ0eXBlIikgZm9yIHEgaW4gUFJFRklYRVMpOgogICAgICAgICMgVHVuZWQgYnkgaGFuZCwgb3IgYSBuZXcgdHlwZTogdGhhdCBiZWNvbWVzIHRoZSBzbGlkZXJzJyBzdGFydGluZyBwb2ludC4KICAgICAgICByZWJhc2UobikKICAgIGVsaWYgayA9PSAic3VuX2ludGVuc2l0eSI6CiAgICAgICAgZCA9IF9hbGwobikKICAgICAgICBkWyJzdW5faW50ZW5zaXR5Il0gPSBuWyJzdW5faW50ZW5zaXR5Il0udmFsdWUoKSAvIDIuMCAqKiBuWyJlYXN5X2xpdCJdLnZhbHVlKCkKICAgICAgICBfc2F2ZShuLCBkKQo=
+ tool_code IiIiRWFzeSB0YWI6IGEgZmV3IGFydGlzdC1sYW5ndWFnZSBzbGlkZXJzIG92ZXIgb25lIGxheWVyJ3Mga25vYnMgKHRoZSAnZWFzeSBsYXllcicpLgoKYnVpbGRfZ3JvdXAucHkgc3RvcmVzIHRoaXMgZmlsZSBiYXNlNjQtZW5jb2RlZCBpbiB0aGUgaGlkZGVuIHRvb2xfY29kZSBrbm9iOyBrbm9iQ2hhbmdlZCBydW5zCml0IGZyb20gdGhlcmUsIHNvIHRoZSBub2RlIG5lZWRzIG5vIFB5dGhvbiBtb2R1bGUgYXQgdGhlIHN0dWRpby4gRXpNYXRjaCBydW5zIGl0IHRoZSBzYW1lIHdheQphbmQgY2FsbHMgYXBwbHlfZWFzeSAvIHJlYmFzZSAoYW5kIG1hdGNoX2JlZ2luIC8gbWF0Y2hfZW5kIGFyb3VuZCBhIG1hdGNoKSwgc28gaXQgb25seSBldmVyCm1vdmVzIHRoZXNlIHNsaWRlcnMuCgpUaGUgc2xpZGVycyBhcmUgcmVsYXRpdmUgdG8gYSBiYXNlOiB0aGUgbGF5ZXIncyBrbm9iIHZhbHVlcyB3aGVuIHRoZSBzbGlkZXJzIHdlcmUgbGFzdCBjZW50cmVkLAprZXB0IHBlciBsYXllciBpbiB0aGUgaGlkZGVuIGVhc3lfYmFzZSBrbm9iIChKU09OKSB3aXRoIHRoZSBzbGlkZXJzJyBvd24gdmFsdWVzLCBzbyBzd2l0Y2hpbmcKJ2Vhc3kgbGF5ZXInIGJyaW5ncyBlYWNoIGxheWVyJ3Mgc2xpZGVycyBiYWNrLiBFdmVyeSBzbGlkZXIgY2hhbmdlIHJld3JpdGVzIHRoZSBsYXllcidzIGtub2JzCmZyb20gaXRzIGJhc2UsIHNvIHRoZSBsYXllciB0YWIgYWx3YXlzIHNob3dzIGV4YWN0bHkgd2hhdCBFYXN5IGRpZC4gRWRpdGluZyBvbmUgb2YgdGhvc2Uga25vYnMgYnkKaGFuZCwgb3IgY2hhbmdpbmcgdGhlIGxheWVyJ3MgdHlwZSwgbWFrZXMgdGhlIG5ldyB2YWx1ZXMgdGhlIGJhc2UgYW5kIGNlbnRyZXMgdGhlIHNsaWRlcnMuCidsaXQnIGlzIGdsb2JhbCAodGhlIHN1biBpbnRlbnNpdHkpIGFuZCBzdGF5cyB3aGVyZSBpdCBpcy4gVGhlIGZvdXJ0aCAnZWFzeSBsYXllcicgaXMgdGhlIGNpcnJ1cwpzaGVldCAoa25vYnMgc2hlZXRfKiksIHdpdGggaXRzIG93biBtYXBwaW5nIChhcHBseV9zaGVldCkuCiIiIgppbXBvcnQganNvbgppbXBvcnQgbWF0aAoKaW1wb3J0IG51a2UKCiMgKGtub2IsIG5ldXRyYWwpClNMSURFUlMgPSBbKCJlYXN5X2NvdmVyIiwgMC4wKSwgKCJlYXN5X3NpemUiLCAxLjApLCAoImVhc3lfc29mdG5lc3MiLCAwLjApLCAoImVhc3lfd2lzcHMiLCAwLjApLAogICAgICAgICAgICgiZWFzeV91bmRlcnNpZGUiLCAwLjApLCAoImVhc3lfbGl0IiwgMC4wKV0KRUFTWV9LTk9CUyA9IFtuYW1lIGZvciBuYW1lLCBfIGluIFNMSURFUlNdICsgWyJlYXN5X2xheWVyIl0KTEFZRVJfU0xJREVSUyA9IFtuYW1lIGZvciBuYW1lLCBfIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiXQojIFRoZSBsYXllciBrbm9icyAod2l0aG91dCB0aGUgbE5fIHByZWZpeCkgdGhlIHNsaWRlcnMgd3JpdGUuCkxPT0sgPSBbImNvdmVyIiwgInNjYWxlX2ttIiwgImNlbGxfa20iLCAibHVtcF9zaXplIiwgImRldGFpbF9zaXplIiwgImVkZ2UiLCAic2lnbWEiLCAid2lzcF9hbW91bnQiLAogICAgICAgICJ3aXNwX3N0cmV0Y2giLCAic2t5X29jY2x1c2lvbiIsICJzaGFkb3dfZGVwdGgiLCAiYW1iaWVudCJdCiMgVGhlIGNpcnJ1cyBzaGVldCdzIGtub2JzICh3aXRob3V0IHNoZWV0XykgdGhlIHNsaWRlcnMgd3JpdGUuClNIRUVUX0xPT0sgPSBbImNvdmVyIiwgInNjYWxlX2ttIiwgImZpYnJlX3NpemUiLCAiZWRnZSIsICJvcGFjaXR5IiwgImZpYnJlcyIsICJhbWJpZW50Il0KUFJFRklYRVMgPSAoImwxXyIsICJsMl8iLCAibDNfIiwgInNoZWV0XyIpCkdMT0JBTCA9IFsic3VuX2ludGVuc2l0eSJdCgoKY2xhc3MgX0J1c3kob2JqZWN0KToKICAgICIiIldoaWxlIHRoZSBzbGlkZXJzIHNldCBrbm9icywga25vYkNoYW5nZWQgbGVhdmVzIHRoZW0gYWxvbmUuIiIiCgogICAgZGVmIF9fZW50ZXJfXyhzZWxmKToKICAgICAgICBzZWxmLndhcyA9IGdldGF0dHIobnVrZSwgIl9lemNsb3VkZ2VuX2J1c3kiLCBGYWxzZSkKICAgICAgICBudWtlLl9lemNsb3VkZ2VuX2J1c3kgPSBUcnVlCgogICAgZGVmIF9fZXhpdF9fKHNlbGYsICphcmdzKToKICAgICAgICBudWtlLl9lemNsb3VkZ2VuX2J1c3kgPSBzZWxmLndhcwoKCmRlZiBidXN5KCk6CiAgICByZXR1cm4gZ2V0YXR0cihudWtlLCAiX2V6Y2xvdWRnZW5fYnVzeSIsIEZhbHNlKQoKCmRlZiBsYXllcihuKToKICAgICIiIlRoZSBlYXN5IGxheWVyJ3Mga25vYiBwcmVmaXgsICdsMV8nIC4uICdsM18nLCBvciAnc2hlZXRfJyBmb3IgdGhlIGNpcnJ1cyBzaGVldC4iIiIKICAgIHJldHVybiBQUkVGSVhFU1ttaW4oaW50KG5bImVhc3lfbGF5ZXIiXS5nZXRWYWx1ZSgpKSwgMyldCgoKZGVmIGxvb2socCk6CiAgICByZXR1cm4gU0hFRVRfTE9PSyBpZiBwID09ICJzaGVldF8iIGVsc2UgTE9PSwoKCmRlZiBfYWxsKG4pOgogICAgdHJ5OgogICAgICAgIHJldHVybiBqc29uLmxvYWRzKG5bImVhc3lfYmFzZSJdLnZhbHVlKCkgb3IgInt9IikKICAgIGV4Y2VwdCBWYWx1ZUVycm9yOgogICAgICAgIHJldHVybiB7fQoKCmRlZiBfc2F2ZShuLCBkKToKICAgIHdpdGggX0J1c3koKToKICAgICAgICBuWyJlYXN5X2Jhc2UiXS5zZXRWYWx1ZShqc29uLmR1bXBzKGQpKQoKCmRlZiBfbGl0X2Jhc2UobiwgZCk6CiAgICBpZiAic3VuX2ludGVuc2l0eSIgbm90IGluIGQ6CiAgICAgICAgZFsic3VuX2ludGVuc2l0eSJdID0gblsic3VuX2ludGVuc2l0eSJdLnZhbHVlKCkgLyAyLjAgKiogblsiZWFzeV9saXQiXS52YWx1ZSgpCiAgICByZXR1cm4gZFsic3VuX2ludGVuc2l0eSJdCgoKZGVmIHJlYmFzZShuLCBjZW50cmU9VHJ1ZSwgcD1Ob25lKToKICAgICIiIk1ha2UgdGhlIGVhc3kgbGF5ZXIncyBrbm9iIHZhbHVlcyBpdHMgYmFzZSBhbmQgY2VudHJlIGl0cyBzbGlkZXJzICgnbGl0JyBzdGF5cykuIiIiCiAgICBwID0gcCBvciBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGRbcF0gPSB7ImJhc2UiOiBkaWN0KChrLCBuW3AgKyBrXS52YWx1ZSgpKSBmb3IgayBpbiBsb29rKHApIGlmIG4ua25vYihwICsgaykgaXMgbm90IE5vbmUpLAogICAgICAgICAgICAic2xpZGVycyI6IGRpY3QoKG5hbWUsIG5ldXRyYWwpIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlMgaWYgbmFtZSAhPSAiZWFzeV9saXQiKX0KICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgX3NhdmUobiwgZCkKICAgIGlmIGNlbnRyZToKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBuYW1lLCBuZXV0cmFsIGluIFNMSURFUlM6CiAgICAgICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICAgICAgbltuYW1lXS5zZXRWYWx1ZShuZXV0cmFsKQoKCmRlZiBzaG93X2xheWVyKG4pOgogICAgIiIiJ2Vhc3kgbGF5ZXInIGNoYW5nZWQ6IGJyaW5nIHRoYXQgbGF5ZXIncyBzbGlkZXJzIGJhY2sgKG9yIHN0YXJ0IGl0IGZyb20gaXRzIGtub2JzKS4iIiIKICAgIHAgPSBsYXllcihuKQogICAgZCA9IF9hbGwobikKICAgIGlmIHAgbm90IGluIGQ6CiAgICAgICAgcmViYXNlKG4sIHA9cCkKICAgICAgICByZXR1cm4KICAgIHdpdGggX0J1c3koKToKICAgICAgICBmb3IgbmFtZSwgbmV1dHJhbCBpbiBTTElERVJTOgogICAgICAgICAgICBpZiBuYW1lICE9ICJlYXN5X2xpdCI6CiAgICAgICAgICAgICAgICBuW25hbWVdLnNldFZhbHVlKGRbcF1bInNsaWRlcnMiXS5nZXQobmFtZSwgbmV1dHJhbCkpCgoKZGVmIGFwcGx5X2Vhc3kobik6CiAgICAiIiJSZXdyaXRlIHRoZSBlYXN5IGxheWVyJ3Mga25vYnMgKGFuZCB0aGUgc3VuIGludGVuc2l0eSkgZnJvbSB0aGUgYmFzZSBhbmQgdGhlIHNsaWRlcnMuIiIiCiAgICBwID0gbGF5ZXIobikKICAgIGQgPSBfYWxsKG4pCiAgICBpZiBwIG5vdCBpbiBkOgogICAgICAgICMgTmV2ZXIgc2V0IHVwOiB0aGUga25vYnMgc3RpbGwgaG9sZCB0aGUgbG9vayB0aGUgc2xpZGVyIGp1c3QgbW92ZWQgYXdheSBmcm9tLgogICAgICAgIGtlZXAgPSBkaWN0KChuYW1lLCBuW25hbWVdLnZhbHVlKCkpIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICAgICAgcmViYXNlKG4sIGNlbnRyZT1GYWxzZSwgcD1wKQogICAgICAgIGQgPSBfYWxsKG4pCiAgICAgICAgZFtwXVsic2xpZGVycyJdID0ga2VlcAogICAgZSA9IGRpY3QoKG5hbWUsIG5bbmFtZV0udmFsdWUoKSkgZm9yIG5hbWUsIF8gaW4gU0xJREVSUykKICAgIGRbcF1bInNsaWRlcnMiXSA9IGRpY3QoKG5hbWUsIGVbbmFtZV0pIGZvciBuYW1lIGluIExBWUVSX1NMSURFUlMpCiAgICBiID0gZFtwXVsiYmFzZSJdCiAgICBsaXQgPSBfbGl0X2Jhc2UobiwgZCkKICAgIF9zYXZlKG4sIGQpCgogICAgZGVmIHB1dChrLCB2LCBsbz1Ob25lLCBoaT1Ob25lKToKICAgICAgICBpZiBuLmtub2IocCArIGspIGlzIE5vbmUgb3IgayBub3QgaW4gYjoKICAgICAgICAgICAgcmV0dXJuCiAgICAgICAgaWYgbG8gaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtYXgobG8sIHYpCiAgICAgICAgaWYgaGkgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIHYgPSBtaW4oaGksIHYpCiAgICAgICAgbltwICsga10uc2V0VmFsdWUodikKCiAgICBzaXplID0gbWF4KGVbImVhc3lfc2l6ZSJdLCAxZS0zKQogICAgcyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3NvZnRuZXNzIl0pKQogICAgdyA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3dpc3BzIl0pKQogICAgdSA9IG1heCgtMS4wLCBtaW4oMS4wLCBlWyJlYXN5X3VuZGVyc2lkZSJdKSkKICAgIGlmIHAgPT0gInNoZWV0XyI6CiAgICAgICAgd2l0aCBfQnVzeSgpOgogICAgICAgICAgICBhcHBseV9zaGVldChwdXQsIGIsIGVbImVhc3lfY292ZXIiXSwgc2l6ZSwgcywgdywgdSkKICAgICAgICAgICAgblsic3VuX2ludGVuc2l0eSJdLnNldFZhbHVlKGxpdCAqIDIuMCAqKiBlWyJlYXN5X2xpdCJdKQogICAgICAgIHJldHVybgogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgQ292ZXI6IG1vcmUgb3IgbGVzcyBvZiB0aGUgc2t5IGhpZGRlbiwgaW4gdGhlIHR5cGUncyB2aXNpYmxlLWNvdmVyIHVuaXRzLgogICAgICAgIHB1dCgiY292ZXIiLCBiLmdldCgiY292ZXIiLCAwLjUpICsgZVsiZWFzeV9jb3ZlciJdLCAwLjAsIDEuMCkKICAgICAgICAjIFNpemU6IHRoZSBjbG91ZCBzaGFwZXMgYW5kIHRoZWlyIGNlbGxzIGFuZCBsdW1wczsgdGhlIGJpbGxvd3MgZ3JvdyBtb3JlIHNsb3dseS4KICAgICAgICBmb3IgayBpbiAoInNjYWxlX2ttIiwgImNlbGxfa20iLCAibHVtcF9zaXplIik6CiAgICAgICAgICAgIHB1dChrLCBiLmdldChrLCAxLjApICogc2l6ZSkKICAgICAgICBwdXQoImRldGFpbF9zaXplIiwgYi5nZXQoImRldGFpbF9zaXplIiwgMTAwLjApICogbWF0aC5zcXJ0KHNpemUpKQogICAgICAgICMgU29mdG5lc3M6IHNvZnRlciwgdGhpbm5lciBlZGdlcyAob3IgaGFyZGVyLCBkZW5zZXIgb25lcykuCiAgICAgICAgcHV0KCJlZGdlIiwgYi5nZXQoImVkZ2UiLCAwLjEpICogNC4wICoqIHMsIDAuMDEsIDAuNSkKICAgICAgICBwdXQoInNpZ21hIiwgYi5nZXQoInNpZ21hIiwgMC4wNCkgKiAyLjAgKiogLXMsIDAuMDAwNSwgMC4xKQogICAgICAgICMgV2lzcHM6IGZpbmUgd2lzcHMgZWF0aW5nIHRoZSBlZGdlcywgY29tYmVkIGFsb25nIHRoZSB3aW5kIGFzIGl0IGdvZXMgdXAuCiAgICAgICAgcHV0KCJ3aXNwX2Ftb3VudCIsIGIuZ2V0KCJ3aXNwX2Ftb3VudCIsIDAuMCkgKyAwLjYgKiB3LCAwLjAsIDEuMCkKICAgICAgICBwdXQoIndpc3Bfc3RyZXRjaCIsIGIuZ2V0KCJ3aXNwX3N0cmV0Y2giLCAxLjApICogNC4wICoqIG1heCh3LCAwLjApLCAxLjAsIDEyLjApCiAgICAgICAgIyBVbmRlcnNpZGU6IGRhcmtlciwgZGVlcGVyIHVuZGVyc2lkZXMgYW5kIGZvbGRzIChvciBsaWdodGVyLCBnbG93aW5nIG9uZXMpLgogICAgICAgIHB1dCgic2t5X29jY2x1c2lvbiIsIGIuZ2V0KCJza3lfb2NjbHVzaW9uIiwgMS4wKSArIDAuOCAqIHUsIDAuMCwgMi4wKQogICAgICAgIHB1dCgic2hhZG93X2RlcHRoIiwgYi5nZXQoInNoYWRvd19kZXB0aCIsIDAuMCkgKyAwLjUgKiB1LCAwLjAsIDEuMCkKICAgICAgICBwdXQoImFtYmllbnQiLCBiLmdldCgiYW1iaWVudCIsIDEuMCkgKiAyLjAgKiogKC0wLjUgKiB1KSwgMC4wLCAzLjApCiAgICAgICAgIyBMaXQ6IHRoZSBzdW5saXQgc2lkZSdzIGJyaWdodG5lc3MsIGluIHN0b3BzICh0aGUgd2hvbGUgbm9kZSdzIHN1bikuCiAgICAgICAgblsic3VuX2ludGVuc2l0eSJdLnNldFZhbHVlKGxpdCAqIDIuMCAqKiBlWyJlYXN5X2xpdCJdKQoKCmRlZiBhcHBseV9zaGVldChwdXQsIGIsIGNvdmVyLCBzaXplLCBzLCB3LCB1KToKICAgICIiIlRoZSBzbGlkZXJzIG9uIHRoZSBjaXJydXMgc2hlZXQuIiIiCiAgICBwdXQoImNvdmVyIiwgYi5nZXQoImNvdmVyIiwgMC41KSArIGNvdmVyLCAwLjAsIDEuMCkKICAgIHB1dCgic2NhbGVfa20iLCBiLmdldCgic2NhbGVfa20iLCA0LjApICogc2l6ZSkKICAgIHB1dCgiZmlicmVfc2l6ZSIsIGIuZ2V0KCJmaWJyZV9zaXplIiwgMTUwLjApICogbWF0aC5zcXJ0KHNpemUpKQogICAgIyBTb2Z0bmVzczogc29mdGVyIHBhdGNoIGVkZ2VzIGFuZCBhIHRoaW5uZXIsIG1vcmUgdmVpbC1saWtlIHNoZWV0IChvciBjcmlzcGVyLCBkZW5zZXIpLgogICAgcHV0KCJlZGdlIiwgYi5nZXQoImVkZ2UiLCAwLjYpICogMi4wICoqIHMsIDAuMCwgMi4wKQogICAgcHV0KCJvcGFjaXR5IiwgYi5nZXQoIm9wYWNpdHkiLCAwLjUpICogMi4wICoqICgtMC43ICogcyksIDAuMCwgMi4wKQogICAgIyBXaXNwczogbW9yZSBvZiB0aGUgc2hlZXQgaW4gc3RyYW5kcy4KICAgIHB1dCgiZmlicmVzIiwgYi5nZXQoImZpYnJlcyIsIDAuOCkgKyAwLjQgKiB3LCAwLjAsIDEuMCkKICAgICMgVW5kZXJzaWRlOiBhIGRhcmtlciBzaWRlIGF3YXkgZnJvbSB0aGUgc3VuIChsZXNzIHNreSBsaWdodCkuCiAgICBwdXQoImFtYmllbnQiLCBiLmdldCgiYW1iaWVudCIsIDEuMCkgKiAyLjAgKiogKC0wLjcgKiB1KSwgMC4wLCAzLjApCgoKIyBTdGFydGluZyBsb29rczogbGF5ZXIgMSBrbm9icyBzZXQgYmVmb3JlIGEgbWF0Y2ggKCdhcHBseSBsb29rJyBvbiB0aGUgRWFzeSB0YWIsIG9yIEV6TWF0Y2gncwojICdhcHBseSBzdGFydGluZyBsb29rJykuICJiYXNlX2Fib3ZlX2NhbWVyYSIgcHV0cyB0aGUgZGVjaydzIGJhc2UgdGhhdCBtYW55IG1ldHJlcyBhYm92ZSB0aGUKIyBjYW1lcmEsIHNvIGFuIGFlcmlhbCBjYW1lcmEgbmV2ZXIgc2VlcyBhIGZsYXQgc3RyaXAgb2YgY2xvdWQgdG9wcyBhbG9uZyB0aGUgaG9yaXpvbi4gQWVyaWFsCiMgU3Vuc2V0IGFkZHMgbm8gY2xvdWQgKGxheWVyIDEgb2ZmKTogdHVybmluZyBsYXllciAxIG9uIGJ5IGhhbmQgc3RhcnRzIGZyb20gYSBkZWNrIGFib3ZlIHRoZSBjYW1lcmEuCkxPT0tTID0geyJBZXJpYWwgU3Vuc2V0IjogeyJlbmFibGUiOiBGYWxzZSwgImJhc2VfYWJvdmVfY2FtZXJhIjogMTkwMC4wfSwKICAgICAgICAgIyBBIGZhaXItd2VhdGhlciBkYXkgZnJvbSBoaWdoIGFib3ZlOiBsYXllciAxIChDdW11bHVzIGJ5IGRlZmF1bHQ7IGl0cyB0eXBlIGlzIGtlcHQpIG9uLAogICAgICAgICAjIGl0cyBiYXNlIDEuNyBrbSBhYm92ZSB0aGUgY2FtZXJhIHNvIHRoZSBjdW11bHVzIHNob3cgaW4gdGhlIHNreSwgbm90IGFzIGEgc3RyaXAgb2YgdG9wcwogICAgICAgICAjIGFsb25nIHRoZSBob3Jpem9uIChwbGFubmVyIHIxOSwgb3VyIGRlbW8gZmFpci13ZWF0aGVyIHJlbmRlcjogY2FtZXJhIDQzMDAgbSwgYmFzZSA2MDAwIG0pLgogICAgICAgICAiQWVyaWFsIERheSI6IHsiZW5hYmxlIjogVHJ1ZSwgImJhc2VfYWJvdmVfY2FtZXJhIjogMTIwMC4wfX0gICAjIHIxOSBwYXNzIDMgKHdhcyAxNzAwKQpMT09LX05BTUVTID0gc29ydGVkKExPT0tTKQoKCmRlZiBjYW1lcmFfaGVpZ2h0KG4pOgogICAgIiIiVGhlIGNhbWVyYSdzIGhlaWdodCBhYm92ZSB0aGUgZ3JvdW5kIGluIG1ldHJlcyAoMzAwIG0gd2l0aG91dCBhIGNhbWVyYSBtYXRyaXgpLiIiIgogICAgdHJ5OgogICAgICAgIHkgPSBuWyJjYW1fd29ybGRfbWF0cml4Il0uZ2V0VmFsdWUoNykKICAgICAgICBoID0gKHkgLSBuWyJncm91bmRfaGVpZ2h0Il0udmFsdWUoKSkgKiAoblsic2NlbmVfc2NhbGUiXS52YWx1ZSgpIG9yIDAuMSkKICAgIGV4Y2VwdCBFeGNlcHRpb246CiAgICAgICAgcmV0dXJuIDMwMC4wCiAgICByZXR1cm4gaCBpZiBoID4gMC4wIGVsc2UgMzAwLjAKCgpkZWYgYXBwbHlfbG9vayhuLCBuYW1lPU5vbmUpOgogICAgIiIiU2V0IGEgc3RhcnRpbmcgbG9vaydzIGxheWVyIDEga25vYnMsIHRoZW4gY2VudHJlIHRoZSBFYXN5IHNsaWRlcnMgb24gaXQgKGxheWVyIDEpLiIiIgogICAgbmFtZSA9IG5hbWUgb3IgKG5bImVhc3lfbG9vayJdLnZhbHVlKCkgaWYgbi5rbm9iKCJlYXN5X2xvb2siKSBpcyBub3QgTm9uZSBlbHNlIE5vbmUpCiAgICBpZiBuYW1lIG5vdCBpbiBMT09LUzoKICAgICAgICByZXR1cm4gTm9uZQogICAgcCA9ICJsMV8iCiAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgaWYgbi5rbm9iKCJlYXN5X2xheWVyIikgaXMgbm90IE5vbmU6CiAgICAgICAgICAgIG5bImVhc3lfbGF5ZXIiXS5zZXRWYWx1ZSgwKQogICAgICAgIGZvciBrLCB2IGluIExPT0tTW25hbWVdLml0ZW1zKCk6CiAgICAgICAgICAgIGlmIGsgPT0gImJhc2VfYWJvdmVfY2FtZXJhIjoKICAgICAgICAgICAgICAgIG5bcCArICJiYXNlIl0uc2V0VmFsdWUobWF4KDAuMCwgbWluKDEyMDAwLjAsIGNhbWVyYV9oZWlnaHQobikgKyB2KSkpCiAgICAgICAgICAgIGVsaWYgbi5rbm9iKHAgKyBrKSBpcyBub3QgTm9uZToKICAgICAgICAgICAgICAgIG5bcCArIGtdLnNldFZhbHVlKHYpCiAgICByZWJhc2UobiwgcD1wKQogICAgcmV0dXJuIG5hbWUKCgpkZWYgbWF0Y2hfYmVnaW4obik6CiAgICAiIiJCZWZvcmUgYSBtYXRjaDogZHJhZnQgcXVhbGl0eSBhdCBRdWFydGVyIHJlc29sdXRpb24sIHNvIGVhY2ggdHJ5IHJlbmRlcnMgZmFzdC4iIiIKICAgIGtlZXAgPSBkaWN0KChrLCBuW2tdLnZhbHVlKCkpIGZvciBrIGluICgicmVuZGVyX3ByZXNldCIsICJyZXNvbHV0aW9uIiwgInF1YWxpdHkiLCAiZWRnZV9zdGVwcyIsICJzYW1wbGluZyIpKQogICAgZCA9IF9hbGwobikKICAgIGRbIl9tYXRjaF9rZWVwIl0gPSBrZWVwCiAgICBfc2F2ZShuLCBkKQogICAgd2l0aCBfQnVzeSgpOgogICAgICAgICMgVGhlIGRyYWZ0IHByZXNldCdzIHZhbHVlcywgYXQgUXVhcnRlciAodGhlIHJlbmRlciBwcmVzZXQgbWVudSB0aGVuIHJlYWRzICdjdXN0b20nOwogICAgICAgICMgbWF0Y2hfZW5kIHB1dHMgaXQgYmFjaykuCiAgICAgICAgblsicXVhbGl0eSJdLnNldFZhbHVlKDAuNSkKICAgICAgICBuWyJlZGdlX3N0ZXBzIl0uc2V0VmFsdWUoMi4wKQogICAgICAgIG5bInNhbXBsaW5nIl0uc2V0VmFsdWUoIkxvdyIpCiAgICAgICAgblsicmVzb2x1dGlvbiJdLnNldFZhbHVlKCJRdWFydGVyIikKCgpkZWYgbWF0Y2hfZW5kKG4pOgogICAgIiIiQWZ0ZXIgYSBtYXRjaDogdGhlIHJlbmRlciBzZXR0aW5ncyBhcyB0aGV5IHdlcmUuIiIiCiAgICBkID0gX2FsbChuKQogICAga2VlcCA9IGQucG9wKCJfbWF0Y2hfa2VlcCIsIE5vbmUpCiAgICBfc2F2ZShuLCBkKQogICAgaWYga2VlcDoKICAgICAgICB3aXRoIF9CdXN5KCk6CiAgICAgICAgICAgIGZvciBrIGluICgicmVzb2x1dGlvbiIsICJxdWFsaXR5IiwgImVkZ2Vfc3RlcHMiLCAic2FtcGxpbmciLCAicmVuZGVyX3ByZXNldCIpOgogICAgICAgICAgICAgICAgbltrXS5zZXRWYWx1ZShrZWVwW2tdKQoKCmRlZiBvbl9rbm9iKG4sIGspOgogICAgIiIia25vYkNoYW5nZWQsIGZvciBhIGtub2IgdGhlIEVhc3kgdGFiIGxvb2tzIGFmdGVyLiIiIgogICAgaWYgYnVzeSgpOgogICAgICAgIHJldHVybgogICAgaWYgayA9PSAiZWFzeV9sYXllciI6CiAgICAgICAgc2hvd19sYXllcihuKQogICAgZWxpZiBrIGluIEVBU1lfS05PQlM6CiAgICAgICAgYXBwbHlfZWFzeShuKQogICAgZWxpZiBhbnkoay5zdGFydHN3aXRoKHEpIGFuZCBxID09IGxheWVyKG4pIGFuZCAoa1tsZW4ocSk6XSBpbiBsb29rKHEpIG9yIGtbbGVuKHEpOl0gPT0gInR5cGUiKSBmb3IgcSBpbiBQUkVGSVhFUyk6CiAgICAgICAgIyBUdW5lZCBieSBoYW5kLCBvciBhIG5ldyB0eXBlOiB0aGF0IGJlY29tZXMgdGhlIHNsaWRlcnMnIHN0YXJ0aW5nIHBvaW50LgogICAgICAgIHJlYmFzZShuKQogICAgZWxpZiBrID09ICJzdW5faW50ZW5zaXR5IjoKICAgICAgICBkID0gX2FsbChuKQogICAgICAgIGRbInN1bl9pbnRlbnNpdHkiXSA9IG5bInN1bl9pbnRlbnNpdHkiXS52YWx1ZSgpIC8gMi4wICoqIG5bImVhc3lfbGl0Il0udmFsdWUoKQogICAgICAgIF9zYXZlKG4sIGQpCg==
  addUserKnob {20 l1_tab l "Layer 1"}
  addUserKnob {6 l1_enable l enable t "Draw this layer. Layers sort themselves by depth." -STARTLINE}
  l1_enable true
@@ -1141,7 +1141,7 @@ Group {
   name bg
   xpos 180
  }
-set N15884000 [stack 0]
+set Ne4374000 [stack 0]
  Constant {
   inputs 0
   name RootFormat
@@ -1169,14 +1169,14 @@ set N15884000 [stack 0]
   xpos 0
   ypos 180
  }
-set N1589f000 [stack 0]
+set Ne438f000 [stack 0]
  Crop {
   box {{0} {0} {input.width} {input.height}}
   name FormatBox
   xpos 180
   ypos 240
  }
-push $N1589f000
+push $Ne438f000
  Merge2 {
   inputs 2
   operation plus
@@ -1193,7 +1193,7 @@ push $N1589f000
   xpos 0
   ypos 360
  }
-set N1589fc00 [stack 0]
+set Ne438fc00 [stack 0]
  Dot {
   name LayoutDot15
   xpos 86
@@ -1204,38 +1204,38 @@ set N1589fc00 [stack 0]
   xpos 86
   ypos 963
  }
-set N5832c800 [stack 0]
+set Na71ac800 [stack 0]
  Dot {
   name LayoutDot22
   xpos 86
   ypos 1461
  }
-set N58348000 [stack 0]
+set Na71c8000 [stack 0]
  Dot {
   name LayoutDot25
   xpos 86
   ypos 1839
  }
-set N58348c00 [stack 0]
+set Na71c8c00 [stack 0]
  Dot {
   name LayoutDot26
   xpos 394
   ypos 1839
  }
-set N58349000 [stack 0]
-push $N1589f000
+set Na71c9000 [stack 0]
+push $Ne438f000
  Dot {
   name LayoutDot1
   xpos 394
   ypos 183
  }
-set N582cec00 [stack 0]
+set Na70cec00 [stack 0]
  Dot {
   name LayoutDot2
   xpos 574
   ypos 183
  }
-set N582cf000 [stack 0]
+set Na70cf000 [stack 0]
  Reformat {
   type "to box"
   box_width 1536
@@ -1258,29 +1258,29 @@ set N582cf000 [stack 0]
   xpos 626
   ypos 567
  }
-set N583afc00 [stack 0]
+set Na722fc00 [stack 0]
  Dot {
   name LayoutDot65
   xpos 626
   ypos 1113
  }
-set N583c6c00 [stack 0]
+set Na7246c00 [stack 0]
  Dot {
   name LayoutDot66
   xpos 610
   ypos 1113
  }
-set N583c7000 [stack 0]
+set Na7247000 [stack 0]
  Dot {
   name LayoutDot67
   xpos 430
   ypos 1113
  }
-set N583c7400 [stack 0]
-push $N583c7400
-push $N583c7400
-push $N583c7400
-push $N15884000
+set Na7247400 [stack 0]
+push $Na7247400
+push $Na7247400
+push $Na7247400
+push $Ne4374000
  AddChannels {
   channels depth
   name DepthEnsure
@@ -1297,7 +1297,7 @@ push $N15884000
   xpos 290
   ypos 243
  }
-push $N582cec00
+push $Na70cec00
  Copy {
   inputs 2
   from0 depth.Z
@@ -1325,7 +1325,7 @@ push $N582cec00
   xpos 470
   ypos 1053
  }
-set N58396c00 [stack 0]
+set Na7216c00 [stack 0]
  Dot {
   name LayoutDot51
   xpos 376
@@ -1359,26 +1359,26 @@ set N58396c00 [stack 0]
   xpos 446
   ypos 537
  }
-set N58362c00 [stack 0]
+set Na71e2c00 [stack 0]
  Dot {
   name LayoutDot37
   xpos 446
   ypos 1023
  }
-set N58363c00 [stack 0]
+set Na71e3c00 [stack 0]
  Dot {
   name LayoutDot38
   xpos 412
   ypos 1023
  }
-set N5837a000 [stack 0]
-push $N5832c800
+set Na71fa000 [stack 0]
+push $Na71ac800
  Dot {
   name LayoutDot17
   xpos 394
   ypos 963
  }
-set N5832cc00 [stack 0]
+set Na71acc00 [stack 0]
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -1612,13 +1612,13 @@ set N5832cc00 [stack 0]
   xpos 446
   ypos 2487
  }
-set N58464c00 [stack 0]
+set Na72e4c00 [stack 0]
  Dot {
   name LayoutDot115
   xpos 446
   ypos 3183
  }
-set N58465400 [stack 0]
+set Na72e5400 [stack 0]
  Dot {
   name LayoutDot118
   xpos 446
@@ -1629,113 +1629,113 @@ set N58465400 [stack 0]
   xpos 772
   ypos 4101
  }
-push $N58349000
+push $Na71c9000
  Dot {
   name LayoutDot27
   xpos 574
   ypos 1839
  }
-set N58349400 [stack 0]
+set Na71c9400 [stack 0]
  Dot {
   name LayoutDot28
   xpos 754
   ypos 1839
  }
-set N58349800 [stack 0]
+set Na71c9800 [stack 0]
  Dot {
   name LayoutDot29
   xpos 934
   ypos 1839
  }
-set N58349c00 [stack 0]
+set Na71c9c00 [stack 0]
  Dot {
   name LayoutDot30
   xpos 1114
   ypos 1839
  }
-push $N583c6c00
+push $Na7246c00
  Dot {
   name LayoutDot68
   xpos 970
   ypos 1113
  }
-set N583c7800 [stack 0]
+set Na7247800 [stack 0]
  Dot {
   name LayoutDot69
   xpos 1150
   ypos 1113
  }
-set N583c7c00 [stack 0]
-push $N583c7c00
-push $N583c7c00
-push $N583c7c00
-push $N58396c00
+set Na7247c00 [stack 0]
+push $Na7247c00
+push $Na7247c00
+push $Na7247c00
+push $Na7216c00
  Dot {
   name LayoutDot50
   xpos 556
   ypos 1053
  }
-set N58397000 [stack 0]
+set Na7217000 [stack 0]
  Dot {
   name LayoutDot52
   xpos 790
   ypos 1053
  }
-set N58397800 [stack 0]
+set Na7217800 [stack 0]
  Dot {
   name LayoutDot53
   xpos 916
   ypos 1053
  }
-set N58397c00 [stack 0]
+set Na7217c00 [stack 0]
  Dot {
   name LayoutDot54
   xpos 1096
   ypos 1053
  }
-push $N58363c00
+push $Na71e3c00
  Dot {
   name LayoutDot39
   xpos 592
   ypos 1023
  }
-set N5837a400 [stack 0]
+set Na71fa400 [stack 0]
  Dot {
   name LayoutDot41
   xpos 736
   ypos 1023
  }
-set N5837ac00 [stack 0]
+set Na71fac00 [stack 0]
  Dot {
   name LayoutDot42
   xpos 952
   ypos 1023
  }
-set N5837b000 [stack 0]
+set Na71fb000 [stack 0]
  Dot {
   name LayoutDot43
   xpos 1132
   ypos 1023
  }
-push $N5832cc00
+push $Na71acc00
  Dot {
   name LayoutDot18
   xpos 574
   ypos 963
  }
-set N5832d000 [stack 0]
+set Na71ad000 [stack 0]
  Dot {
   name LayoutDot19
   xpos 754
   ypos 963
  }
-set N5832d400 [stack 0]
+set Na71ad400 [stack 0]
  Dot {
   name LayoutDot20
   xpos 934
   ypos 963
  }
-set N5832d800 [stack 0]
+set Na71ad800 [stack 0]
  Dot {
   name LayoutDot21
   xpos 1114
@@ -1992,14 +1992,14 @@ set N5832d800 [stack 0]
   xpos 470
   ypos 3807
  }
-push $N58349c00
-push $N583c7800
-push $N583c7800
-push $N583c7800
-push $N583c7800
-push $N58397c00
-push $N5837b000
-push $N5832d800
+push $Na71c9c00
+push $Na7247800
+push $Na7247800
+push $Na7247800
+push $Na7247800
+push $Na7217c00
+push $Na71fb000
+push $Na71ad800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2251,24 +2251,24 @@ push $N5832d800
   xpos 314
   ypos 3747
  }
-push $N583afc00
+push $Na722fc00
  Dot {
   name LayoutDot62
   xpos 592
   ypos 567
  }
-set N583c6000 [stack 0]
-push $N583c6000
-push $N583c6000
-push $N583c6000
-push $N583c6000
-push $N58362c00
+set Na7246000 [stack 0]
+push $Na7246000
+push $Na7246000
+push $Na7246000
+push $Na7246000
+push $Na71e2c00
  Dot {
   name LayoutDot35
   xpos 574
   ypos 537
  }
-push $N583c6000
+push $Na7246000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2471,13 +2471,13 @@ push $N583c6000
   xpos 650
   ypos 1143
  }
-set N58418c00 [stack 0]
+set Na7298c00 [stack 0]
  Dot {
   name LayoutDot92
   xpos 650
   ypos 1287
  }
-set N58419800 [stack 0]
+set Na7299800 [stack 0]
  Dot {
   name LayoutDot93
   xpos 650
@@ -2493,25 +2493,25 @@ set N58419800 [stack 0]
   xpos 626
   ypos 2619
  }
-push $N583c6000
+push $Na7246000
  Dot {
   name LayoutDot63
   xpos 412
   ypos 567
  }
-set N583c6400 [stack 0]
-push $N583c6400
-push $N583c6400
-push $N583c6400
-push $N583c6400
-push $N58362c00
+set Na7246400 [stack 0]
+push $Na7246400
+push $Na7246400
+push $Na7246400
+push $Na7246400
+push $Na71e2c00
  Dot {
   name LayoutDot34
   xpos 394
   ypos 537
  }
-set N58363000 [stack 0]
-push $N583c6400
+set Na71e3000 [stack 0]
+push $Na7246400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2714,13 +2714,13 @@ push $N583c6400
   xpos 494
   ypos 1083
  }
-set N583fa800 [stack 0]
+set Na727a800 [stack 0]
  Dot {
   name LayoutDot83
   xpos 494
   ypos 1192
  }
-set N583fb400 [stack 0]
+set Na727b400 [stack 0]
  Dot {
   name LayoutDot86
   xpos 494
@@ -2731,24 +2731,24 @@ set N583fb400 [stack 0]
   xpos 592
   ypos 2457
  }
-push $N583c6400
+push $Na7246400
  Dot {
   name LayoutDot64
   xpos 232
   ypos 567
  }
-set N583c6800 [stack 0]
-push $N583c6800
-push $N583c6800
-push $N583c6800
-push $N583c6800
-push $N58363000
+set Na7246800 [stack 0]
+push $Na7246800
+push $Na7246800
+push $Na7246800
+push $Na7246800
+push $Na71e3000
  Dot {
   name LayoutDot36
   xpos 214
   ypos 537
  }
-push $N583c6800
+push $Na7246800
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -2951,13 +2951,13 @@ push $N583c6800
   xpos 290
   ypos 993
  }
-set N583e4400 [stack 0]
+set Na7264400 [stack 0]
  Dot {
   name LayoutDot74
   xpos 290
   ypos 1206
  }
-set N583e5000 [stack 0]
+set Na7265000 [stack 0]
  Dot {
   name LayoutDot77
   xpos 290
@@ -3028,7 +3028,7 @@ set N583e5000 [stack 0]
   xpos 338
   ypos 3627
  }
-push $N58465400
+push $Na72e5400
  Dot {
   name LayoutDot116
   xpos 266
@@ -3039,19 +3039,19 @@ push $N58465400
   xpos 266
   ypos 3567
  }
-push $N58348c00
+push $Na71c8c00
  Dot {
   name LayoutDot31
   xpos 86
   ypos 2022
  }
-push $N58396c00
+push $Na7216c00
  Dot {
   name LayoutDot55
   xpos 470
   ypos 1252
  }
-set N583ae400 [stack 0]
+set Na722e400 [stack 0]
  Dot {
   name LayoutDot57
   xpos 470
@@ -3062,19 +3062,19 @@ set N583ae400 [stack 0]
   xpos 412
   ypos 1491
  }
-set N583af000 [stack 0]
+set Na722f000 [stack 0]
  Dot {
   name LayoutDot59
   xpos 232
   ypos 1491
  }
-push $N58348000
+push $Na71c8000
  Dot {
   name LayoutDot23
   xpos 214
   ypos 1461
  }
-set N58348400 [stack 0]
+set Na71c8400 [stack 0]
  BlinkScript {
   inputs 2
   recompileCount 2
@@ -3122,27 +3122,27 @@ set N58348400 [stack 0]
   ypos 1572
   disable {{"!(parent.sheet_enable && parent.view!=4)"}}
  }
-push $N583e4400
+push $Na7264400
  Dot {
   name LayoutDot72
   xpos 214
   ypos 993
  }
-set N583e4800 [stack 0]
-push $N58418c00
+set Na7264800 [stack 0]
+push $Na7298c00
  Dot {
   name LayoutDot91
   xpos 250
   ypos 1143
  }
-push $N583fa800
+push $Na727a800
  Dot {
   name LayoutDot82
   xpos 196
   ypos 1083
  }
-push $N583e4800
-push $N582cf000
+push $Na7264800
+push $Na70cf000
  Dot {
   name LayoutDot3
   xpos 754
@@ -3175,14 +3175,14 @@ push $N582cf000
   xpos 178
   ypos 1173
  }
-set N58431000 [stack 0]
-push $N5837a000
+set Na72b1000 [stack 0]
+push $Na71fa000
  Dot {
   name LayoutDot40
   xpos 232
   ypos 1023
  }
-push $N58431000
+push $Na72b1000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3374,14 +3374,14 @@ push $N58431000
   ypos 1224
   disable {{"!(!(!parent.l1_enable || (parent.view==4 && parent.variations_of!=0)) || !(!parent.l2_enable || (parent.view==4 && parent.variations_of!=1)) || !(!parent.l3_enable || (parent.view==4 && parent.variations_of!=2))) || !parent.light_grid"}}
  }
-set N6af20000 [stack 0]
+set Nba0e0000 [stack 0]
  Dot {
   name LayoutDot176
   xpos 46
   ypos 1227
  }
-push $N58419800
-push $N583fb400
+push $Na7299800
+push $Na727b400
  Dot {
   name LayoutDot84
   xpos 134
@@ -3392,7 +3392,7 @@ push $N583fb400
   xpos 134
   ypos 1287
  }
-push $N583e5000
+push $Na7265000
  Dot {
   name LayoutDot75
   xpos 110
@@ -3403,13 +3403,13 @@ push $N583e5000
   xpos 110
   ypos 1275
  }
-push $N583ae400
+push $Na722e400
  Dot {
   name LayoutDot56
   xpos 124
   ypos 1252
  }
-push $N58363c00
+push $Na71e3c00
  Dot {
   name LayoutDot44
   xpos 446
@@ -3420,7 +3420,7 @@ push $N58363c00
   xpos 124
   ypos 1266
  }
-push $N1589fc00
+push $Ne438fc00
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -3637,7 +3637,7 @@ push $N1589fc00
   xpos 0
   ypos 2100
  }
-set N580af000 [stack 0]
+set Na6eaf000 [stack 0]
  Expression {
   temp_name0 gain
   temp_expr0 "pow(2, parent.exposure)"
@@ -3654,15 +3654,15 @@ set N580af000 [stack 0]
   xpos 180
   ypos 2160
  }
-set N580e0400 [stack 0]
+set Na6ee0400 [stack 0]
  Dot {
   name LayoutDot5
   xpos 766
   ypos 2163
  }
-push $N58349800
-push $N583af000
-push $N58348400
+push $Na71c9800
+push $Na722f000
+push $Na71c8400
  Dot {
   name LayoutDot24
   xpos 394
@@ -3716,33 +3716,33 @@ push $N58348400
   ypos 1572
   disable {{"!(parent.sheet_enable && parent.view!=4) || !((parent.breakout && !parent.preview) || parent.view==2)"}}
  }
-push $N6af20000
+push $Nba0e0000
  Dot {
   name LayoutDot4
   xpos 214
   ypos 1275
  }
-push $N58418c00
+push $Na7298c00
  Dot {
   name LayoutDot90
   xpos 808
   ypos 1143
  }
-push $N583fa800
+push $Na727a800
  Dot {
   name LayoutDot81
   xpos 718
   ypos 1083
  }
-push $N583e4400
+push $Na7264400
  Dot {
   name LayoutDot73
   xpos 772
   ypos 993
  }
-push $N58397800
-push $N5837ac00
-push $N5832d400
+push $Na7217800
+push $Na71fac00
+push $Na71ad400
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -4009,15 +4009,15 @@ push $N5832d400
   xpos 806
   ypos 3213
  }
-set N584cc400 [stack 0]
+set Na734c400 [stack 0]
  Dot {
   name LayoutDot144
   xpos 412
   ypos 3213
  }
-set N584cc800 [stack 0]
-push $N580e0400
-push $N580af000
+set Na734c800 [stack 0]
+push $Na6ee0400
+push $Na6eaf000
  Merge2 {
   inputs 2
   operation multiply
@@ -4027,7 +4027,7 @@ push $N580af000
   ypos 2220
   disable {{"parent.exposure == 0 && parent.highlight_rolloff <= 0"}}
  }
-set N580e0800 [stack 0]
+set Na6ee0800 [stack 0]
  Dot {
   name LayoutDot99
   xpos 86
@@ -4038,19 +4038,19 @@ set N580e0800 [stack 0]
   xpos 86
   ypos 2805
  }
-set N58431800 [stack 0]
+set Na72b1800 [stack 0]
  Dot {
   name LayoutDot102
   xpos 86
   ypos 3123
  }
-set N5844a000 [stack 0]
+set Na72ca000 [stack 0]
  Dot {
   name LayoutDot103
   xpos 214
   ypos 3123
  }
-set N5844a400 [stack 0]
+set Na72ca400 [stack 0]
  Dot {
   name LayoutDot104
   xpos 394
@@ -4069,7 +4069,7 @@ set N5844a400 [stack 0]
   xpos 394
   ypos 3507
  }
-push $N584cc800
+push $Na734c800
  Dot {
   name LayoutDot145
   xpos 290
@@ -4080,15 +4080,15 @@ push $N584cc800
   xpos 290
   ypos 3447
  }
-push $N5844a400
-push $N58349400
-push $N583c7000
-push $N583c7000
-push $N583c7000
-push $N583c7000
-push $N58397000
-push $N5837a400
-push $N5832d000
+push $Na72ca400
+push $Na71c9400
+push $Na7247000
+push $Na7247000
+push $Na7247000
+push $Na7247000
+push $Na7217000
+push $Na71fa400
+push $Na71ad000
  BlinkScript {
   inputs 7
   recompileCount 2
@@ -4323,7 +4323,7 @@ push $N5832d000
   xpos 674
   ypos 4131
  }
-set N58497000 [stack 0]
+set Na7317000 [stack 0]
  Dot {
   name LayoutDot132
   xpos 674
@@ -4334,13 +4334,13 @@ set N58497000 [stack 0]
   xpos 232
   ypos 5277
  }
-push $N58431800
+push $Na72b1800
  Dot {
   name LayoutDot101
   xpos 214
   ypos 2805
  }
-push $N58464c00
+push $Na72e4c00
  Dot {
   name LayoutDot114
   xpos 214
@@ -4356,7 +4356,7 @@ push $N58464c00
   xpos 180
   ypos 2568
  }
-push $N15884000
+push $Ne4374000
  Dot {
   name LayoutDot12
   xpos 266
@@ -4402,7 +4402,7 @@ push $N15884000
   xpos 180
   ypos 2886
  }
-push $N580e0800
+push $Na6ee0800
  Switch {
   inputs 2
   which {{parent.bg_found}}
@@ -4411,7 +4411,7 @@ push $N580e0800
   xpos 0
   ypos 2946
  }
-set N15881700 [stack 0]
+set Ne4371700 [stack 0]
  Dot {
   name LayoutDot123
   xpos 110
@@ -4435,7 +4435,7 @@ set N15881700 [stack 0]
   xpos 180
   ypos 5328
  }
-set N58145400 [stack 0]
+set Na6f45400 [stack 0]
  Dot {
   name LayoutDot134
   xpos 273
@@ -4446,13 +4446,13 @@ set N58145400 [stack 0]
   xpos 266
   ypos 5361
  }
-push $N5844a000
+push $Na72ca000
  Dot {
   name LayoutDot105
   xpos 86
   ypos 4041
  }
-set N5844ac00 [stack 0]
+set Na72cac00 [stack 0]
  Dot {
   name LayoutDot107
   xpos 86
@@ -4478,8 +4478,8 @@ set N5844ac00 [stack 0]
   xpos 394
   ypos 5391
  }
-push $N58145400
-push $N15881700
+push $Na6f45400
+push $Ne4371700
  Keymix {
   inputs 3
   channels depth
@@ -4494,7 +4494,7 @@ push $N15881700
   xpos 0
   ypos 3324
  }
-set N5818a000 [stack 0]
+set Na6f8a000 [stack 0]
 add_layer {cloud cloud.red cloud.green cloud.blue cloud.alpha}
  Copy {
   inputs 2
@@ -4563,7 +4563,7 @@ add_layer {cloud_sunmap cloud_sunmap.red cloud_sunmap.green cloud_sunmap.blue}
   ypos 3624
   disable {{!parent.sun_map_out}}
  }
-push $N5818a000
+push $Na6f8a000
  Switch {
   inputs 2
   which {{parent.breakout}}
@@ -4572,7 +4572,7 @@ push $N5818a000
   xpos 0
   ypos 3684
  }
-set N5818a500 [stack 0]
+set Na6f8a500 [stack 0]
  Copy {
   inputs 2
   from0 rgba.red
@@ -4593,7 +4593,7 @@ set N5818a500 [stack 0]
   xpos 180
   ypos 3804
  }
-push $N5818a500
+push $Na6f8a500
  Switch {
   inputs 2
   which {{parent.motion_vectors}}
@@ -4602,7 +4602,7 @@ push $N5818a500
   xpos 0
   ypos 3864
  }
-set N5818aa00 [stack 0]
+set Na6f8aa00 [stack 0]
  Dot {
   name LayoutDot170
   xpos 134
@@ -4618,19 +4618,19 @@ set N5818aa00 [stack 0]
   xpos 232
   ypos 4071
  }
-set N58517800 [stack 0]
+set Na7397800 [stack 0]
  Dot {
   name LayoutDot173
   xpos 394
   ypos 4071
  }
-set N58517c00 [stack 0]
+set Na7397c00 [stack 0]
  Dot {
   name LayoutDot174
   xpos 574
   ypos 4071
  }
-set N58532000 [stack 0]
+set Na73b2000 [stack 0]
  Dot {
   name LayoutDot175
   xpos 754
@@ -4648,13 +4648,13 @@ set N58532000 [stack 0]
   xpos 754
   ypos 4875
  }
-push $N5844ac00
+push $Na72cac00
  Dot {
   name LayoutDot106
   xpos 214
   ypos 4041
  }
-push $N58517800
+push $Na7397800
  Copy {
   inputs 2
   channels rgba
@@ -4662,7 +4662,7 @@ push $N58517800
   xpos 180
   ypos 4212
  }
-set N581d1000 [stack 0]
+set Na6fd1000 [stack 0]
  Expression {
   expr0 r+(1-a)*0.14
   expr1 g+(1-a)*0.22
@@ -4862,13 +4862,13 @@ set N581d1000 [stack 0]
   xpos 180
   ypos 4812
  }
-push $N58497000
+push $Na7317000
  Dot {
   name LayoutDot131
   xpos 592
   ypos 4131
  }
-push $N58532000
+push $Na73b2000
  Copy {
   inputs 2
   channels rgba
@@ -4881,7 +4881,7 @@ push $N58532000
   xpos 574
   ypos 4875
  }
-push $N584cc400
+push $Na734c400
  Dot {
   name LayoutDot147
   xpos 806
@@ -4892,7 +4892,7 @@ push $N584cc400
   xpos 412
   ypos 4161
  }
-push $N58517c00
+push $Na7397c00
  Copy {
   inputs 2
   channels rgba
@@ -4905,13 +4905,13 @@ push $N58517c00
   xpos 394
   ypos 4863
  }
-push $N581d1000
+push $Na6fd1000
  Dot {
   name LayoutDot8
   xpos 46
   ypos 4215
  }
-push $N5818aa00
+push $Na6f8aa00
  Switch {
   inputs 6
   which {{parent.view}}
