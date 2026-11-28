@@ -147,7 +147,7 @@ def main():
     ok &= check("look without a camera: base 300 + 1900", [n["l1_base"].v], [2200.0])
     n["l1_enable"].v = False
     ns["apply_look"](n, "Aerial Day")
-    ok &= check("Aerial Day without a camera: on, base 300 + 1700", [float(n["l1_enable"].v), n["l1_base"].v], [1.0, 2000.0])
+    ok &= check("Aerial Day without a camera: on, base 300 + 1200", [float(n["l1_enable"].v), n["l1_base"].v], [1.0, 1500.0])
     ok &= (ns["apply_look"](n, "Nope") is None)
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1

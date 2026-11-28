@@ -10,7 +10,7 @@ v0.56.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.
 render in NukeX 15.1.
 
 New in 0.56: a second starting look, **Aerial Day**: a fair-weather day from high above. Layer 1
-(its type kept, Cumulus by default) is turned on with its base 1700 m above the camera, so the
+(its type kept, Cumulus by default) is turned on with its base 1200 m above the camera, so the
 cumulus show in the sky. EzMatch's 'apply starting look' sets it with the other tools' Aerial Day.
 
 New in 0.55: a **starting look** on the Easy tab. Pick 'Aerial Sunset' and press **apply look**: layer 1

@@ -179,7 +179,7 @@ LOOKS = {"Aerial Sunset": {"enable": False, "base_above_camera": 1900.0},
          # A fair-weather day from high above: layer 1 (Cumulus by default; its type is kept) on,
          # its base 1.7 km above the camera so the cumulus show in the sky, not as a strip of tops
          # along the horizon (planner r19, our demo fair-weather render: camera 4300 m, base 6000 m).
-         "Aerial Day": {"enable": True, "base_above_camera": 1700.0}}
+         "Aerial Day": {"enable": True, "base_above_camera": 1200.0}}   # r19 pass 3 (was 1700)
 LOOK_NAMES = sorted(LOOKS)
 
 
