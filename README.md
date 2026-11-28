@@ -6,8 +6,12 @@ with all code and settings in the node's knobs (no init.py or menu.py).
 
 ## Status
 
-v0.55.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
+v0.56.0: the Group (`groups/EzCloudGen_group.nk`) and gizmo (`gizmos/EzCloudGen.gizmo`) build and
 render in NukeX 15.1.
+
+New in 0.56: a second starting look, **Aerial Day**: a fair-weather day from high above. Layer 1
+(its type kept, Cumulus by default) is turned on with its base 1700 m above the camera, so the
+cumulus show in the sky. EzMatch's 'apply starting look' sets it with the other tools' Aerial Day.
 
 New in 0.55: a **starting look** on the Easy tab. Pick 'Aerial Sunset' and press **apply look**: layer 1
 is turned off (the look adds no cloud) with its base moved 1900 m above the camera, and the Easy

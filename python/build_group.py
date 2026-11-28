@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.join(ROOT, "python"))
 import cloud_types  # noqa: E402
 import node_layout  # noqa: E402
 
-VERSION = "0.55.0"
+VERSION = "0.56.0"
 KERNEL = "EzCloudGen"
 KERNEL_FILE = os.path.join(ROOT, "blink", KERNEL + ".blink")
 GROUP_PATH = os.path.join(ROOT, "groups", "EzCloudGen_group.nk")
@@ -720,9 +720,10 @@ def add_easy_tab(g):
         k = add(g, nuke.Double_Knob(name, label), tip)
         k.setRange(lo, hi)
         k.setValue(neutral)
-    add(g, nuke.Enumeration_Knob("easy_look", "starting look", ["Aerial Sunset"]),
+    add(g, nuke.Enumeration_Knob("easy_look", "starting look", ["Aerial Day", "Aerial Sunset"]),
         "A starting point for a kind of shot, on layer 1. Aerial Sunset: a camera high above the valleys "
-        "toward a low sun; layer 1 off (no cloud), its base moved 1900 m above the camera for when you turn it on. Pair it with EzAtmosScatter's "
+        "toward a low sun; layer 1 off (no cloud), its base moved 1900 m above the camera for when you turn it on. "
+        "Aerial Day: a fair-weather day from high above; layer 1 on, its base 1700 m above the camera. Pair it with EzAtmosScatter's "
         "and EzDepthHaze's Aerial Sunset looks (EzMatch's 'apply starting look' sets all three), then match all.")
     add(g, nuke.PyScript_Knob("apply_easy_look", "apply look",
                               "_n = nuke.thisNode()\n_ez = {}\n"
